@@ -1,0 +1,758 @@
+---
+type: "always_apply"
+---
+
+# Cursor Rules - 多租户考试报名系统 (SAAS Exam Registration System)
+
+## 项目概述
+构建一个基于 SAAS 模式的多租户考试报名管理系统（单体系统），支持企业级招聘考试的全流程管理。
+
+## 技术栈规范
+
+### 后端技术栈
+- **框架**: Spring Boot 3.x (最新稳定版)
+- **Java版本**: Java 17+
+- **数据库**: PostgreSQL 15+
+- **分库分表**: Apache ShardingSphere 5.x (同库分表模式)
+- **对象存储**: MinIO (用于身份证、学历证明等附件存储)
+- **缓存**: Redis 7.x
+- **认证授权**: Spring Security + JWT
+- **支付集成**: 微信支付 + 支付宝支付
+- **文档生成**: Apache PDFBox (准考证生成)
+
+### 前端技术栈
+- **框架**: Next.js 14+ (App Router)
+- **语言**: TypeScript 5.x
+- **UI组件库**: Shadcn/ui + Tailwind CSS 3.x
+- **状态管理**: Zustand / TanStack Query
+- **表单处理**: React Hook Form + Zod
+- **HTTP客户端**: Axios
+- **PDF预览**: react-pdf
+
+### 开发工具
+- **API文档**: Swagger/OpenAPI 3.0
+- **代码质量**: ESLint, Prettier, Checkstyle
+- **版本控制**: Git
+- **构建工具**: Maven (后端), pnpm (前端)
+
+## 架构设计原则
+
+### 1. 多租户架构
+```
+- 租户隔离策略: 基于 PostgreSQL Schema 的物理隔离
+- 使用 Hibernate Schema 级多租户 (SCHEMA multitenancy)
+- 每个租户拥有独立的 Schema (如 tenant_company_a, tenant_company_b)
+- 通过 search_path 动态路由到租户 Schema
+- 租户间数据完全隔离,确保数据安全
+- 公共数据 (tenants, users) 存储在 public schema
+```
+
+### 2. 数据隔离实现
+```
+实现方式:
+- TenantInterceptor: 从请求头/URL提取租户ID
+- TenantContext: ThreadLocal存储当前租户
+- TenantSchemaConnectionProvider: 设置 search_path
+- SchemaManagementService: 自动创建租户Schema
+
+数据结构:
+- public schema: tenants, users, user_tenant_roles (全局共享)
+- tenant_* schema: exams, positions, applications, tickets (租户隔离)
+
+注意: 业务表不包含 tenant_id 字段，通过 Schema 隔离
+```
+
+### 3. 服务模块划分
+```
+- exam-auth-service: 认证授权服务
+- exam-tenant-service: 租户管理服务
+- exam-user-service: 用户管理服务
+- exam-exam-service: 考试管理服务
+- exam-registration-service: 报名管理服务
+- exam-review-service: 审核服务
+- exam-payment-service: 支付服务
+- exam-venue-service: 考场座位安排服务
+- exam-score-service: 成绩管理服务
+- exam-file-service: 文件存储服务
+```
+
+## 数据库设计规范
+
+### 核心表结构要求
+
+#### 1. 基础字段规范
+所有表必须包含:
+```sql
+id BIGSERIAL PRIMARY KEY,
+tenant_id BIGINT NOT NULL,
+created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+created_by BIGINT,
+updated_by BIGINT,
+is_deleted BOOLEAN DEFAULT FALSE,
+version INT DEFAULT 0
+```
+
+#### 2. 核心业务表
+```sql
+-- 租户表
+tenants (id, name, domain, status, config, contact_info, ...)
+
+-- 用户表
+users (id, tenant_id, username, password, email, phone, role, real_name, id_card, gender, birth_date, education, major, graduation_school, ...)
+
+-- 考试表
+exams (id, tenant_id, exam_name, exam_type, start_date, end_date, registration_start, registration_end, status, exam_url, fee_amount, is_free, ...)
+
+-- 考试岗位表
+exam_positions (id, tenant_id, exam_id, position_name, position_code, requirements, subject_ids, max_applicants, ...)
+
+-- 考试科目表
+exam_subjects (id, tenant_id, exam_id, subject_name, subject_code, total_score, ...)
+
+-- 报名表单配置表
+registration_form_configs (id, tenant_id, exam_id, field_name, field_type, is_required, field_order, validation_rules, ...)
+
+-- 考试报名表
+exam_registrations (id, tenant_id, exam_id, position_id, user_id, registration_no, form_data, attachment_ids, status, review_status, payment_status, ...)
+
+-- 审核记录表
+review_records (id, tenant_id, registration_id, reviewer_id, review_level, review_result, review_comments, ...)
+
+-- 审核员表
+reviewers (id, tenant_id, exam_id, user_id, review_level, ...)
+
+-- 附件表
+attachments (id, tenant_id, user_id, file_name, file_path, file_type, file_size, storage_key, ...)
+
+-- 考场表
+exam_venues (id, tenant_id, exam_id, venue_name, address, total_rooms, ...)
+
+-- 考场教室表
+exam_rooms (id, tenant_id, venue_id, room_name, room_code, capacity, ...)
+
+-- 座位安排表
+seat_assignments (id, tenant_id, exam_id, room_id, registration_id, seat_no, admission_ticket_no, ...)
+
+-- 准考证表
+admission_tickets (id, tenant_id, registration_id, ticket_no, qr_code, pdf_path, ...)
+
+-- 支付记录表
+payment_records (id, tenant_id, registration_id, order_no, payment_method, amount, payment_status, transaction_id, ...)
+
+-- 成绩表
+exam_scores (id, tenant_id, exam_id, registration_id, subject_id, score, total_score, is_qualified, interview_eligible, ...)
+```
+
+### 索引规范
+```sql
+-- 所有表必须建立的索引
+CREATE INDEX idx_{table}_tenant_id ON {table}(tenant_id);
+CREATE INDEX idx_{table}_created_at ON {table}(created_at);
+
+-- 业务索引示例
+CREATE INDEX idx_registrations_exam_position ON exam_registrations(exam_id, position_id);
+CREATE INDEX idx_registrations_user ON exam_registrations(user_id);
+CREATE INDEX idx_registrations_status ON exam_registrations(review_status, payment_status);
+```
+
+## 后端开发规范
+
+### 1. 项目结构
+```
+src/main/java/com/exam/
+├── common/                    # 公共模块
+│   ├── config/               # 配置类
+│   ├── constants/            # 常量定义
+│   ├── exception/            # 异常处理
+│   ├── utils/                # 工具类
+│   └── interceptor/          # 拦截器
+├── security/                 # 安全认证
+│   ├── jwt/
+│   └── tenant/              # 租户上下文
+├── entity/                   # 实体类
+├── dto/                      # 数据传输对象
+│   ├── request/
+│   └── response/
+├── mapper/                   # MyBatis Mapper
+├── service/                  # 服务层
+│   ├── impl/
+│   └── strategy/            # 策略模式
+├── controller/               # 控制器
+└── sharding/                # 分片配置
+```
+
+### 2. 代码规范
+
+#### Controller 规范
+```java
+@RestController
+@RequestMapping("/api/v1/{tenantId}/exams")
+@Tag(name = "考试管理", description = "考试CRUD操作")
+@Validated
+public class ExamController {
+    
+    @GetMapping("/{examId}")
+    @Operation(summary = "获取考试详情")
+    @TenantCheck
+    public Result<ExamDTO> getExam(
+        @PathVariable Long tenantId,
+        @PathVariable Long examId
+    ) {
+        // 实现逻辑
+    }
+    
+    @PostMapping
+    @Operation(summary = "创建考试")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public Result<ExamDTO> createExam(
+        @PathVariable Long tenantId,
+        @Valid @RequestBody CreateExamRequest request
+    ) {
+        // 实现逻辑
+    }
+}
+```
+
+#### Service 规范
+```java
+@Service
+@Transactional(rollbackFor = Exception.class)
+public class ExamServiceImpl implements ExamService {
+    
+    @Autowired
+    private ExamMapper examMapper;
+    
+    @Autowired
+    private TenantContext tenantContext;
+    
+    @Override
+    public ExamDTO createExam(CreateExamRequest request) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+        
+        // 1. 参数校验
+        // 2. 业务逻辑
+        // 3. 数据持久化
+        // 4. 返回结果
+    }
+}
+```
+
+#### 租户上下文拦截器
+```java
+@Component
+public class TenantInterceptor implements HandlerInterceptor {
+    
+    @Override
+    public boolean preHandle(HttpServletRequest request, 
+                           HttpServletResponse response, 
+                           Object handler) {
+        String tenantId = request.getHeader("X-Tenant-Id");
+        if (StringUtils.isEmpty(tenantId)) {
+            tenantId = extractFromPath(request.getRequestURI());
+        }
+        TenantContext.setCurrentTenantId(Long.parseLong(tenantId));
+        return true;
+    }
+    
+    @Override
+    public void afterCompletion(HttpServletRequest request, 
+                               HttpServletResponse response, 
+                               Object handler, Exception ex) {
+        TenantContext.clear();
+    }
+}
+```
+
+#### Hibernate 多租户配置
+```yaml
+spring:
+  jpa:
+    properties:
+      hibernate:
+        multitenancy: SCHEMA
+        # 多租户连接提供者和解析器在 HibernateMultiTenancyConfig 中配置
+  datasource:
+    url: jdbc:postgresql://localhost:5432/duanruo-exam-system
+    username: postgres
+    password: password
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+```
+
+#### 租户Schema管理
+```java
+// 创建新租户时自动创建Schema
+@Service
+public class SchemaManagementService {
+    public void createTenantSchema(String schemaName) {
+        // 1. 创建Schema
+        jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + schemaName);
+
+        // 2. 使用Flyway在新Schema中创建业务表
+        Flyway flyway = Flyway.configure()
+            .dataSource(dataSource)
+            .schemas(schemaName)
+            .locations("classpath:db/tenant-migration")
+            .baselineOnMigrate(true)
+            .load();
+        flyway.migrate();
+    }
+}
+```
+
+### 3. 审核流程实现
+
+#### 自动审核规则引擎
+```java
+@Service
+public class AutoReviewService {
+    
+    public ReviewResult autoReview(ExamRegistration registration) {
+        List<ReviewRule> rules = getRulesByExam(registration.getExamId());
+        
+        for (ReviewRule rule : rules) {
+            if (!rule.validate(registration)) {
+                return ReviewResult.reject(rule.getRejectReason());
+            }
+        }
+        
+        return ReviewResult.pass();
+    }
+}
+
+// 规则示例
+public interface ReviewRule {
+    boolean validate(ExamRegistration registration);
+    String getRejectReason();
+}
+
+@Component
+public class GenderRule implements ReviewRule {
+    @Override
+    public boolean validate(ExamRegistration registration) {
+        String requiredGender = registration.getPosition().getRequiredGender();
+        return StringUtils.isEmpty(requiredGender) 
+            || requiredGender.equals(registration.getUser().getGender());
+    }
+}
+```
+
+#### 二级审核流程
+```java
+@Service
+public class ReviewWorkflowService {
+    
+    @Transactional
+    public void submitForReview(Long registrationId) {
+        // 1. 自动审核
+        ReviewResult autoResult = autoReviewService.autoReview(registration);
+        if (autoResult.isRejected()) {
+            updateRegistrationStatus(registrationId, ReviewStatus.AUTO_REJECTED);
+            return;
+        }
+        
+        // 2. 进入一级人工审核
+        assignToFirstLevelReviewer(registrationId);
+    }
+    
+    @Transactional
+    public void firstLevelReview(Long registrationId, ReviewRequest request) {
+        // 一级审核
+        if (request.isApproved()) {
+            assignToSecondLevelReviewer(registrationId);
+        } else {
+            updateRegistrationStatus(registrationId, ReviewStatus.FIRST_LEVEL_REJECTED);
+        }
+    }
+    
+    @Transactional
+    public void secondLevelReview(Long registrationId, ReviewRequest request) {
+        // 二级审核
+        if (request.isApproved()) {
+            updateRegistrationStatus(registrationId, ReviewStatus.APPROVED);
+        } else {
+            updateRegistrationStatus(registrationId, ReviewStatus.SECOND_LEVEL_REJECTED);
+        }
+    }
+}
+```
+
+### 4. MinIO 文件存储
+```java
+@Service
+public class FileStorageService {
+    
+    @Autowired
+    private MinioClient minioClient;
+    
+    public String uploadFile(MultipartFile file, Long tenantId, String fileType) {
+        String bucketName = "tenant-" + tenantId;
+        String objectName = generateObjectName(file, fileType);
+        
+        try {
+            // 确保bucket存在
+            if (!minioClient.bucketExists(BucketExistsArgs.builder()
+                .bucket(bucketName).build())) {
+                minioClient.makeBucket(MakeBucketArgs.builder()
+                    .bucket(bucketName).build());
+            }
+            
+            // 上传文件
+            minioClient.putObject(PutObjectArgs.builder()
+                .bucket(bucketName)
+                .object(objectName)
+                .stream(file.getInputStream(), file.getSize(), -1)
+                .contentType(file.getContentType())
+                .build());
+            
+            return objectName;
+        } catch (Exception e) {
+            throw new FileStorageException("文件上传失败", e);
+        }
+    }
+    
+    private String generateObjectName(MultipartFile file, String fileType) {
+        String extension = getFileExtension(file.getOriginalFilename());
+        return String.format("%s/%s/%s.%s", 
+            fileType, 
+            LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")),
+            UUID.randomUUID().toString(),
+            extension);
+    }
+}
+
+
+### 5. 支付集成
+
+
+### 6. 考场座位安排算法
+
+```
+
+### 7. 准考证生成
+
+
+## 前端开发规范
+
+### 1. 项目结构
+```
+src/
+├── app/                      # Next.js App Router
+│   ├── (auth)/              # 认证相关页面
+│   ├── (tenant)/            # 租户管理
+│   ├── (candidate)/         # 考生端
+│   ├── (admin)/             # 管理端
+│   └── api/                 # API Routes
+├── components/               # 组件
+│   ├── ui/                  # Shadcn UI组件
+│   ├── forms/               # 表单组件
+│   ├── layout/              # 布局组件
+│   └── features/            # 业务组件
+├── lib/                     # 工具库
+│   ├── api/                 # API封装
+│   ├── utils/               # 工具函数
+│   └── validators/          # 验证规则
+├── hooks/                   # 自定义Hooks
+├── store/                   # 状态管理
+├── types/                   # TypeScript类型定义
+└── constants/               # 常量定义
+```
+
+### 2. API 调用规范
+```typescript
+// lib/api/client.ts
+import axios from 'axios';
+
+const apiClient = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  timeout: 10000,
+});
+
+// 请求拦截器
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  const tenantId = localStorage.getItem('tenantId');
+  
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  
+  if (tenantId) {
+    config.headers['X-Tenant-Id'] = tenantId;
+  }
+  
+  return config;
+});
+
+// 响应拦截器
+apiClient.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    if (error.response?.status === 401) {
+      // 跳转登录
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default apiClient;
+```
+
+
+## API 接口规范
+
+### RESTful API 设计
+```
+GET    /api/v1/{tenantId}/exams                     # 获取考试列表
+POST   /api/v1/{tenantId}/exams                     # 创建考试
+GET    /api/v1/{tenantId}/exams/{examId}            # 获取考试详情
+PUT    /api/v1/{tenantId}/exams/{examId}            # 更新考试
+DELETE /api/v1/{tenantId}/exams/{examId}            # 删除考试
+
+POST   /api/v1/{tenantId}/exams/{examId}/positions  # 创建考试岗位
+GET    /api/v1/{tenantId}/exams/{examId}/positions  # 获取岗位列表
+
+POST   /api/v1/exams/{examId}/register              # 考生报名
+GET    /api/v1/registrations/{registrationId}       # 获取报名详情
+PUT    /api/v1/registrations/{registrationId}       # 更新报名信息
+
+POST   /api/v1/registrations/{registrationId}/review  # 提交审核
+GET    /api/v1/{tenantId}/reviews                     # 获取待审核列表
+POST   /api/v1/reviews/{reviewId}/approve             # 审核通过
+POST   /api/v1/reviews/{reviewId}/reject              # 审核拒绝
+
+POST   /api/v1/registrations/{registrationId}/payment # 创建支付订单
+POST   /api/v1/payments/callback                      # 支付回调
+
+GET    /api/v1/registrations/{registrationId}/ticket  # 获取准考证
+POST   /api/v1/{tenantId}/exams/{examId}/arrange-seats # 安排座位
+
+POST   /api/v1/{tenantId}/scores                      # 录入成绩
+GET    /api/v1/registrations/{registrationId}/scores  # 查询成绩
+
+POST   /api/v1/files/upload                           # 上传文件
+GET    /api/v1/files/{fileId}                         # 下载文件
+```
+
+### 统一响应格式
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {},
+  "timestamp": 1234567890
+}
+```
+
+### 错误码定义
+```
+200 - 成功
+400 - 请求参数错误
+401 - 未授权
+403 - 无权限
+404 - 资源不存在
+409 - 资源冲突
+500 - 服务器错误
+
+业务错误码 (10000+):
+10001 - 租户不存在
+10002 - 用户已存在
+10003 - 考试不存在
+10004 - 报名已截止
+10005 - 岗位已满
+10006 - 审核状态异常
+10007 - 支付失败
+10008 - 准考证未生成
+```
+
+## 核心业务流程
+
+### 1. 用户注册流程
+```
+1. 用户填写基本信息（用户名、密码、手机号、邮箱）
+2. 发送验证码验证手机号
+3. 完善个人信息（姓名、身份证、性别、出生日期、学历、专业、毕业学校）
+4. 上传证明材料（身份证照片、学历证明）
+5. 提交注册，生成用户账号
+```
+
+### 2. 考试创建流程
+```
+1. 租户管理员登录
+2. 创建考试基本信息（名称、类型、时间、报名时间、费用）
+3. 配置考试岗位（岗位名称、要求、科目、人数限制）
+4. 配置报名表单（必填字段、选填字段、验证规则）
+5. 配置审核规则（自动审核条件）
+6. 指定审核员（一级审核员、二级审核员）
+7. 发布考试，生成报名URL
+```
+
+### 3. 考生报名流程
+```
+1. 考生登录系统
+2. 访问考试报名URL
+3. 选择报考岗位
+4. 填写报名表单（根据配置的表单字段）
+5. 上传附件材料（身份证扫描件、学历证明等）
+6. 提交报名
+7. 系统自动审核（检查性别、年龄、学历等条件）
+8. 进入人工审核队列
+```
+
+### 4. 审核流程
+```
+自动审核阶段:
+1. 系统根据配置的规则自动检查
+2. 不符合条件的直接拒绝，通知考生
+3. 符合条件的进入一级人工审核
+
+一级审核阶段:
+1. 一级审核员查看报名列表
+2. 查看考生提交的表单信息和附件
+3. 逐项确认信息真实性
+4. 审核通过进入二级审核，拒绝则通知考生
+
+二级审核阶段:
+1. 二级审核员进行最终审核
+2. 重点审核附件材料的真实性
+3. 审核通过则标记为"审核通过"
+4. 审核拒绝则通知考生并说明原因
+```
+
+### 5. 支付流程
+```
+1. 考生查看审核通过的报名
+2. 选择支付方式（微信/支付宝）
+3. 系统创建支付订单
+4. 跳转到支付页面
+5. 考生完成支付
+6. 支付平台回调通知
+7. 系统验证支付结果
+8. 更新支付状态
+9. 自动生成准考证
+```
+
+### 6. 座位安排流程
+```
+1. 报名截止后，管理员触发座位安排
+2. 系统统计各岗位审核通过且已缴费的人数
+3. 管理员配置考场和教室（数量、容量）
+4. 系统按岗位分组
+5. 相同岗位的考生安排在同一教室
+6. 按顺序分配座位号
+7. 生成准考证号（按规则生成）
+8. 保存座位分配结果
+```
+
+### 7. 准考证生成与打印流程
+```
+1. 考生缴费成功后自动生成准考证
+2. 准考证包含信息：
+   - 考生姓名、身份证号
+   - 准考证号
+   - 考试名称、岗位
+   - 考场地址、教室号、座位号
+   - 考试时间
+   - 注意事项
+   - 二维码（用于入场验证）
+3. 考生登录系统下载PDF
+4. 自行打印准考证
+```
+
+### 8. 成绩录入与查询流程
+```
+1. 考试结束后，管理员录入成绩
+2. 按科目录入每位考生的分数
+3. 系统自动计算总分
+4. 标记是否达到面试资格线
+5. 成绩审核确认
+6. 发布成绩
+7. 考生登录查询成绩
+8. 查看各科分数、总分、排名
+9. 查看是否进入面试
+```
+
+## 权限设计
+
+### 角色定义
+```
+1. 超级管理员 (SUPER_ADMIN)
+   - 管理所有租户
+   - 系统配置
+
+2. 租户管理员 (TENANT_ADMIN)
+   - 创建和管理考试
+   - 配置审核规则
+   - 查看统计数据
+   - 管理审核员
+
+3. 一级审核员 (REVIEWER_L1)
+   - 审核报名材料（一级）
+   - 查看考生信息
+
+4. 二级审核员 (REVIEWER_L2)
+   - 审核报名材料（二级）
+   - 查看考生信息
+   - 最终审核决定
+
+5. 考生 (CANDIDATE)
+   - 注册账号
+   - 报名考试
+   - 上传材料
+   - 缴费
+   - 查询成绩
+```
+
+### 权限矩阵
+```
+功能模块              | 超管 | 租户管理员 | 一级审核员 | 二级审核员 | 考生
+---------------------|------|-----------|-----------|-----------|------
+租户管理              | ✓    | ✗         | ✗         | ✗         | ✗
+考试创建/编辑         | ✓    | ✓         | ✗         | ✗         | ✗
+岗位配置              | ✓    | ✓         | ✗         | ✗         | ✗
+表单配置              | ✓    | ✓         | ✗         | ✗         | ✗
+审核规则配置          | ✓    | ✓         | ✗         | ✗         | ✗
+审核员管理            | ✓    | ✓         | ✗         | ✗         | ✗
+一级审核              | ✓    | ✓         | ✓         | ✗         | ✗
+二级审核              | ✓    | ✓         | ✗         | ✓         | ✗
+座位安排              | ✓    | ✓         | ✗         | ✗         | ✗
+成绩录入              | ✓    | ✓         | ✗         | ✗         | ✗
+考生报名              | ✗    | ✗         | ✗         | ✗         | ✓
+材料上传              | ✗    | ✗         | ✗         | ✗         | ✓
+在线支付              | ✗    | ✗         | ✗         | ✗         | ✓
+准考证下载            | ✗    | ✗         | ✗         | ✗         | ✓
+成绩查询              | ✗    | ✗         | ✗         | ✗         | ✓
+
+
+
+### 2. 代码审查清单
+```
+功能实现:
+□ 功能符合需求文档
+□ 边界条件处理完善
+□ 异常处理完整
+
+代码质量:
+□ 代码可读性好
+□ 命名规范清晰
+□ 无重复代码
+□ 适当的注释
+
+性能:
+□ 无N+1查询问题
+□ 使用了适当的索引
+□ 大数据量处理优化
+
+安全:
+□ 输入验证完整
+□ SQL注入防护
+□ XSS防护
+□ 权限检查到位
+
+测试:
+□ 单元测试覆盖率 > 80%
+□ 关键业务逻辑有集成测试
+```

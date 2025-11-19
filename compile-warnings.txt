@@ -1,0 +1,200 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] Exam Registration System                                           [pom]
+[INFO] Exam Registration - Shared                                         [jar]
+[INFO] Exam Registration - Domain                                         [jar]
+[INFO] Exam Registration - Application                                    [jar]
+[INFO] Exam Registration - Infrastructure                                 [jar]
+[INFO] Exam Registration - REST Adapter                                   [jar]
+[INFO] Exam Registration - Scheduler Adapter                              [jar]
+[INFO] Exam Registration - Bootstrap                                      [jar]
+[INFO] 
+[INFO] -------------------< com.duanruo:exam-registration >--------------------
+[INFO] Building Exam Registration System 0.0.1-SNAPSHOT                   [1/8]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ exam-registration ---
+[INFO] 
+[INFO] ----------------------< com.duanruo:exam-shared >-----------------------
+[INFO] Building Exam Registration - Shared 0.0.1-SNAPSHOT                 [2/8]
+[INFO]   from exam-shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ exam-shared ---
+[INFO] Deleting D:\duanruo-exam-system2\exam-shared\target
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ exam-shared ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\duanruo-exam-system2\exam-shared\src\main\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:compile (default-compile) @ exam-shared ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 14 source files with javac [debug target 21] to target\classes
+[WARNING] /D:/duanruo-exam-system2/exam-shared/src/main/java/com/duanruo/exam/shared/exception/ApplicationException.java:[6,8] 可序列化类com.duanruo.exam.shared.exception.ApplicationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-shared/src/main/java/com/duanruo/exam/shared/exception/DomainException.java:[6,17] 可序列化类com.duanruo.exam.shared.exception.DomainException没有 serialVersionUID 的定义
+[INFO] 
+[INFO] ----------------------< com.duanruo:exam-domain >-----------------------
+[INFO] Building Exam Registration - Domain 0.0.1-SNAPSHOT                 [3/8]
+[INFO]   from exam-domain\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ exam-domain ---
+[INFO] Deleting D:\duanruo-exam-system2\exam-domain\target
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ exam-domain ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\duanruo-exam-system2\exam-domain\src\main\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:compile (default-compile) @ exam-domain ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 99 source files with javac [debug target 21] to target\classes
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/exam/Position.java:[187,19] 可序列化类com.duanruo.exam.domain.exam.Position.PositionCreationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/exam/Position.java:[196,19] 可序列化类com.duanruo.exam.domain.exam.Position.PositionOperationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/exam/Subject.java:[207,19] 可序列化类com.duanruo.exam.domain.exam.Subject.SubjectCreationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/exam/Subject.java:[216,19] 可序列化类com.duanruo.exam.domain.exam.Subject.SubjectOperationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/tenant/Tenant.java:[258,19] 可序列化类com.duanruo.exam.domain.tenant.Tenant.TenantCreationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/tenant/Tenant.java:[264,19] 可序列化类com.duanruo.exam.domain.tenant.Tenant.TenantOperationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/notification/NotificationTemplate.java:[297,19] 可序列化类com.duanruo.exam.domain.notification.NotificationTemplate.TemplateCreationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/notification/NotificationTemplate.java:[303,19] 可序列化类com.duanruo.exam.domain.notification.NotificationTemplate.TemplateRenderException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/candidate/Candidate.java:[213,19] 可序列化类com.duanruo.exam.domain.candidate.Candidate.CandidateCreationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/candidate/Candidate.java:[222,19] 可序列化类com.duanruo.exam.domain.candidate.Candidate.CandidateOperationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/venue/Venue.java:[77,19] 可序列化类com.duanruo.exam.domain.venue.Venue.VenueException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/payment/PaymentOrder.java:[12,38] 找到原始类型: com.duanruo.exam.domain.shared.AggregateRoot
+  缺少泛型类com.duanruo.exam.domain.shared.AggregateRoot<ID>的类型参数
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/review/ReviewTask.java:[108,19] 可序列化类com.duanruo.exam.domain.review.ReviewTask.TaskException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/exam/Exam.java:[373,19] 可序列化类com.duanruo.exam.domain.exam.Exam.ExamCreationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/exam/Exam.java:[382,19] 可序列化类com.duanruo.exam.domain.exam.Exam.ExamOperationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/tenant/UserTenantRole.java:[114,25] com.duanruo.exam.domain.user.Role中的ADMIN已过时
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/tenant/UserTenantRole.java:[170,19] 可序列化类com.duanruo.exam.domain.tenant.UserTenantRole.UserTenantRoleException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/application/Application.java:[340,19] 可序列化类com.duanruo.exam.domain.application.Application.ApplicationCreationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/application/Application.java:[349,19] 可序列化类com.duanruo.exam.domain.application.Application.ApplicationOperationException没有 serialVersionUID 的定义
+[INFO] 
+[INFO] --------------------< com.duanruo:exam-application >--------------------
+[INFO] Building Exam Registration - Application 0.0.1-SNAPSHOT            [4/8]
+[INFO]   from exam-application\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ exam-application ---
+[INFO] Deleting D:\duanruo-exam-system2\exam-application\target
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ exam-application ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\duanruo-exam-system2\exam-application\src\main\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:compile (default-compile) @ exam-application ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 103 source files with javac [debug target 21] to target\classes
+[WARNING] /D:/duanruo-exam-system2/exam-application/src/main/java/com/duanruo/exam/application/service/ExamApplicationService.java:[356,19] 可序列化类com.duanruo.exam.application.service.ExamApplicationService.ExamNotFoundException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-application/src/main/java/com/duanruo/exam/application/service/ExamApplicationService.java:[365,19] 可序列化类com.duanruo.exam.application.service.ExamApplicationService.ExamCreationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-application/src/main/java/com/duanruo/exam/application/service/AuthenticationService.java:[194,105] com.duanruo.exam.domain.user.Role中的ADMIN已过时
+[WARNING] /D:/duanruo-exam-system2/exam-application/src/main/java/com/duanruo/exam/application/service/TenantApplicationService.java:[204,19] 可序列化类com.duanruo.exam.application.service.TenantApplicationService.TenantNotFoundException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-application/src/main/java/com/duanruo/exam/application/service/TenantApplicationService.java:[210,19] 可序列化类com.duanruo.exam.application.service.TenantApplicationService.TenantAlreadyExistsException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-application/src/main/java/com/duanruo/exam/application/service/UserTenantRoleApplicationService.java:[194,19] 可序列化类com.duanruo.exam.application.service.UserTenantRoleApplicationService.UserNotFoundException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-application/src/main/java/com/duanruo/exam/application/service/UserTenantRoleApplicationService.java:[200,19] 可序列化类com.duanruo.exam.application.service.UserTenantRoleApplicationService.RoleAlreadyGrantedException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-application/src/main/java/com/duanruo/exam/application/service/UserTenantRoleApplicationService.java:[206,19] 可序列化类com.duanruo.exam.application.service.UserTenantRoleApplicationService.RoleNotFoundException没有 serialVersionUID 的定义
+[INFO] 
+[INFO] ------------------< com.duanruo:exam-infrastructure >-------------------
+[INFO] Building Exam Registration - Infrastructure 0.0.1-SNAPSHOT         [5/8]
+[INFO]   from exam-infrastructure\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ exam-infrastructure ---
+[INFO] Deleting D:\duanruo-exam-system2\exam-infrastructure\target
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ exam-infrastructure ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Copying 28 resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:compile (default-compile) @ exam-infrastructure ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 110 source files with javac [debug target 21] to target\classes
+[WARNING] 无法找到类型 'edu.umd.cs.findbugs.annotations.SuppressFBWarnings' 的批注方法 'value()': 找不到edu.umd.cs.findbugs.annotations.SuppressFBWarnings的类文件
+[WARNING] 无法找到类型 'edu.umd.cs.findbugs.annotations.SuppressFBWarnings' 的批注方法 'justification()'
+[WARNING] 无法找到类型 'edu.umd.cs.findbugs.annotations.SuppressFBWarnings' 的批注方法 'value()': 找不到edu.umd.cs.findbugs.annotations.SuppressFBWarnings的类文件
+[WARNING] 无法找到类型 'edu.umd.cs.findbugs.annotations.SuppressFBWarnings' 的批注方法 'justification()'
+[WARNING] 无法找到类型 'edu.umd.cs.findbugs.annotations.SuppressFBWarnings' 的批注方法 'value()': 找不到edu.umd.cs.findbugs.annotations.SuppressFBWarnings的类文件
+[WARNING] 无法找到类型 'edu.umd.cs.findbugs.annotations.SuppressFBWarnings' 的批注方法 'justification()'
+[WARNING] /D:/duanruo-exam-system2/exam-infrastructure/src/main/java/com/duanruo/exam/infrastructure/persistence/entity/TicketSequenceEntity.java:[43,19] 可序列化类com.duanruo.exam.infrastructure.persistence.entity.TicketSequenceEntity.TicketSequenceId没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-infrastructure/src/main/java/com/duanruo/exam/infrastructure/multitenancy/TenantSchemaConnectionProvider.java:[18,56] 找到原始类型: org.hibernate.engine.jdbc.connections.spi.MultiTenantConnectionProvider
+  缺少泛型类org.hibernate.engine.jdbc.connections.spi.MultiTenantConnectionProvider<T>的类型参数
+[WARNING] /D:/duanruo-exam-system2/exam-infrastructure/src/main/java/com/duanruo/exam/infrastructure/multitenancy/TenantSchemaConnectionProvider.java:[79,36] 找到原始类型: java.lang.Class
+  缺少泛型类java.lang.Class<T>的类型参数
+[WARNING] /D:/duanruo-exam-system2/exam-infrastructure/src/main/java/com/duanruo/exam/infrastructure/multitenancy/TenantSchemaConnectionProvider.java:[18,8] 可序列化类com.duanruo.exam.infrastructure.multitenancy.TenantSchemaConnectionProvider没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-infrastructure/src/main/java/com/duanruo/exam/infrastructure/multitenancy/TenantSchemaConnectionProvider.java:[23,30] 可序列化类的非瞬时实例字段是用不可序列化的类型声明的
+[WARNING] /D:/duanruo-exam-system2/exam-infrastructure/src/main/java/com/duanruo/exam/infrastructure/adapter/FileApplicationServiceImpl.java:[79,97] com.duanruo.exam.domain.user.Role中的ADMIN已过时
+[WARNING] 无法找到类型 'edu.umd.cs.findbugs.annotations.SuppressFBWarnings' 的批注方法 'value()'
+[WARNING] 无法找到类型 'edu.umd.cs.findbugs.annotations.SuppressFBWarnings' 的批注方法 'justification()'
+[WARNING] /D:/duanruo-exam-system2/exam-infrastructure/src/main/java/com/duanruo/exam/infrastructure/multitenancy/SchemaManagementService.java:[164,19] 可序列化类com.duanruo.exam.infrastructure.multitenancy.SchemaManagementService.SchemaCreationException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-infrastructure/src/main/java/com/duanruo/exam/infrastructure/multitenancy/SchemaManagementService.java:[170,19] 可序列化类com.duanruo.exam.infrastructure.multitenancy.SchemaManagementService.SchemaDropException没有 serialVersionUID 的定义
+[WARNING] /D:/duanruo-exam-system2/exam-infrastructure/src/main/java/com/duanruo/exam/infrastructure/multitenancy/TenantIdentifierResolver.java:[14,50] 找到原始类型: org.hibernate.context.spi.CurrentTenantIdentifierResolver
+  缺少泛型类org.hibernate.context.spi.CurrentTenantIdentifierResolver<T>的类型参数
+[WARNING] /D:/duanruo-exam-system2/exam-infrastructure/src/main/java/com/duanruo/exam/infrastructure/multitenancy/TenantAccessDeniedException.java:[10,8] 可序列化类com.duanruo.exam.infrastructure.multitenancy.TenantAccessDeniedException没有 serialVersionUID 的定义
+[INFO] 
+[INFO] -------------------< com.duanruo:exam-adapter-rest >--------------------
+[INFO] Building Exam Registration - REST Adapter 0.0.1-SNAPSHOT           [6/8]
+[INFO]   from exam-adapter-rest\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ exam-adapter-rest ---
+[INFO] Deleting D:\duanruo-exam-system2\exam-adapter-rest\target
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ exam-adapter-rest ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\duanruo-exam-system2\exam-adapter-rest\src\main\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:compile (default-compile) @ exam-adapter-rest ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 59 source files with javac [debug target 21] to target\classes
+[WARNING] /D:/duanruo-exam-system2/exam-adapter-rest/src/main/java/com/duanruo/exam/adapter/rest/config/JacksonConfig.java:[28,12] 可序列化类com.duanruo.exam.adapter.rest.config.JacksonConfig.LenientLocalDateTimeDeserializer没有 serialVersionUID 的定义
+[INFO] 
+[INFO] -----------------< com.duanruo:exam-adapter-scheduler >-----------------
+[INFO] Building Exam Registration - Scheduler Adapter 0.0.1-SNAPSHOT      [7/8]
+[INFO]   from exam-adapter-scheduler\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ exam-adapter-scheduler ---
+[INFO] Deleting D:\duanruo-exam-system2\exam-adapter-scheduler\target
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ exam-adapter-scheduler ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\duanruo-exam-system2\exam-adapter-scheduler\src\main\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:compile (default-compile) @ exam-adapter-scheduler ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 3 source files with javac [debug target 21] to target\classes
+[INFO] 
+[INFO] ---------------------< com.duanruo:exam-bootstrap >---------------------
+[INFO] Building Exam Registration - Bootstrap 0.0.1-SNAPSHOT              [8/8]
+[INFO]   from exam-bootstrap\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ exam-bootstrap ---
+[INFO] Deleting D:\duanruo-exam-system2\exam-bootstrap\target
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ exam-bootstrap ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Copying 8 resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:compile (default-compile) @ exam-bootstrap ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 6 source files with javac [debug target 21] to target\classes
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for Exam Registration System 0.0.1-SNAPSHOT:
+[INFO] 
+[INFO] Exam Registration System ........................... SUCCESS [  0.263 s]
+[INFO] Exam Registration - Shared ......................... SUCCESS [  2.681 s]
+[INFO] Exam Registration - Domain ......................... SUCCESS [  2.981 s]
+[INFO] Exam Registration - Application .................... SUCCESS [  3.929 s]
+[INFO] Exam Registration - Infrastructure ................. SUCCESS [  5.096 s]
+[INFO] Exam Registration - REST Adapter ................... SUCCESS [  2.408 s]
+[INFO] Exam Registration - Scheduler Adapter .............. SUCCESS [  0.657 s]
+[INFO] Exam Registration - Bootstrap ...................... SUCCESS [  0.996 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  19.828 s
+[INFO] Finished at: 2025-10-26T10:47:41+08:00
+[INFO] ------------------------------------------------------------------------

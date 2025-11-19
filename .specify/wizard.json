@@ -1,0 +1,9 @@
+{
+  "ai": "claude",
+  "script": "ps",
+  "here": true,
+  "noGit": true,
+  "ignoreAgentTools": false,
+  "debug": true,
+  "lastProjectName": "my-project"
+}

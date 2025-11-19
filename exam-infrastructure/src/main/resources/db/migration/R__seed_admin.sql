@@ -1,0 +1,36 @@
+-- ⚠️ 警告：此文件已废弃，不应直接使用SQL插入用户数据
+--
+-- 问题：直接SQL插入绕过了JPA实体管理，导致：
+-- 1. version字段为NULL，引起Hibernate乐观锁失败
+-- 2. 违反DDD架构原则，绕过领域层和应用层
+-- 3. 缺少JPA注解的自动处理（@CreationTimestamp等）
+--
+-- 正确做法：使用应用层服务创建用户
+-- - AuthenticationService.createInitialAdminIfNone()
+-- - AuthenticationService.createSystemUser()
+--
+-- 如果必须使用SQL插入，请确保包含所有必要字段，特别是version字段：
+
+-- CREATE EXTENSION IF NOT EXISTS pgcrypto;
+--
+-- INSERT INTO users (
+--     id, username, email, password_hash, full_name, roles, email_verified,
+--     created_at, updated_at, version  -- ⚠️ 必须包含version字段
+-- ) VALUES (
+--     gen_random_uuid(),
+--     'admin',
+--     'admin@duanruo.com',
+--     crypt('admin123@Abc', gen_salt('bf')),
+--     '系统管理员',
+--     '["ADMIN","SUPER_ADMIN"]',
+--     true,
+--     CURRENT_TIMESTAMP,
+--     CURRENT_TIMESTAMP,
+--     0  -- ⚠️ version字段必须有初始值
+-- )
+-- ON CONFLICT (username) DO UPDATE SET
+--     password_hash = EXCLUDED.password_hash,
+--     roles = EXCLUDED.roles,
+--     email_verified = EXCLUDED.email_verified,
+--     updated_at = CURRENT_TIMESTAMP,
+--     version = users.version + 1;  -- ⚠️ 更新时递增version
