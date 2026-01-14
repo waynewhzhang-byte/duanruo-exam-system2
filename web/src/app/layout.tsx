@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import QueryProvider from '@/components/providers/QueryProvider'
@@ -9,18 +9,19 @@ import { Toaster } from 'sonner'
 
 const inter = Inter({ subsets: ['latin'] })
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: 'cover',
+  themeColor: '#3b82f6',
+}
+
 export const metadata: Metadata = {
   title: '端若数智考盟 - 智能招聘考试平台',
   description: '智能化招聘考试报名与管理平台',
   manifest: '/manifest.json',
-  themeColor: '#3b82f6',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-    viewportFit: 'cover'
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

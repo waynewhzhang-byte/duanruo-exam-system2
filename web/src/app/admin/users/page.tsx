@@ -124,16 +124,12 @@ export default function UsersPage() {
     setLoading(true)
 
     try {
-      // 创建用户
-      const userResponse = await apiPost<{ id: string }>(roleConfig.endpoint, form)
+      // 创建用户，如果是租户管理员，在请求中包含 tenantId
+      const requestBody = selectedRole === 'TENANT_ADMIN' && selectedTenantId
+        ? { ...form, tenantId: selectedTenantId }
+        : form
 
-      // 如果是租户管理员，需要关联到租户
-      if (selectedRole === 'TENANT_ADMIN' && selectedTenantId && userResponse.id) {
-        await apiPost(`/tenants/${selectedTenantId}/users/roles`, {
-          userId: userResponse.id,
-          role: 'TENANT_ADMIN'
-        })
-      }
+      const userResponse = await apiPost<{ id: string }>(roleConfig.endpoint, requestBody)
 
       toast.success(`${roleConfig.label}创建成功`)
       setForm({ username: '', email: '', password: '', fullName: '', phoneNumber: '' })

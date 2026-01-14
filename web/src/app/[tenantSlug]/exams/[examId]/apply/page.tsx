@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useTenant } from '@/hooks/useTenant'
-import { apiGet, apiPost } from '@/lib/api'
+import { apiGet, apiPost, apiGetWithTenant, apiPostWithTenant } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -46,43 +46,211 @@ export default function ExamApplicationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [applicationId, setApplicationId] = useState<string | null>(null)
 
-  // Fetch exam details
+  // Fetch exam details (需要传递租户ID以访问租户内的考试数据)
   const { data: exam, isLoading: examLoading } = useQuery<Exam>({
-    queryKey: ['exam', examId],
+    queryKey: ['exam', examId, tenant?.id],
     queryFn: async () => {
-      return apiGet<Exam>(`/exams/${examId}`)
+      if (!tenant?.id) throw new Error('Tenant ID is required')
+      return apiGetWithTenant<Exam>(`/exams/${examId}`, tenant.id)
     },
-    enabled: !!examId,
+    enabled: !!examId && !!tenant?.id,
   })
 
-  // Fetch position details
+  // Fetch position details (需要传递租户ID以访问租户内的岗位数据)
   const { data: position, isLoading: positionLoading } = useQuery<Position>({
-    queryKey: ['position', positionId],
+    queryKey: ['position', positionId, tenant?.id],
     queryFn: async () => {
       if (!positionId) throw new Error('No position selected')
-      return apiGet<Position>(`/positions/${positionId}`)
+      if (!tenant?.id) throw new Error('Tenant ID is required')
+      return apiGetWithTenant<Position>(`/positions/${positionId}`, tenant.id)
     },
-    enabled: !!positionId,
+    enabled: !!positionId && !!tenant?.id,
   })
 
   // Fetch form template from exam level (not position level)
   const { data: formTemplate, isLoading: templateLoading } = useQuery<FormTemplate>({
-    queryKey: ['form-template', examId],
+    queryKey: ['form-template', examId, tenant?.id],
     queryFn: async () => {
       try {
-        const response = await apiGet<{ templateJson: string }>(`/exams/${examId}/form-template`)
-        if (response.templateJson) {
-          return JSON.parse(response.templateJson)
+        if (!tenant?.id) throw new Error('Tenant ID is required')
+        // 后端返回 FormTemplateDetailResponse 格式（需要传递租户ID）
+        const response = await apiGetWithTenant<{
+          id: string
+          templateName: string
+          description?: string
+          status: string
+          fields: Array<{
+            id: string
+            fieldKey: string
+            fieldType: string
+            label: string
+            placeholder?: string
+            helpText?: string
+            required: boolean
+            displayOrder: number
+            options?: {
+              allowCustomInput?: boolean
+              options?: Array<{ value: string; label: string }>
+            }
+          }>
+        }>(`/exams/${examId}/form-template`, tenant.id)
+
+        // 检查模板是否已发布
+        if (response.status !== 'PUBLISHED') {
+          console.warn('Form template is not published yet')
+          return BASIC_TEMPLATE
         }
-        // 如果没有自定义模板，使用默认模板
-        return BASIC_TEMPLATE
+
+        // 转换后端格式为前端 FormTemplate 格式
+        return convertBackendToUITemplate(response)
       } catch (error) {
         console.warn('Failed to load form template, using default:', error)
         return BASIC_TEMPLATE
       }
     },
-    enabled: !!examId,
+    enabled: !!examId && !!tenant?.id,
   })
+
+  // 将后端字段类型映射为前端字段类型
+  const mapBackendFieldType = (backendType: string): string => {
+    const typeMap: Record<string, string> = {
+      'TEXT_SHORT': 'text',
+      'TEXT_LONG': 'textarea',
+      'NUMBER_INTEGER': 'number',
+      'NUMBER_DECIMAL': 'number',
+      'EMAIL': 'email',
+      'PHONE': 'phone',
+      'DATE': 'date',
+      'DATETIME': 'date',
+      'SELECT_SINGLE': 'select',
+      'SELECT_MULTIPLE': 'multi-select',
+      'CHECKBOX': 'checkbox',
+      'FILE_IMAGE': 'file-upload',
+      'FILE_DOCUMENT': 'file-upload',
+      'FILE_PDF': 'file-upload',
+      'AGREEMENT': 'agreement',
+      'BOOLEAN': 'checkbox',
+    }
+    return typeMap[backendType] || 'text'
+  }
+
+  // 转换后端模板格式为前端UI格式
+  const convertBackendToUITemplate = (backendTemplate: {
+    id: string
+    templateName: string
+    description?: string
+    fields: Array<{
+      id: string
+      fieldKey: string
+      fieldType: string
+      label: string
+      placeholder?: string
+      helpText?: string
+      required: boolean
+      displayOrder: number
+      options?: {
+        allowCustomInput?: boolean
+        options?: Array<{ value: string; label: string }>
+      }
+    }>
+  }): FormTemplate => {
+    // 智能识别协议/确认类字段（基于标签或字段键）
+    const isAgreementField = (label: string, fieldKey: string): boolean => {
+      const agreementKeywords = ['同意', '协议', '确认', '声明', '承诺', 'agree', 'confirm', 'terms', 'policy']
+      const lowerLabel = label.toLowerCase()
+      const lowerKey = fieldKey.toLowerCase()
+      return agreementKeywords.some(keyword =>
+        lowerLabel.includes(keyword) || lowerKey.includes(keyword)
+      )
+    }
+
+    // 将所有字段放在一个默认分区中
+    const fields = backendTemplate.fields
+      .sort((a, b) => a.displayOrder - b.displayOrder)
+      .map(field => {
+        let fieldType = mapBackendFieldType(field.fieldType)
+
+        // 如果是 SELECT_SINGLE 但没有选项，且标签包含协议相关关键词，识别为协议字段
+        if ((field.fieldType === 'SELECT_SINGLE' || field.fieldType === 'CHECKBOX') &&
+          (!field.options?.options || field.options.options.length === 0) &&
+          isAgreementField(field.label, field.fieldKey)) {
+          fieldType = 'agreement'
+        }
+
+        // 根据 required 字段生成验证规则
+        const validation: Array<{ type: string; value?: string | number; message: string }> = []
+        if (field.required) {
+          validation.push({
+            type: 'required',
+            message: `${field.label}为必填项`,
+          })
+        }
+
+        const baseField = {
+          id: field.id,
+          name: field.fieldKey, // 使用 fieldKey 作为 name（react-hook-form 需要 name 属性）
+          type: fieldType as any,
+          label: field.label,
+          placeholder: field.placeholder,
+          helpText: field.helpText,
+          description: field.helpText,
+          required: field.required,
+          disabled: false,
+          width: 'full' as const,
+          order: field.displayOrder,
+          validation: validation.length > 0 ? validation as any[] : undefined,
+          options: field.options?.options?.map(opt => ({
+            value: opt.value,
+            label: opt.label,
+          })),
+        }
+
+        // 为文件上传类型添加默认的 fileConfig
+        if (fieldType === 'file-upload') {
+          return {
+            ...baseField,
+            fileConfig: {
+              maxFiles: 5,
+              maxSize: 10, // 10MB（单位是 MB）
+              accept: field.fieldType === 'FILE_IMAGE'
+                ? '.jpg,.jpeg,.png,.gif'
+                : '.pdf,.jpg,.jpeg,.png',
+              category: field.fieldKey, // 使用字段key作为分类
+              required: field.required,
+            },
+          }
+        }
+
+        return baseField
+      })
+
+    return {
+      id: backendTemplate.id,
+      name: backendTemplate.templateName,
+      description: backendTemplate.description || '',
+      sections: [
+        {
+          id: 'main-section',
+          title: '报名信息',
+          description: '请填写以下信息',
+          fields,
+          order: 0,
+          collapsible: false,
+          collapsed: false,
+        },
+      ],
+      version: '1.0',
+      category: 'custom',
+      fileRequirements: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: 'system',
+      isActive: true,
+      allowSaveDraft: true,
+      allowMultipleSubmissions: false,
+      submitButtonText: '提交报名',
+    }
+  }
 
   const isLoading = tenantLoading || examLoading || positionLoading || templateLoading
 
@@ -95,6 +263,11 @@ export default function ExamApplicationPage() {
   }, [positionId, isLoading, router, tenantSlug, examId])
 
   const handleSubmit = async (formData: Record<string, any>) => {
+    // 【调试日志】记录从 DynamicForm 接收到的原始表单数据
+    console.log('[APPLICATION_SUBMIT] Raw formData from DynamicForm:', formData)
+    console.log('[APPLICATION_SUBMIT] fullName:', formData.fullName)
+    console.log('[APPLICATION_SUBMIT] idNumber:', formData.idNumber)
+
     if (!positionId) {
       toast.error('未选择岗位')
       return
@@ -103,23 +276,37 @@ export default function ExamApplicationPage() {
     setIsSubmitting(true)
     try {
       // 分离附件和其他数据
-      const attachments: any[] = []
+      // 后端期望 attachments 格式: [{fileId: UUID, fieldKey: string}]
+      const attachments: { fileId: string; fieldKey: string }[] = []
       const payload: Record<string, any> = {}
 
       Object.entries(formData).forEach(([key, value]) => {
-        if (Array.isArray(value) && value.length > 0 && value[0]?.fileName) {
-          // 这是文件上传字段
-          attachments.push({
-            fieldName: key,
-            files: value,
+        if (Array.isArray(value) && value.length > 0 && value[0]?.id) {
+          // 这是文件上传字段，提取 fileId
+          value.forEach((file: { id: string }) => {
+            if (file.id) {
+              attachments.push({
+                fileId: file.id,
+                fieldKey: key,
+              })
+            }
           })
+          // 也将文件ID列表放入 payload（可选，根据后端需求）
+          payload[key] = value.map((f: { id: string }) => f.id)
         } else {
           payload[key] = value
         }
       })
 
-      // 提交报名
-      const response = await apiPost<{ id: string; applicationNumber: string }>('/applications/submit', {
+      // 【调试日志】记录构建的 payload
+      console.log('[APPLICATION_SUBMIT] Constructed payload:', payload)
+      console.log('[APPLICATION_SUBMIT] payload.fullName:', payload.fullName)
+      console.log('[APPLICATION_SUBMIT] payload.idNumber:', payload.idNumber)
+
+      // 提交报名（需要传递租户ID）
+      // 后端端点是 POST /applications（不是 /applications/submit）
+      if (!tenant?.id) throw new Error('Tenant ID is required')
+      const response = await apiPostWithTenant<{ id: string; status: string }>('/applications', tenant.id, {
         examId,
         positionId,
         payload,

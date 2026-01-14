@@ -1,83 +1,77 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/loading';
+import { RouteGuard } from '@/components/auth/RouteGuard';
+import { useTenant } from '@/hooks/useTenant';
+import { apiGetWithTenant } from '@/lib/api';
+import { ArrowLeft, History } from 'lucide-react';
+import Link from 'next/link';
 
 interface ReviewRecord {
   id: string;
-  candidateName: string;
-  examName: string;
-  positionName: string;
-  reviewTime: string;
-  reviewResult: string;
-  reviewComments: string;
-  registrationNo: string;
+  applicationId: string;
+  candidateName?: string;
+  examTitle?: string;
+  positionTitle?: string;
+  reviewedAt: string;
+  decision: string;
+  comment: string;
+  reviewerName?: string;
 }
 
-export default function ReviewHistoryPage() {
+interface ReviewHistoryResponse {
+  content: ReviewRecord[];
+  totalElements: number;
+  totalPages: number;
+}
+
+function ReviewHistoryContent() {
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
-  const [records, setRecords] = useState<ReviewRecord[]>([]);
-  const [filteredRecords, setFilteredRecords] = useState<ReviewRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { tenant, isLoading: tenantLoading } = useTenant();
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
-  useEffect(() => {
-    // 模拟加载审核历史
-    const mockRecords: ReviewRecord[] = [
-      {
-        id: '1',
-        candidateName: '张三',
-        examName: '2025年春季招聘考试',
-        positionName: 'Java开发工程师',
-        reviewTime: '2025-10-25 14:30:00',
-        reviewResult: '审核通过',
-        reviewComments: '材料齐全，符合要求',
-        registrationNo: '2025001',
-      },
-      {
-        id: '2',
-        candidateName: '李四',
-        examName: '2025年春季招聘考试',
-        positionName: 'Python开发工程师',
-        reviewTime: '2025-10-25 15:00:00',
-        reviewResult: '审核拒绝',
-        reviewComments: '学历不符合要求',
-        registrationNo: '2025002',
-      },
-    ];
+  // 获取审核历史
+  const { data, isLoading, refetch } = useQuery<ReviewHistoryResponse>({
+    queryKey: ['review-history', tenant?.id, filterStatus, startDate, endDate],
+    queryFn: async () => {
+      if (!tenant?.id) throw new Error('Tenant not loaded');
+      const params = new URLSearchParams();
+      params.append('page', '0');
+      params.append('size', '50');
+      if (filterStatus !== 'all') {
+        params.append('decision', filterStatus);
+      }
+      if (startDate) {
+        params.append('startDate', startDate);
+      }
+      if (endDate) {
+        params.append('endDate', endDate);
+      }
+      try {
+        return await apiGetWithTenant<ReviewHistoryResponse>(`/reviews/history?${params.toString()}`, tenant.id);
+      } catch {
+        // 如果API不存在，返回空数据
+        return { content: [], totalElements: 0, totalPages: 0 };
+      }
+    },
+    enabled: !!tenant?.id,
+  });
 
-    setTimeout(() => {
-      setRecords(mockRecords);
-      setFilteredRecords(mockRecords);
-      setLoading(false);
-    }, 500);
-  }, [tenantSlug]);
+  const records = data?.content || [];
 
   const handleFilter = () => {
-    let filtered = [...records];
-
-    // 按状态筛选
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter((record) => record.reviewResult === filterStatus);
-    }
-
-    // 按时间范围筛选
-    if (startDate) {
-      filtered = filtered.filter((record) => record.reviewTime >= startDate);
-    }
-    if (endDate) {
-      filtered = filtered.filter((record) => record.reviewTime <= endDate);
-    }
-
-    setFilteredRecords(filtered);
+    refetch();
   };
 
   const handleExport = () => {
@@ -85,11 +79,26 @@ export default function ReviewHistoryPage() {
     // TODO: 实现导出功能
   };
 
-  if (loading) {
+  const getDecisionLabel = (decision: string) => {
+    const labels: Record<string, string> = {
+      'APPROVE': '审核通过',
+      'REJECT': '审核拒绝',
+      'RETURN': '退回修改',
+    };
+    return labels[decision] || decision;
+  };
+
+  const getDecisionVariant = (decision: string): 'default' | 'destructive' | 'secondary' => {
+    if (decision === 'APPROVE') return 'default';
+    if (decision === 'REJECT') return 'destructive';
+    return 'secondary';
+  };
+
+  if (tenantLoading || isLoading) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">加载中...</p>
+          <Spinner size="lg" />
         </div>
       </div>
     );
@@ -98,9 +107,20 @@ export default function ReviewHistoryPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">审核历史</h1>
+        <div className="flex items-center gap-3 mb-4">
+          <Link href={`/${tenantSlug}/reviewer`}>
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              返回
+            </Button>
+          </Link>
+        </div>
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <History className="h-8 w-8 text-blue-600" />
+          审核历史
+        </h1>
         <p className="text-muted-foreground mt-2">
-          查看已完成的审核记录
+          查看已完成的审核记录（共 {data?.totalElements || 0} 条）
         </p>
       </div>
 
@@ -173,35 +193,32 @@ export default function ReviewHistoryPage() {
 
       {/* 审核记录列表 */}
       <div className="space-y-4">
-        {filteredRecords.length === 0 ? (
+        {records.length === 0 ? (
           <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">
-                暂无审核记录
-              </p>
+            <CardContent className="pt-6 py-12">
+              <div className="text-center">
+                <History className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-lg font-medium text-muted-foreground">
+                  暂无审核记录
+                </p>
+              </div>
             </CardContent>
           </Card>
         ) : (
-          filteredRecords.map((record) => (
+          records.map((record) => (
             <Card key={record.id}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-lg">
-                      {record.candidateName} - {record.positionName}
+                      {record.candidateName || '考生'} - {record.positionTitle || '未知岗位'}
                     </CardTitle>
                     <CardDescription className="mt-1">
-                      报名号: {record.registrationNo} | 考试: {record.examName}
+                      申请ID: {record.applicationId?.substring(0, 8).toUpperCase()} | 考试: {record.examTitle || '未知考试'}
                     </CardDescription>
                   </div>
-                  <Badge
-                    variant={
-                      record.reviewResult === '审核通过'
-                        ? 'default'
-                        : 'destructive'
-                    }
-                  >
-                    {record.reviewResult}
+                  <Badge variant={getDecisionVariant(record.decision)}>
+                    {getDecisionLabel(record.decision)}
                   </Badge>
                 </div>
               </CardHeader>
@@ -209,12 +226,18 @@ export default function ReviewHistoryPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">审核时间:</span>
-                    <span>{record.reviewTime}</span>
+                    <span>{record.reviewedAt ? new Date(record.reviewedAt).toLocaleString('zh-CN') : '-'}</span>
                   </div>
+                  {record.reviewerName && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">审核员:</span>
+                      <span>{record.reviewerName}</span>
+                    </div>
+                  )}
                   <div className="flex items-start justify-between text-sm">
                     <span className="text-muted-foreground">审核意见:</span>
                     <span className="text-right max-w-md">
-                      {record.reviewComments}
+                      {record.comment || '-'}
                     </span>
                   </div>
                 </div>
@@ -227,3 +250,10 @@ export default function ReviewHistoryPage() {
   );
 }
 
+export default function ReviewHistoryPage() {
+  return (
+    <RouteGuard roles={['PRIMARY_REVIEWER', 'SECONDARY_REVIEWER', 'TENANT_ADMIN']}>
+      <ReviewHistoryContent />
+    </RouteGuard>
+  );
+}

@@ -9,13 +9,15 @@ import { Badge } from '@/components/ui/badge'
 import { Save, Plus, X, Loader2 } from 'lucide-react'
 import { useExamRules, useUpdateExamRules } from '@/lib/api-hooks'
 import { toast } from 'sonner'
+import { useTenant } from '@/hooks/useTenant'
 
 interface ExamReviewRulesProps {
   examId: string
 }
 
 export default function ExamReviewRules({ examId }: Readonly<ExamReviewRulesProps>) {
-  const { data: rulesData, isLoading } = useExamRules(examId)
+  const { tenant } = useTenant()
+  const { data: rulesData, isLoading } = useExamRules(examId, tenant?.id)
   const updateRulesMutation = useUpdateExamRules()
 
   const [requiredFields, setRequiredFields] = useState<string[]>([])

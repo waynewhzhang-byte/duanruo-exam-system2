@@ -3,8 +3,19 @@
 import { useState, useCallback } from 'react'
 import { UseFormReturn, FieldPath, FieldValues } from 'react-hook-form'
 import { Upload, X, File, CheckCircle, AlertCircle, Eye, Download } from 'lucide-react'
-import { apiPost } from '@/lib/api'
+import { apiPostWithTenant } from '@/lib/api'
 import { FormField, FormItem, FormLabel, FormMessage } from './form'
+
+// Safe useTenant hook that doesn't throw if outside TenantProvider
+function useTenantSafe() {
+  try {
+    // Dynamic import to avoid throwing when TenantContext is not available
+    const { useTenant } = require('@/contexts/TenantContext')
+    return useTenant()
+  } catch {
+    return { tenant: null }
+  }
+}
 
 interface FileInfo {
   id: string
@@ -25,6 +36,7 @@ interface FormFileUploadProps<T extends FieldValues> {
   required?: boolean
   category?: string
   className?: string
+  tenantId?: string // Optional: if provided, use this instead of context
 }
 
 interface UploadingFile {
@@ -47,30 +59,43 @@ export default function FormFileUpload<T extends FieldValues>({
   required = false,
   category,
   className = '',
+  tenantId: propTenantId,
 }: FormFileUploadProps<T>) {
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
 
+  // Try to get tenant from context, fallback to prop
+  const { tenant } = useTenantSafe()
+  const effectiveTenantId = propTenantId || tenant?.id
+
   const uploadFile = useCallback(async (file: File, uploadId: string) => {
     try {
+      // Validate tenant context
+      if (!effectiveTenantId) {
+        throw new Error('租户信息缺失，无法上传文件')
+      }
+
       // Step 1: Get upload URL
-      setUploadingFiles(prev => prev.map(f => 
+      setUploadingFiles(prev => prev.map(f =>
         f.id === uploadId ? { ...f, progress: 10 } : f
       ))
 
-      const uploadUrlResponse = await apiPost<{ url: string; fileId: string }>('/files/upload-url', {
-        fileName: file.name,
-        contentType: file.type,
-        size: file.size,
-        fieldKey: category || name || 'general',
-      })
+      const uploadUrlResponse = await apiPostWithTenant<{ uploadUrl: string; fileId: string }>(
+        '/files/upload-url',
+        effectiveTenantId,
+        {
+          fileName: file.name,
+          contentType: file.type,
+          fieldKey: category || name || 'general',
+        }
+      )
 
-      setUploadingFiles(prev => prev.map(f => 
+      setUploadingFiles(prev => prev.map(f =>
         f.id === uploadId ? { ...f, progress: 30, fileId: uploadUrlResponse.fileId } : f
       ))
 
       // Step 2: Upload to MinIO
-      const uploadResponse = await fetch(uploadUrlResponse.url, {
+      const uploadResponse = await fetch(uploadUrlResponse.uploadUrl, {
         method: 'PUT',
         body: file,
         headers: {
@@ -82,12 +107,16 @@ export default function FormFileUpload<T extends FieldValues>({
         throw new Error('文件上传失败')
       }
 
-      setUploadingFiles(prev => prev.map(f => 
+      setUploadingFiles(prev => prev.map(f =>
         f.id === uploadId ? { ...f, progress: 80 } : f
       ))
 
       // Step 3: Confirm upload
-      await apiPost(`/files/${uploadUrlResponse.fileId}/confirm`, {})
+      await apiPostWithTenant(`/files/${uploadUrlResponse.fileId}/confirm`, effectiveTenantId, {
+        fileName: file.name,
+        fileSize: file.size,
+        contentType: file.type,
+      })
 
       setUploadingFiles(prev => prev.map(f => 
         f.id === uploadId ? { ...f, progress: 100, status: 'success' } : f
@@ -113,11 +142,11 @@ export default function FormFileUpload<T extends FieldValues>({
 
     } catch (error: any) {
       const errorMessage = error.message || '上传失败'
-      setUploadingFiles(prev => prev.map(f => 
+      setUploadingFiles(prev => prev.map(f =>
         f.id === uploadId ? { ...f, status: 'error', error: errorMessage } : f
       ))
     }
-  }, [form, name, multiple, category])
+  }, [form, name, multiple, category, effectiveTenantId])
 
   const handleFiles = useCallback((files: FileList) => {
     const fileArray = Array.from(files)

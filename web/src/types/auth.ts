@@ -9,6 +9,7 @@ export const LoginRequest = z.object({
   username: z.string().min(1, '用户名不能为空'),
   password: z.string().min(1, '密码不能为空'),
 })
+export type LoginRequest = z.infer<typeof LoginRequest>
 
 export const LoginResponse = z.object({
   token: z.string(),
@@ -20,6 +21,7 @@ export const LoginResponse = z.object({
     roles: z.array(UserRole),
   }),
 })
+export type LoginResponse = z.infer<typeof LoginResponse>
 
 // Register request
 export const RegisterRequest = z.object({
@@ -32,12 +34,12 @@ export const RegisterRequest = z.object({
   message: '两次输入的密码不一致',
   path: ['confirmPassword'],
 })
+export type RegisterRequest = z.infer<typeof RegisterRequest>
 
 // Select tenant request
 export const SelectTenantRequest = z.object({
   tenantId: z.string().uuid('无效的租户ID'),
 })
-
 export type SelectTenantRequest = z.infer<typeof SelectTenantRequest>
 
 export const UserResponse = z.object({
@@ -48,15 +50,11 @@ export const UserResponse = z.object({
   roles: z.array(UserRole),
   createdAt: z.string(),
 })
+export type UserResponse = z.infer<typeof UserResponse>
 
 // Session/Auth state
 export interface AuthState {
   isAuthenticated: boolean
-  user: z.infer<typeof UserResponse> | null
+  user: UserResponse | null
   token: string | null
 }
-
-export type LoginRequestType = z.infer<typeof LoginRequest>
-export type LoginResponseType = z.infer<typeof LoginResponse>
-export type RegisterRequestType = z.infer<typeof RegisterRequest>
-export type UserResponseType = z.infer<typeof UserResponse>

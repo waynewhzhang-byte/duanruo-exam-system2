@@ -15,7 +15,11 @@ import {
   Building,
   UserCheck,
   LogOut,
-  User
+  User,
+  FileText,
+  Plus,
+  ShieldAlert,
+  ClipboardList
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +30,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/contexts/AuthContext';
+import { Spinner } from '@/components/ui/loading';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -38,64 +44,174 @@ interface NavItem {
   children?: NavItem[];
 }
 
-const navigationItems: NavItem[] = [
-  {
-    href: '/admin',
-    label: '管理首页',
-    icon: Home,
-  },
-  {
-    label: '系统管理',
-    icon: Settings,
-    children: [
-      {
-        href: '/admin/tenants',
-        label: '租户管理',
-        icon: Building,
-      },
-      {
-        href: '/admin/users',
-        label: '用户管理',
-        icon: Users,
-      },
-      {
-        href: '/admin/reviewers',
-        label: '审核员管理',
-        icon: UserCheck,
-      },
-      {
-        href: '/admin/settings',
-        label: '系统设置',
-        icon: Settings,
-      },
-    ],
-  },
-  {
-    href: '/admin/analytics',
-    label: '数据分析',
-    icon: BarChart3,
-  },
-];
+// Admin roles that can access the admin panel
+const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN', 'TENANT_ADMIN', 'EXAM_ADMIN'];
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps & { tenantSlug?: string }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedItems, setExpandedItems] = useState<string[]>(['系统管理']);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
-  // 获取当前用户信息
-  useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        setCurrentUser(user);
-      } catch (error) {
-        console.error('Failed to parse user data:', error);
-      }
+  // Generate navigation items based on context
+  const getNavigationItems = (): NavItem[] => {
+    const basePath = tenantSlug ? `/${tenantSlug}/admin` : '/admin';
+
+    if (tenantSlug) {
+      // Tenant Admin Navigation
+      return [
+        {
+          href: basePath,
+          label: '管理首页',
+          icon: Home,
+        },
+        {
+          label: '考试管理',
+          icon: FileText,
+          children: [
+            {
+              href: `${basePath}/exams`,
+              label: '考试列表',
+              icon: FileText,
+            },
+            {
+              href: `${basePath}/exams/create`,
+              label: '创建考试',
+              icon: Plus,
+            }
+          ]
+        },
+        {
+          label: '用户管理',
+          icon: Users,
+          children: [
+            {
+              href: `${basePath}/users`,
+              label: '用户列表',
+              icon: Users,
+            },
+            {
+              href: `${basePath}/reviewers`,
+              label: '审核员管理',
+              icon: UserCheck,
+            },
+            {
+              href: `${basePath}/reviews`,
+              label: '审核记录审计',
+              icon: ClipboardList,
+            }
+          ]
+        },
+        {
+          href: `${basePath}/analytics`,
+          label: '数据分析',
+          icon: BarChart3,
+        }
+      ];
     }
-  }, []);
+
+    // Global Admin Navigation
+    return [
+      {
+        href: '/admin',
+        label: '管理首页',
+        icon: Home,
+      },
+      {
+        label: '系统管理',
+        icon: Settings,
+        children: [
+          {
+            href: '/admin/tenants',
+            label: '租户管理',
+            icon: Building,
+          },
+          {
+            href: '/admin/users',
+            label: '用户管理',
+            icon: Users,
+          },
+          {
+            href: '/admin/reviewers',
+            label: '审核员管理',
+            icon: UserCheck,
+          },
+          {
+            href: '/admin/reviews',
+            label: '审核记录审计',
+            icon: ClipboardList,
+          },
+          {
+            href: '/admin/settings',
+            label: '系统设置',
+            icon: Settings,
+          },
+        ],
+      },
+      {
+        href: '/admin/analytics',
+        label: '数据分析',
+        icon: BarChart3,
+      },
+    ];
+  };
+
+  const navigationItems = getNavigationItems();
+
+  // 权限检查：验证用户是否有管理员角色
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (!isAuthenticated || !user) {
+      // 未登录，重定向到登录页
+      router.push('/login?redirect=' + encodeURIComponent(pathname));
+      return;
+    }
+
+    // 检查用户是否有管理员角色
+    const userRoles = user.roles || [];
+    const hasAdminRole = userRoles.some((role: string) => ADMIN_ROLES.includes(role));
+
+    if (!hasAdminRole) {
+      // 没有管理员权限，重定向到候选人首页
+      console.warn('User does not have admin role, redirecting to candidate page');
+      setIsAuthorized(false);
+      const redirectPath = tenantSlug ? `/${tenantSlug}/candidate` : '/';
+      router.push(redirectPath);
+      return;
+    }
+
+    setIsAuthorized(true);
+    setCurrentUser(user);
+  }, [isLoading, isAuthenticated, user, router, pathname, tenantSlug]);
+
+  // 显示加载状态
+  if (isLoading || isAuthorized === null) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-center">
+          <Spinner size="lg" />
+          <p className="mt-4 text-gray-600">正在验证权限...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 显示未授权状态（在重定向发生前短暂显示）
+  if (!isAuthorized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-center">
+          <ShieldAlert className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-xl font-semibold text-gray-800 mb-2">访问被拒绝</h1>
+          <p className="text-gray-600">您没有权限访问管理后台，正在跳转...</p>
+        </div>
+      </div>
+    );
+  }
 
   // 退出登录
   const handleLogout = () => {
@@ -114,8 +230,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const toggleExpanded = (label: string) => {
-    setExpandedItems(prev => 
-      prev.includes(label) 
+    setExpandedItems(prev =>
+      prev.includes(label)
         ? prev.filter(item => item !== label)
         : [...prev, label]
     );
@@ -161,8 +277,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         href={item.href!}
         className={cn(
           "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors mb-1",
-          active 
-            ? "bg-primary text-primary-foreground" 
+          active
+            ? "bg-primary text-primary-foreground"
             : "text-gray-700 hover:bg-gray-100",
           !sidebarOpen && "justify-center"
         )}

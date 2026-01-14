@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { RegisterRequest, type RegisterRequestType } from '@/types/auth'
+import { RegisterRequest } from '@/types/auth'
 import { apiPost } from '@/lib/api'
 import { UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { ZodError } from 'zod'
@@ -16,7 +16,7 @@ import { ZodError } from 'zod'
 export default function RegisterPage() {
   const router = useRouter()
 
-  const [formData, setFormData] = useState<RegisterRequestType>({
+  const [formData, setFormData] = useState<RegisterRequest>({
     username: '',
     email: '',
     password: '',
@@ -73,10 +73,10 @@ export default function RegisterPage() {
     }
   }
 
-  const handleInputChange = (field: keyof RegisterRequestType) => (
+  const handleInputChange = (field: keyof RegisterRequest) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setFormData(prev => ({ ...prev, [field]: e.target.value }))
+    setFormData((prev: RegisterRequest) => ({ ...prev, [field]: e.target.value }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }

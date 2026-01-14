@@ -1,0 +1,57 @@
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
+import * as Minio from 'minio';
+import { FileUploadUrlRequest, FileUploadUrlResponse, PresignedUrlResponse, FileBatchInfoResponse } from './dto/file.dto';
+export declare const MINIO_CLIENT = "MINIO_CLIENT";
+export declare class FileService {
+    private readonly minioClient;
+    private readonly configService;
+    private readonly prisma;
+    private readonly logger;
+    private readonly bucketName;
+    constructor(minioClient: Minio.Client, configService: ConfigService, prisma: PrismaService);
+    private initializeBucket;
+    generateUploadUrl(tenantId: string, userId: string, req: FileUploadUrlRequest): Promise<FileUploadUrlResponse>;
+    confirmUpload(tenantId: string, fileId: string, fileSize: number): Promise<{
+        id: string;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        applicationId: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        originalName: string;
+        storedName: string;
+        objectKey: string;
+        contentType: string | null;
+        fileSize: bigint | null;
+        fieldKey: string | null;
+        uploadedBy: string;
+        virusScanStatus: string;
+        virusScanResult: string | null;
+        accessCount: number;
+        lastAccessedAt: Date | null;
+        expiresAt: Date | null;
+    }>;
+    getDownloadUrl(tenantId: string, fileId: string): Promise<PresignedUrlResponse>;
+    getBatchFileInfo(fileIds: string[]): Promise<FileBatchInfoResponse>;
+    findById(id: string): Promise<{
+        id: string;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        applicationId: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        originalName: string;
+        storedName: string;
+        objectKey: string;
+        contentType: string | null;
+        fileSize: bigint | null;
+        fieldKey: string | null;
+        uploadedBy: string;
+        virusScanStatus: string;
+        virusScanResult: string | null;
+        accessCount: number;
+        lastAccessedAt: Date | null;
+        expiresAt: Date | null;
+    } | null>;
+}

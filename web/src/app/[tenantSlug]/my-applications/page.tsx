@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useTenant } from '@/hooks/useTenant'
-import { apiGet } from '@/lib/api'
+import { apiGetWithTenant } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,6 +28,16 @@ interface Application {
   feePaid: boolean
 }
 
+interface ApplicationsResponse {
+  content: Application[]
+  totalElements: number
+  totalPages: number
+  currentPage: number
+  pageSize: number
+  hasNext: boolean
+  hasPrevious: boolean
+}
+
 const STATUS_CONFIG: Record<string, { label: string; variant: any; color: string }> = {
   SUBMITTED: { label: '待初审', variant: 'outline', color: 'text-blue-600' },
   PRIMARY_PASSED: { label: '待复审', variant: 'outline', color: 'text-blue-600' },
@@ -46,13 +56,16 @@ export default function MyApplicationsPage() {
   const { tenant, isLoading: tenantLoading } = useTenant()
 
   // Fetch my applications
-  const { data: applications, isLoading: applicationsLoading } = useQuery<Application[]>({
+  const { data: applicationsData, isLoading: applicationsLoading } = useQuery<ApplicationsResponse>({
     queryKey: ['my-applications', tenant?.id],
     queryFn: async () => {
-      return apiGet<Application[]>('/applications/my')
+      if (!tenant?.id) throw new Error('Tenant ID required')
+      return apiGetWithTenant<ApplicationsResponse>('/applications/my', tenant.id)
     },
     enabled: !!tenant?.id,
   })
+
+  const applications = applicationsData?.content || []
 
   const isLoading = tenantLoading || applicationsLoading
 

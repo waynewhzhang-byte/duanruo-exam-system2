@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPost } from '@/lib/api'
+import { apiGet, apiPost, apiGetWithTenant } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,14 +11,14 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Spinner } from '@/components/ui/loading'
-import { 
-  FileText, 
-  Search, 
-  Filter, 
-  Download, 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
+import {
+  FileText,
+  Search,
+  Filter,
+  Download,
+  Eye,
+  CheckCircle,
+  XCircle,
   Clock,
   Users,
   TrendingUp,
@@ -27,6 +28,7 @@ import {
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import { useTenant } from '@/hooks/useTenant'
 
 interface Application {
   id: string
@@ -51,27 +53,40 @@ interface ExamApplicationsProps {
 }
 
 export default function ExamApplications({ examId }: ExamApplicationsProps) {
+  const params = useParams()
+  const tenantSlug = params.tenantSlug as string
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [positionFilter, setPositionFilter] = useState<string>('ALL')
+  const { tenant } = useTenant()
 
   // 获取报名列表
   const { data: applications, isLoading } = useQuery<Application[]>({
     queryKey: ['exam-applications', examId, statusFilter, positionFilter],
     queryFn: async () => {
+      if (!tenant?.id) {
+        throw new Error('Tenant ID is required')
+      }
       const params = new URLSearchParams()
       if (statusFilter !== 'ALL') params.append('status', statusFilter)
       if (positionFilter !== 'ALL') params.append('positionId', positionFilter)
-      
-      return apiGet<Application[]>(`/exams/${examId}/applications?${params.toString()}`)
+
+      return apiGetWithTenant<Application[]>(`/exams/${examId}/applications?${params.toString()}`, tenant.id)
     },
+    enabled: !!tenant?.id,
   })
 
   // 获取岗位列表（用于筛选）
   const { data: positions } = useQuery<Array<{ id: string; title: string }>>({
     queryKey: ['exam-positions', examId],
-    queryFn: () => apiGet(`/exams/${examId}/positions`),
+    queryFn: () => {
+      if (!tenant?.id) {
+        throw new Error('Tenant ID is required')
+      }
+      return apiGetWithTenant(`/exams/${examId}/positions`, tenant.id)
+    },
+    enabled: !!tenant?.id,
   })
 
   // 导出报名数据
@@ -314,7 +329,7 @@ export default function ExamApplications({ examId }: ExamApplicationsProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => window.open(`/admin/applications/${application.id}`, '_blank')}
+                          onClick={() => window.open(`/${tenantSlug}/admin/applications/${application.id}`, '_blank')}
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           查看详情

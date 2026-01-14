@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { ErrorResponse, PaginationResponse } from './schemas'
 
 // Base API configuration
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '/api/v1'
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1'
 
 // Re-export common schemas from schemas.ts
 export { ErrorResponse, PaginationResponse } from './schemas'
@@ -27,7 +27,7 @@ async function resolveAuthToken(provided?: string): Promise<string | null> {
       if (ls) return ls
       const ss = window.sessionStorage?.getItem('token')
       if (ss) return ss
-    } catch {}
+    } catch { }
     return null
   }
   // Server: use next/headers cookies()
@@ -39,6 +39,17 @@ async function resolveAuthToken(provided?: string): Promise<string | null> {
   } catch {
     return null
   }
+}
+
+// Resolve tenant ID automatically from provided option or browser localStorage
+async function resolveTenantId(provided?: string): Promise<string | null> {
+  if (provided) return provided
+  if (typeof window !== 'undefined') {
+    try {
+      return window.localStorage?.getItem('tenant_id') || null
+    } catch { }
+  }
+  return null
 }
 
 // API client with error handling and type safety
@@ -64,8 +75,9 @@ export async function api<T>(
   }
 
   // Auto inject X-Tenant-ID header
-  if (tenantId) {
-    headers['X-Tenant-ID'] = tenantId
+  const resolvedTenantId = await resolveTenantId(tenantId)
+  if (resolvedTenantId) {
+    headers['X-Tenant-ID'] = resolvedTenantId
   }
 
   // Auto inject Authorization header
@@ -112,7 +124,16 @@ export async function api<T>(
     }
 
     if (schema) {
-      return schema.parse(isJson ? data : text)
+      // Handle NestJS ApiResult wrapper if present
+      const targetData = (isJson && data && typeof data === 'object' && 'success' in data && 'data' in data)
+        ? data.data
+        : data;
+      return schema.parse(isJson ? targetData : text)
+    }
+
+    // Handle NestJS ApiResult wrapper for non-schema requests
+    if (isJson && data && typeof data === 'object' && 'success' in data && 'data' in data) {
+      return data.data as T;
     }
 
     return (isJson ? data : (text as unknown as T))
@@ -120,7 +141,7 @@ export async function api<T>(
     if (error instanceof APIError) {
       throw error
     }
-    
+
     throw new APIError(
       'NETWORK_ERROR',
       error instanceof Error ? error.message : 'Network request failed',
@@ -140,19 +161,19 @@ export class APIError extends Error {
     super(message)
     this.name = 'APIError'
   }
-  
+
   get isUnauthorized() {
     return this.status === 401
   }
-  
+
   get isForbidden() {
     return this.status === 403
   }
-  
+
   get isNotFound() {
     return this.status === 404
   }
-  
+
   get isValidationError() {
     return this.status === 400 || this.status === 422
   }
@@ -163,17 +184,17 @@ export const apiGet = <T>(endpoint: string, options?: Omit<Parameters<typeof api
   api<T>(endpoint, { ...options, method: 'GET' })
 
 export const apiPost = <T>(endpoint: string, data?: any, options?: Omit<Parameters<typeof api>[1], 'method' | 'body'>) =>
-  api<T>(endpoint, { 
-    ...options, 
-    method: 'POST', 
-    body: data ? JSON.stringify(data) : undefined 
+  api<T>(endpoint, {
+    ...options,
+    method: 'POST',
+    body: data ? JSON.stringify(data) : undefined
   })
 
 export const apiPut = <T>(endpoint: string, data?: any, options?: Omit<Parameters<typeof api>[1], 'method' | 'body'>) =>
-  api<T>(endpoint, { 
-    ...options, 
-    method: 'PUT', 
-    body: data ? JSON.stringify(data) : undefined 
+  api<T>(endpoint, {
+    ...options,
+    method: 'PUT',
+    body: data ? JSON.stringify(data) : undefined
   })
 
 export const apiDelete = <T>(endpoint: string, options?: Omit<Parameters<typeof api>[1], 'method'>) =>

@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
+import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import FileUpload from '@/components/ui/fileupload'
 import { Button } from '@/components/ui/button'
-import { EmptyState } from '@/components/ui/loading'
-import { FileText, Download, Trash2, Eye } from 'lucide-react'
+import { EmptyState, Spinner } from '@/components/ui/loading'
+import { FileText, Download, Trash2, Eye, Building } from 'lucide-react'
+import { apiGet } from '@/lib/api'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface UploadedFile {
   id: string
@@ -17,7 +19,14 @@ interface UploadedFile {
   category: string
 }
 
-// Mock data
+interface Tenant {
+  id: string
+  name: string
+  code: string
+  slug?: string
+}
+
+// Mock data (will be replaced with real API data later)
 const mockFiles: UploadedFile[] = [
   {
     id: '1',
@@ -47,6 +56,22 @@ const mockFiles: UploadedFile[] = [
 
 export default function FilesPage() {
   const [files, setFiles] = useState<UploadedFile[]>(mockFiles)
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('')
+
+  // 获取用户关联的租户列表
+  const { data: tenants, isLoading: tenantsLoading } = useQuery<Tenant[]>({
+    queryKey: ['my-tenants'],
+    queryFn: async () => {
+      return apiGet<Tenant[]>('/tenants/me')
+    },
+  })
+
+  // 自动选择第一个租户
+  useEffect(() => {
+    if (tenants && tenants.length > 0 && !selectedTenantId) {
+      setSelectedTenantId(tenants[0].id)
+    }
+  }, [tenants, selectedTenantId])
 
   const handleUploadComplete = (fileId: string, fileName: string) => {
     console.log('Upload completed:', fileId, fileName)
@@ -103,13 +128,65 @@ export default function FilesPage() {
     return acc
   }, {} as Record<string, UploadedFile[]>)
 
-  return (
-    <DashboardLayout>
+  // 如果正在加载租户信息
+  if (tenantsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
+
+  // 如果没有租户，显示提示
+  if (!tenants || tenants.length === 0) {
+    return (
       <div className="space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-gray-900">我的文件</h1>
           <p className="text-gray-600">管理您的证明材料和附件</p>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <Building className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">暂无关联租户</h3>
+            <p className="text-sm text-muted-foreground mb-4">您需要先报名考试才能上传文件</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">我的文件</h1>
+            <p className="text-gray-600">管理您的证明材料和附件</p>
+          </div>
+          {/* 租户选择器 */}
+          <div className="flex items-center gap-2">
+            {tenants.length > 1 ? (
+              <Select value={selectedTenantId} onValueChange={setSelectedTenantId}>
+                <SelectTrigger className="w-48">
+                  <Building className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="选择考试机构" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tenants.map((tenant) => (
+                    <SelectItem key={tenant.id} value={tenant.id}>
+                      {tenant.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="flex items-center text-sm text-muted-foreground px-3 py-2 bg-muted rounded-md">
+                <Building className="h-4 w-4 mr-2" />
+                {tenants[0]?.name}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Upload Section */}
@@ -124,6 +201,7 @@ export default function FilesPage() {
               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
               maxSize={10}
               multiple={true}
+              tenantId={selectedTenantId}
             />
             <div className="mt-4 text-sm text-gray-500">
               <p>支持的文件类型：PDF、JPG、PNG、DOC、DOCX</p>
@@ -220,7 +298,6 @@ export default function FilesPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
   )
 }
 

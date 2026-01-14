@@ -16,10 +16,11 @@ interface EditVenueDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   venue: any
+  tenantId: string
   onSuccess: () => void
 }
 
-export default function EditVenueDialog({ open, onOpenChange, venue, onSuccess }: Readonly<EditVenueDialogProps>) {
+export default function EditVenueDialog({ open, onOpenChange, venue, tenantId, onSuccess }: Readonly<EditVenueDialogProps>) {
   const updateMutation = useUpdateVenue()
 
   const {
@@ -45,7 +46,7 @@ export default function EditVenueDialog({ open, onOpenChange, venue, onSuccess }
 
   const onSubmit = async (data: UpdateVenueRequestType) => {
     try {
-      await updateMutation.mutateAsync({ venueId: venue.venueId, data })
+      await updateMutation.mutateAsync({ venueId: venue.venueId, data, tenantId })
       toast.success('考场更新成功')
       onSuccess()
     } catch (error: any) {

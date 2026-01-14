@@ -33,9 +33,9 @@ export default function TenantSelectionPage() {
   }, [])
 
   // Determine if user is a candidate
-  const isCandidate = userRoles.includes('CANDIDATE') && 
-                     !userRoles.includes('TENANT_ADMIN') && 
-                     !userRoles.includes('SUPER_ADMIN')
+  const isCandidate = userRoles.includes('CANDIDATE') &&
+    !userRoles.includes('TENANT_ADMIN') &&
+    !userRoles.includes('SUPER_ADMIN')
 
   // For candidates, fetch public exams across all tenants
   // For other roles, fetch available tenants
@@ -75,7 +75,7 @@ export default function TenantSelectionPage() {
         localStorage.setItem('token', response.token)
 
         // 也更新到cookie（如果需要）
-        document.cookie = `auth-token=${response.token}; path=/; max-age=${response.expiresIn || 86400}`
+        document.cookie = `auth-token=${response.token}; path=/; max-age=86400`
 
         toast.success('租户选择成功')
       }
@@ -257,11 +257,10 @@ export default function TenantSelectionPage() {
 
                 {/* Action Button */}
                 <button
-                  className={`w-full py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                    tenant.status === 'ACTIVE'
+                  className={`w-full py-2 px-4 rounded-md text-sm font-medium transition-colors ${tenant.status === 'ACTIVE'
                       ? 'bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50'
                       : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  }`}
+                    }`}
                   disabled={tenant.status !== 'ACTIVE' || isSelecting}
                   onClick={(e) => {
                     e.stopPropagation()

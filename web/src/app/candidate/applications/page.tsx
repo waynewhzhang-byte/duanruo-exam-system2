@@ -1,14 +1,43 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus, FileText, Eye, Edit, Ticket } from 'lucide-react'
-import { useMyApplications, useExam, usePosition } from '@/lib/api-hooks'
+import { Plus, FileText, Eye, Edit, Ticket, Building } from 'lucide-react'
+import { useExam, usePosition } from '@/lib/api-hooks'
+import { apiGet, apiGetWithTenant } from '@/lib/api'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+interface Tenant {
+  id: string
+  name: string
+  code: string
+  slug?: string
+}
+
+interface ApplicationListResponse {
+  content: Array<{
+    id: string
+    examId: string
+    positionId: string
+    status: string
+    submittedAt: string | null
+    examTitle?: string
+    positionTitle?: string
+    applicationNo?: string
+  }>
+  totalElements: number
+  totalPages: number
+  currentPage: number
+  pageSize: number
+  hasNext: boolean
+  hasPrevious: boolean
+}
 
 function ExamTitle({ examId }: Readonly<{ examId: string }>) {
   const { data } = useExam(examId)
@@ -33,15 +62,41 @@ export default function ApplicationsPage() {
   const [examIdFilter, setExamIdFilter] = useState('')
   const [positionIdFilter, setPositionIdFilter] = useState('')
   const [sortOrder, setSortOrder] = useState<'submittedAt,desc' | 'submittedAt,asc'>('submittedAt,desc')
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('')
 
-  const { data, isLoading } = useMyApplications({
-    page: currentPage - 1,
-    size: pageSize,
-    status: statusFilter || undefined,
-    examId: examIdFilter || undefined,
-    positionId: positionIdFilter || undefined,
-    sort: sortOrder,
+  // 获取用户关联的租户列表
+  const { data: tenants, isLoading: tenantsLoading } = useQuery<Tenant[]>({
+    queryKey: ['my-tenants'],
+    queryFn: async () => {
+      return apiGet<Tenant[]>('/tenants/me')
+    },
   })
+
+  // 自动选择第一个租户
+  useEffect(() => {
+    if (tenants && tenants.length > 0 && !selectedTenantId) {
+      setSelectedTenantId(tenants[0].id)
+    }
+  }, [tenants, selectedTenantId])
+
+  // 使用带租户 ID 的 API 调用获取报名列表
+  const { data, isLoading: applicationsLoading } = useQuery<ApplicationListResponse>({
+    queryKey: ['applications', 'my', selectedTenantId, currentPage, pageSize, statusFilter, examIdFilter, positionIdFilter, sortOrder],
+    queryFn: async () => {
+      if (!selectedTenantId) throw new Error('No tenant selected')
+      const sp = new URLSearchParams()
+      sp.set('page', String(currentPage - 1))
+      sp.set('size', String(pageSize))
+      if (statusFilter) sp.set('status', statusFilter)
+      if (examIdFilter) sp.set('examId', examIdFilter)
+      if (positionIdFilter) sp.set('positionId', positionIdFilter)
+      if (sortOrder) sp.set('sort', sortOrder)
+      return apiGetWithTenant<ApplicationListResponse>(`/applications/my?${sp}`, selectedTenantId)
+    },
+    enabled: !!selectedTenantId,
+  })
+
+  const isLoading = tenantsLoading || applicationsLoading
 
   const pagination = data ? {
     currentPage: data.currentPage + 1,
@@ -137,6 +192,31 @@ export default function ApplicationsPage() {
     }
   }
 
+  // 如果没有租户，显示提示
+  if (!tenantsLoading && (!tenants || tenants.length === 0)) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">我的报名</h1>
+            <p className="text-muted-foreground mt-2">管理您的考试报名申请</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <Building className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">暂无关联租户</h3>
+            <p className="text-sm text-muted-foreground mb-4">您尚未在任何考试机构报名</p>
+            <Button onClick={() => router.push('/candidate/exams')}>
+              <Plus className="h-4 w-4 mr-2" />
+              浏览可报名的考试
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -146,6 +226,28 @@ export default function ApplicationsPage() {
           <p className="text-muted-foreground mt-2">管理您的考试报名申请</p>
         </div>
           <div className="flex items-center space-x-3">
+            {/* 租户选择器 */}
+            {tenants && tenants.length > 1 && (
+              <Select value={selectedTenantId} onValueChange={(value) => { setSelectedTenantId(value); setCurrentPage(1); }}>
+                <SelectTrigger className="w-48">
+                  <Building className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="选择考试机构" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tenants.map((tenant) => (
+                    <SelectItem key={tenant.id} value={tenant.id}>
+                      {tenant.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {tenants && tenants.length === 1 && (
+              <div className="flex items-center text-sm text-muted-foreground px-2 py-1 bg-muted rounded-md">
+                <Building className="h-4 w-4 mr-2" />
+                {tenants[0].name}
+              </div>
+            )}
             <input
               className="border border-gray-300 rounded-md px-2 py-1 text-sm w-56"
               placeholder="按考试ID过滤（可选）"

@@ -1,0 +1,392 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Public Schema Tables ---
+
+model User {
+  id                String    @id @default(uuid()) @db.Uuid
+  username          String    @unique @db.VarChar(50)
+  email             String    @unique @db.VarChar(100)
+  passwordHash      String    @map("password_hash") @db.VarChar(255)
+  fullName          String    @map("full_name") @db.VarChar(100)
+  phoneNumber       String?   @unique @map("phone_number") @db.VarChar(20)
+  status            String    @default("ACTIVE") @db.VarChar(50)
+  roles             String    @db.Text // JSON string: ["ADMIN", "CANDIDATE", etc.]
+  lastLoginAt       DateTime? @map("last_login_at")
+  passwordChangedAt DateTime? @map("password_changed_at")
+  emailVerified     Boolean   @default(false) @map("email_verified")
+  phoneVerified     Boolean   @default(false) @map("phone_verified")
+  department        String?   @db.VarChar(100)
+  jobTitle          String?   @map("job_title") @db.VarChar(100)
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  version           BigInt    @default(0)
+
+  tenantRoles       UserTenantRole[]
+  // In the tenant schema, candidates will refer to this id.
+  // Prisma doesn't natively support cross-schema relations perfectly in a single client,
+  // but we can manage them by ID.
+
+  @@map("users")
+}
+
+model Tenant {
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String    @db.VarChar(100)
+  code          String    @unique @db.VarChar(50)
+  schemaName    String    @unique @map("schema_name") @db.VarChar(63)
+  status        String    @default("PENDING") @db.VarChar(20)
+  contactEmail  String    @map("contact_email") @db.VarChar(100)
+  contactPhone  String?   @map("contact_phone") @db.VarChar(20)
+  description   String?   @db.Text
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  activatedAt   DateTime? @map("activated_at")
+  deactivatedAt DateTime? @map("deactivated_at")
+
+  userRoles     UserTenantRole[]
+
+  @@map("tenants")
+}
+
+model UserTenantRole {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  role      String    @db.VarChar(50)
+  grantedAt DateTime  @default(now()) @map("granted_at")
+  grantedBy String?   @map("granted_by") @db.Uuid
+  revokedAt DateTime? @map("revoked_at")
+  revokedBy String?   @map("revoked_by") @db.Uuid
+  active    Boolean   @default(true)
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId, role])
+  @@map("user_tenant_roles")
+}
+
+// --- Tenant Schema Tables (Template) ---
+// Note: These will be duplicated/managed in individual schemas.
+// Prisma's multi-schema support (preview) is evolving, but here we define them
+// as models. In execution, we'll set the search_path.
+
+model Exam {
+  id                String    @id @default(uuid()) @db.Uuid
+  code              String    @unique @db.VarChar(64)
+  title             String    @db.VarChar(255)
+  description       String?   @db.Text
+  announcement      String?   @db.Text
+  registrationStart DateTime? @map("registration_start")
+  registrationEnd   DateTime? @map("registration_end")
+  examStart         DateTime? @map("exam_start")
+  examEnd           DateTime? @map("exam_end")
+  feeRequired       Boolean   @default(false) @map("fee_required")
+  feeAmount         Decimal?  @map("fee_amount") @db.Decimal(10, 2)
+  ticketTemplate    String?   @map("ticket_template") @db.Text
+  formTemplate      Json?     @map("form_template") @db.JsonB
+  formTemplateId    String?   @map("form_template_id") @db.Uuid
+  status            String    @default("DRAFT") @db.VarChar(50) // DRAFT, REGISTRATION_OPEN, OPEN, CLOSED, IN_PROGRESS, COMPLETED
+  createdBy         String?   @map("created_by") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  positions         Position[]
+  applications      Application[]
+
+  @@map("exams")
+}
+
+model Position {
+  id           String    @id @default(uuid()) @db.Uuid
+  examId       String    @map("exam_id") @db.Uuid
+  code         String    @db.VarChar(64)
+  title        String    @db.VarChar(255)
+  description  String?   @db.Text
+  requirements String?   @db.Text
+  quota        Int?
+  rulesConfig  Json?     @map("rules_config") @db.JsonB
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  exam         Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+  subjects     Subject[]
+  applications Application[]
+
+  @@unique([examId, code])
+  @@map("positions")
+}
+
+model Subject {
+  id              String    @id @default(uuid()) @db.Uuid
+  positionId      String    @map("position_id") @db.Uuid
+  name            String    @db.VarChar(255)
+  durationMinutes Int       @map("duration")
+  type            String    @db.VarChar(64) // WRITTEN, INTERVIEW, PRACTICAL
+  maxScore        Decimal?  @map("max_score") @db.Decimal(5, 2)
+  passingScore    Decimal?  @map("passing_score") @db.Decimal(5, 2)
+  weight          Decimal   @default(1.0) @db.Decimal(3, 2)
+  ordering        Int       @default(0)
+  schedule        Json?     @db.JsonB
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  position        Position  @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  @@map("subjects")
+}
+
+model Application {
+  id                   String    @id @default(uuid()) @db.Uuid
+  candidateId          String    @map("candidate_id") @db.Uuid
+  examId               String    @map("exam_id") @db.Uuid
+  positionId           String    @map("position_id") @db.Uuid
+  formVersion          Int       @default(1) @map("form_version")
+  payload              Json      @db.JsonB // JSON form data
+  status               String    @default("DRAFT") @db.VarChar(50) 
+  submittedAt          DateTime? @map("submitted_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  exam                 Exam      @relation(fields: [examId], references: [id])
+  position             Position  @relation(fields: [positionId], references: [id])
+  attachments          FileRecord[]
+
+  @@unique([examId, candidateId])
+  @@map("applications")
+}
+
+model ApplicationAuditLog {
+  id            String    @id @default(uuid()) @db.Uuid
+  applicationId String    @map("application_id") @db.Uuid
+  fromStatus    String?   @map("from_status") @db.VarChar(50)
+  toStatus      String    @map("to_status") @db.VarChar(50)
+  actor         String?   @db.VarChar(100)
+  reason        String?   @db.Text
+  metadata      Json?     @db.JsonB
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@map("application_audit_logs")
+}
+
+model ReviewTask {
+  id              String    @id @default(uuid()) @db.Uuid
+  applicationId   String    @map("application_id") @db.Uuid
+  stage           String    @db.VarChar(32) // PRIMARY, SECONDARY
+  status          String    @db.VarChar(32) // OPEN, ASSIGNED, COMPLETED, CANCELLED
+  assignedTo      String?   @map("assigned_to") @db.Uuid
+  lockedAt        DateTime? @map("locked_at")
+  lastHeartbeatAt DateTime? @map("last_heartbeat_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([applicationId, stage])
+  @@index([assignedTo, status])
+  @@map("review_tasks")
+}
+
+model Review {
+  id            String    @id @default(uuid()) @db.Uuid
+  applicationId String    @map("application_id") @db.Uuid
+  stage         String    @db.VarChar(50) // PRIMARY, SECONDARY
+  reviewerId    String    @map("reviewer_id") @db.Uuid
+  decision      String?   @db.VarChar(50) // APPROVED, REJECTED, PENDING, RETURNED
+  comment       String?   @db.Text
+  reviewedAt    DateTime? @map("reviewed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([applicationId])
+  @@index([reviewerId])
+  @@index([stage])
+  @@index([decision])
+  @@index([reviewedAt])
+  @@map("reviews")
+}
+
+model ExamReviewer {
+  id         BigInt   @id @default(autoincrement())
+  examId     String   @map("exam_id") @db.Uuid
+  reviewerId String   @map("reviewer_id") @db.Uuid
+  stage      String   @db.VarChar(32) // PRIMARY, SECONDARY
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([examId, reviewerId, stage])
+  @@index([examId])
+  @@index([reviewerId])
+  @@map("exam_reviewers")
+}
+
+model PaymentOrder {
+  id            String    @id @default(uuid()) @db.Uuid
+  applicationId String    @map("application_id") @db.Uuid
+  outTradeNo    String    @unique @map("out_trade_no") @db.VarChar(64)
+  amount        Decimal   @db.Decimal(10, 2)
+  currency      String    @db.VarChar(10)
+  channel       String    @db.VarChar(20) // ALIPAY, WECHAT, MOCK
+  status        String    @db.VarChar(20) // PENDING, PROCESSING, SUCCESS, FAILED, CANCELLED
+  transactionId String?   @map("transaction_id") @db.VarChar(128)
+  paymentParams String?   @map("payment_params") @db.Text
+  callbackData  String?   @map("callback_data") @db.Text
+  failureReason String?   @map("failure_reason") @db.VarChar(500)
+  paidAt        DateTime? @map("paid_at")
+  expiredAt     DateTime? @map("expired_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([applicationId])
+  @@index([transactionId])
+  @@index([status])
+  @@map("payment_orders")
+}
+
+model Ticket {
+  id              String    @id @default(uuid()) @db.Uuid
+  applicationId   String    @map("application_id") @db.Uuid
+  examId          String    @map("exam_id") @db.Uuid
+  positionId      String    @map("position_id") @db.Uuid
+  candidateId     String    @map("candidate_id") @db.Uuid
+  ticketNo        String    @unique @map("ticket_no") @db.VarChar(100)
+  ticketNumber    String    @map("ticket_number") @db.VarChar(100)
+  status          String    @db.VarChar(20) // ACTIVE, CANCELLED, PRINTED
+  candidateName   String?   @map("candidate_name") @db.VarChar(500)
+  candidateIdNumber String? @map("candidate_id_number") @db.VarChar(500)
+  candidatePhoto  String?   @map("candidate_photo") @db.VarChar(500)
+  examTitle       String?   @map("exam_title") @db.VarChar(200)
+  positionTitle   String?   @map("position_title") @db.VarChar(200)
+  examStartTime   DateTime? @map("exam_start_time")
+  examEndTime     DateTime? @map("exam_end_time")
+  venueName       String?   @map("venue_name") @db.VarChar(200)
+  roomNumber      String?   @map("room_number") @db.VarChar(50)
+  seatNumber      String?   @map("seat_number") @db.VarChar(50)
+  qrCode          String?   @map("qr_code") @db.Text
+  barcode         String?   @map("barcode") @db.VarChar(100)
+  issuedAt        DateTime  @map("issued_at")
+  printedAt       DateTime? @map("printed_at")
+  verifiedAt      DateTime? @map("verified_at")
+  cancelledAt     DateTime? @map("cancelled_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("tickets")
+}
+
+model SeatAssignment {
+  id            String   @id @default(uuid()) @db.Uuid
+  examId        String   @map("exam_id") @db.Uuid
+  positionId    String   @map("position_id") @db.Uuid
+  applicationId String   @unique @map("application_id") @db.Uuid
+  venueId       String   @map("venue_id") @db.Uuid
+  roomId        String?  @map("room_id") @db.Uuid
+  seatNo        Int      @map("seat_no")
+  seatLabel     String?  @map("seat_label") @db.VarChar(100)
+  batchId       String?  @map("batch_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([examId])
+  @@index([batchId])
+  @@map("seat_assignments")
+}
+
+model TicketNumberRule {
+  examId              String   @id @map("exam_id") @db.Uuid
+  customPrefix        String?  @map("custom_prefix") @db.VarChar(50)
+  includeExamCode     Boolean  @map("include_exam_code")
+  includeExamName     Boolean  @map("include_exam_name")
+  includePositionCode Boolean  @map("include_position_code")
+  includePositionName Boolean  @map("include_position_name")
+  dateFormat          String   @map("date_format") @db.VarChar(20)
+  sequenceLength      Int      @map("sequence_length")
+  sequenceStart       Int      @map("sequence_start")
+  dailyReset          Boolean  @map("daily_reset")
+  checksumType        String   @map("checksum_type") @db.VarChar(20)
+  separator           String   @map("separator") @db.VarChar(10)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("ticket_number_rules")
+}
+
+model TicketSequence {
+  examId       String   @map("exam_id") @db.Uuid
+  scope        String   @db.VarChar(16) // GLOBAL or DAILY
+  counterDate  DateTime @map("counter_date") @db.Date
+  currentValue BigInt   @map("current_value")
+
+  @@id([examId, scope, counterDate])
+  @@map("ticket_sequences")
+}
+
+model Venue {
+  id          String   @id @default(uuid()) @db.Uuid
+  examId      String   @map("exam_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  capacity    Int
+  seatMapJson Json?    @map("seat_map_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  rooms       Room[]
+
+  @@index([examId])
+  @@map("venues")
+}
+
+model Room {
+  id          String   @id @default(uuid()) @db.Uuid
+  venueId     String   @map("venue_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  code        String   @db.VarChar(64)
+  capacity    Int
+  floor       Int?
+  description String?  @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  venue       Venue    @relation(fields: [venueId], references: [id])
+
+  @@index([venueId])
+  @@map("rooms")
+}
+
+model AllocationBatch {
+  id              String   @id @default(uuid()) @db.Uuid
+  examId          String   @map("exam_id") @db.Uuid
+  strategy        String?  @db.Text
+  totalCandidates Int      @map("total_candidates")
+  totalAssigned   Int      @map("total_assigned")
+  totalVenues     Int      @map("total_venues")
+  createdAt       DateTime @default(now()) @map("created_at")
+  createdBy       String?  @map("created_by")
+
+  @@index([examId])
+  @@map("allocation_batches")
+}
+
+model FileRecord {
+  id              String   @id @default(uuid()) @db.Uuid
+  originalName    String   @map("original_name") @db.VarChar(255)
+  storedName      String   @unique @map("stored_name") @db.VarChar(255)
+  objectKey       String   @unique @map("object_key") @db.VarChar(255)
+  contentType     String?  @map("content_type") @db.VarChar(100)
+  fileSize        BigInt?  @map("file_size")
+  fieldKey        String?  @map("field_key") @db.VarChar(100)
+  applicationId   String?  @map("application_id") @db.Uuid
+  application     Application? @relation(fields: [applicationId], references: [id])
+  uploadedBy      String   @map("uploaded_by") @db.Uuid
+  status          String   @default("UPLOADING") @db.VarChar(50) // UPLOADING, UPLOADED, AVAILABLE, DELETED, EXPIRED, QUARANTINED
+  virusScanStatus String   @default("PENDING") @map("virus_scan_status") @db.VarChar(50) // PENDING, SCANNING, CLEAN, INFECTED, FAILED, SKIPPED
+  virusScanResult String?  @map("virus_scan_result") @db.Text
+  accessCount     Int      @default(0) @map("access_count")
+  lastAccessedAt  DateTime? @map("last_accessed_at")
+  expiresAt       DateTime? @map("expires_at")
+  metadata        Json?    @db.JsonB
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("files")
+}

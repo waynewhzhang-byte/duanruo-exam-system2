@@ -31,6 +31,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 interface Tenant {
   id: string
@@ -54,6 +62,10 @@ export default function SuperAdminTenantsPage() {
   const [activeOnly, setActiveOnly] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showDisableDialog, setShowDisableDialog] = useState(false)
+  const [showEnableDialog, setShowEnableDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showConfigDialog, setShowConfigDialog] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null)
   const [formData, setFormData] = useState({
     name: '',
@@ -72,7 +84,8 @@ export default function SuperAdminTenantsPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8081/api/v1/super-admin/tenants', {
+      // 请求更大的分页大小，避免分页限制（默认只返回10条）
+      const response = await fetch('/api/v1/super-admin/tenants?page=0&size=100', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -81,15 +94,21 @@ export default function SuperAdminTenantsPage() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('📥 获取到的租户数据:', data);
+        console.log('📊 数据类型:', typeof data, '是否有content:', !!data?.content, '是否数组:', Array.isArray(data));
+
         // 后端返回格式: { content: [...], totalElements, totalPages, ... }
         if (data && Array.isArray(data.content)) {
+          console.log('✅ 使用 data.content, 租户数量:', data.content.length);
           setTenants(data.content);
         } else if (Array.isArray(data)) {
+          console.log('✅ 直接使用 data 数组, 租户数量:', data.length);
           setTenants(data);
         } else if (data && Array.isArray(data.data)) {
+          console.log('✅ 使用 data.data, 租户数量:', data.data.length);
           setTenants(data.data);
         } else {
-          console.error('Invalid tenants data format:', data);
+          console.error('❌ Invalid tenants data format:', data);
           setTenants([]);
         }
       } else {
@@ -108,7 +127,9 @@ export default function SuperAdminTenantsPage() {
   const handleCreateTenant = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8081/api/v1/super-admin/tenants', {
+
+      // 1. 创建租户
+      const response = await fetch('/api/v1/super-admin/tenants', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -124,18 +145,41 @@ export default function SuperAdminTenantsPage() {
       });
 
       if (response.ok) {
+        const result = await response.json();
+        const tenant = result.data || result;
+        console.log('✅ 租户创建成功:', tenant);
+
+        // 2. 自动激活租户
+        const activateResponse = await fetch(
+          `/api/v1/super-admin/tenants/${tenant.id}/activate`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (activateResponse.ok) {
+          console.log('✅ 租户已自动激活');
+          toast.success('租户创建并激活成功');
+        } else {
+          console.warn('⚠️ 租户创建成功，但自动激活失败');
+          toast.warning('租户创建成功，但自动激活失败，请手动启用');
+        }
+
         setShowCreateDialog(false);
-        setFormData({ name: '', slug: '', contactName: '', contactPhone: '', contactEmail: '' });
+        setFormData({ name: '', slug: '', contactName: '', contactPhone: '', contactEmail: '', description: '' });
         fetchTenants();
-        alert('租户创建成功');
       } else {
         const errorText = await response.text();
-        console.error('Failed to create tenant:', response.status, errorText);
-        alert('创建租户失败: ' + errorText);
+        console.error('创建租户失败:', response.status, errorText);
+        toast.error('创建租户失败: ' + errorText);
       }
     } catch (error) {
-      console.error('Failed to create tenant:', error);
-      alert('创建租户失败: ' + error);
+      console.error('创建租户失败:', error);
+      toast.error('创建租户失败: ' + error);
     }
   };
 
@@ -144,7 +188,7 @@ export default function SuperAdminTenantsPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8081/api/v1/super-admin/tenants/${selectedTenant.id}/deactivate`, {
+      const response = await fetch(`/api/v1/super-admin/tenants/${selectedTenant.id}/deactivate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -173,7 +217,7 @@ export default function SuperAdminTenantsPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8081/api/v1/super-admin/tenants/${selectedTenant.id}/activate`, {
+      const response = await fetch(`/api/v1/super-admin/tenants/${selectedTenant.id}/activate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -202,7 +246,7 @@ export default function SuperAdminTenantsPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8081/api/v1/super-admin/tenants/${selectedTenant.id}`, {
+      const response = await fetch(`/api/v1/super-admin/tenants/${selectedTenant.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -224,90 +268,95 @@ export default function SuperAdminTenantsPage() {
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">租户管理</h1>
+        <div>
+          <h1 className="text-3xl font-bold">租户管理</h1>
+          <p className="text-sm text-gray-600 mt-2">总共 {tenants.length} 个租户</p>
+        </div>
         <Button onClick={() => setShowCreateDialog(true)}>创建租户</Button>
       </div>
 
       {loading ? (
         <div>加载中...</div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>租户名称</TableHead>
-              <TableHead>租户标识</TableHead>
-              <TableHead>联系人</TableHead>
-              <TableHead>联系电话</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead>操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tenants.map((tenant) => (
-              <TableRow key={tenant.id}>
-                <TableCell>{tenant.name}</TableCell>
-                <TableCell>{tenant.slug}</TableCell>
-                <TableCell>{tenant.contactName || '-'}</TableCell>
-                <TableCell>{tenant.contactPhone || '-'}</TableCell>
-                <TableCell>
-                  <Badge variant={tenant.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                    {tenant.status === 'ACTIVE' ? '启用' : '禁用'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedTenant(tenant);
-                        setShowConfigDialog(true);
-                      }}
-                    >
-                      配置
-                    </Button>
-                    {tenant.status === 'ACTIVE' ? (
-                      <Button
-                        data-testid="btn-disable-tenant"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTenant(tenant);
-                          setShowDisableDialog(true);
-                        }}
-                      >
-                        禁用
-                      </Button>
-                    ) : (
-                      <Button
-                        data-testid="btn-enable-tenant"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTenant(tenant);
-                          setShowEnableDialog(true);
-                        }}
-                      >
-                        启用
-                      </Button>
-                    )}
-                    <Button
-                      data-testid="btn-delete-tenant"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedTenant(tenant);
-                        setShowDeleteDialog(true);
-                      }}
-                    >
-                      删除
-                    </Button>
-                  </div>
-                </TableCell>
+        <div className="max-h-[600px] overflow-y-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>租户名称</TableHead>
+                <TableHead>租户标识</TableHead>
+                <TableHead>联系人</TableHead>
+                <TableHead>联系电话</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead>操作</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {tenants.map((tenant) => (
+                <TableRow key={tenant.id}>
+                  <TableCell>{tenant.name}</TableCell>
+                  <TableCell>{tenant.slug}</TableCell>
+                  <TableCell>{tenant.contactName || '-'}</TableCell>
+                  <TableCell>{tenant.contactPhone || '-'}</TableCell>
+                  <TableCell>
+                    <Badge variant={tenant.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                      {tenant.status === 'ACTIVE' ? '启用' : '禁用'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTenant(tenant);
+                          setShowConfigDialog(true);
+                        }}
+                      >
+                        配置
+                      </Button>
+                      {tenant.status === 'ACTIVE' ? (
+                        <Button
+                          data-testid="btn-disable-tenant"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTenant(tenant);
+                            setShowDisableDialog(true);
+                          }}
+                        >
+                          禁用
+                        </Button>
+                      ) : (
+                        <Button
+                          data-testid="btn-enable-tenant"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTenant(tenant);
+                            setShowEnableDialog(true);
+                          }}
+                        >
+                          启用
+                        </Button>
+                      )}
+                      <Button
+                        data-testid="btn-delete-tenant"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTenant(tenant);
+                          setShowDeleteDialog(true);
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       {/* 创建租户对话框 */}

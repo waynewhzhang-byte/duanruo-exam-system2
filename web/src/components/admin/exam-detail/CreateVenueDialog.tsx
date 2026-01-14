@@ -15,10 +15,11 @@ interface CreateVenueDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   examId: string
+  tenantId: string
   onSuccess: () => void
 }
 
-export default function CreateVenueDialog({ open, onOpenChange, examId, onSuccess }: Readonly<CreateVenueDialogProps>) {
+export default function CreateVenueDialog({ open, onOpenChange, examId, tenantId, onSuccess }: Readonly<CreateVenueDialogProps>) {
   const createMutation = useCreateVenue()
 
   const {
@@ -36,7 +37,7 @@ export default function CreateVenueDialog({ open, onOpenChange, examId, onSucces
 
   const onSubmit = async (data: CreateVenueRequestType) => {
     try {
-      await createMutation.mutateAsync({ examId, data })
+      await createMutation.mutateAsync({ examId, data, tenantId })
       toast.success('考场创建成功')
       reset()
       onSuccess()

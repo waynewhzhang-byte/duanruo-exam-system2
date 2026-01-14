@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useCreatePosition } from '@/lib/api-hooks'
 import { CreatePositionRequest, CreatePositionRequestType } from '@/lib/schemas'
+import { useTenant } from '@/hooks/useTenant'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 
@@ -21,6 +22,7 @@ interface CreatePositionDialogProps {
 
 export default function CreatePositionDialog({ open, onOpenChange, examId, onSuccess }: CreatePositionDialogProps) {
   const createMutation = useCreatePosition()
+  const { tenant } = useTenant()
 
   const {
     register,
@@ -36,7 +38,11 @@ export default function CreatePositionDialog({ open, onOpenChange, examId, onSuc
 
   const onSubmit = async (data: CreatePositionRequestType) => {
     try {
-      await createMutation.mutateAsync(data)
+      if (!tenant?.id) {
+        toast.error('租户信息未加载')
+        return
+      }
+      await createMutation.mutateAsync({ ...data, tenantId: tenant.id })
       toast.success('岗位创建成功')
       reset({ examId })
       onSuccess()

@@ -12,7 +12,8 @@ import {
   Menu,
   LogOut,
   User,
-  ChevronDown
+  ChevronDown,
+  History
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,6 +49,11 @@ const navigationItems = [
     href: '/reviewer/tasks',
     label: '我的任务',
     icon: ClipboardCheck,
+  },
+  {
+    href: '/reviewer/history',
+    label: '审核历史',
+    icon: History,
   },
 ];
 

@@ -3,13 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { RegisterRequest, type RegisterRequestType } from '@/types/auth'
+import { RegisterRequest } from '@/types/auth'
 import { apiPost } from '@/lib/api'
 
 export default function RegisterPage() {
   const router = useRouter()
-  
-  const [formData, setFormData] = useState<RegisterRequestType>({
+
+  const [formData, setFormData] = useState<RegisterRequest>({
     username: '',
     email: '',
     password: '',
@@ -28,17 +28,17 @@ export default function RegisterPage() {
     try {
       // Validate form data
       const validatedData = RegisterRequest.parse(formData)
-      
+
       // Call register API
       await apiPost('/auth/register', validatedData)
-      
+
       setSuccess(true)
-      
+
       // Redirect to login after 2 seconds
       setTimeout(() => {
         router.push('/login?message=registration_success')
       }, 2000)
-      
+
     } catch (error: any) {
       if (error.name === 'ZodError') {
         const fieldErrors: Record<string, string> = {}
@@ -56,10 +56,10 @@ export default function RegisterPage() {
     }
   }
 
-  const handleInputChange = (field: keyof RegisterRequestType) => (
+  const handleInputChange = (field: keyof RegisterRequest) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setFormData(prev => ({ ...prev, [field]: e.target.value }))
+    setFormData((prev: RegisterRequest) => ({ ...prev, [field]: e.target.value }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
@@ -103,14 +103,14 @@ export default function RegisterPage() {
             创建您的考试报名账号
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {errors.general && (
             <div className="bg-danger-50 border border-danger-200 text-danger-700 px-4 py-3 rounded">
               {errors.general}
             </div>
           )}
-          
+
           <div className="space-y-4">
             <div>
               <label htmlFor="fullName" className="label">
@@ -130,7 +130,7 @@ export default function RegisterPage() {
                 <p className="mt-1 text-sm text-danger-600">{errors.fullName}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="username" className="label">
                 用户名 *
@@ -150,7 +150,7 @@ export default function RegisterPage() {
                 <p className="mt-1 text-sm text-danger-600">{errors.username}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="email" className="label">
                 邮箱 *
@@ -170,7 +170,7 @@ export default function RegisterPage() {
                 <p className="mt-1 text-sm text-danger-600">{errors.email}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="password" className="label">
                 密码 *
@@ -190,7 +190,7 @@ export default function RegisterPage() {
                 <p className="mt-1 text-sm text-danger-600">{errors.password}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="confirmPassword" className="label">
                 确认密码 *

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useForm, UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -22,6 +22,7 @@ interface DynamicFormProps {
   // 用于表单提交的额外参数
   examId?: string
   positionId?: string
+  tenantId?: string // Optional: for file uploads when not in TenantProvider context
 }
 
 // 根据模板生成 zod 验证模式
@@ -167,6 +168,7 @@ export default function DynamicForm({
   onSaveDraft,
   isSubmitting = false,
   className = '',
+  tenantId,
 }: DynamicFormProps) {
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
 
@@ -201,7 +203,11 @@ export default function DynamicForm({
     return { ...defaults, ...initialData }
   }
 
-  const validationSchema = generateValidationSchema(template)
+  const validationSchema = useMemo(
+    () => generateValidationSchema(template),
+    [template]
+  )
+
   const form = useForm({
     resolver: zodResolver(validationSchema as any),
     defaultValues: generateDefaultValues(),
@@ -337,6 +343,7 @@ export default function DynamicForm({
                             field={field}
                             form={form}
                             template={template}
+                            tenantId={tenantId}
                           />
                         </div>
                       ))}

@@ -4,11 +4,13 @@ import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Building2, Plus, Edit, Trash2, Users } from 'lucide-react'
+import { Building2, Plus, Edit, Trash2, Users, DoorOpen } from 'lucide-react'
 import { useExamVenues, useDeleteVenue } from '@/lib/api-hooks'
 import { toast } from 'sonner'
 import CreateVenueDialog from './CreateVenueDialog'
 import EditVenueDialog from './EditVenueDialog'
+import RoomManagement from './RoomManagement'
+import { useTenant } from '@/hooks/useTenant'
 
 interface ExamVenuesProps {
   examId: string
@@ -18,8 +20,10 @@ export default function ExamVenues({ examId }: ExamVenuesProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedVenue, setSelectedVenue] = useState<any>(null)
+  const [roomManagementVenue, setRoomManagementVenue] = useState<any>(null)
 
-  const { data: venuesData, isLoading, refetch } = useExamVenues(examId)
+  const { tenant } = useTenant()
+  const { data: venuesData, isLoading, refetch } = useExamVenues(examId, tenant?.id)
   const deleteVenueMutation = useDeleteVenue()
 
   const venues = venuesData?.items || []
@@ -34,8 +38,13 @@ export default function ExamVenues({ examId }: ExamVenuesProps) {
       return
     }
 
+    if (!tenant?.id) {
+      toast.error('租户信息未找到')
+      return
+    }
+
     try {
-      await deleteVenueMutation.mutateAsync(venue.venueId)
+      await deleteVenueMutation.mutateAsync({ venueId: venue.venueId, tenantId: tenant.id })
       toast.success('考场删除成功')
       refetch()
     } catch (error: any) {
@@ -87,6 +96,15 @@ export default function ExamVenues({ examId }: ExamVenuesProps) {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => setRoomManagementVenue(venue)}
+                    className="flex-1"
+                  >
+                    <DoorOpen className="h-3 w-3 mr-1" />
+                    教室
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleEditVenue(venue)}
                     className="flex-1"
                   >
@@ -111,27 +129,40 @@ export default function ExamVenues({ examId }: ExamVenuesProps) {
       </CardContent>
 
       {/* Create Venue Dialog */}
-      <CreateVenueDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        examId={examId}
-        onSuccess={() => {
-          refetch()
-          setCreateDialogOpen(false)
-        }}
-      />
+      {tenant?.id && (
+        <CreateVenueDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          examId={examId}
+          tenantId={tenant.id}
+          onSuccess={() => {
+            refetch()
+            setCreateDialogOpen(false)
+          }}
+        />
+      )}
 
       {/* Edit Venue Dialog */}
-      {selectedVenue && (
+      {selectedVenue && tenant?.id && (
         <EditVenueDialog
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           venue={selectedVenue}
+          tenantId={tenant.id}
           onSuccess={() => {
             refetch()
             setEditDialogOpen(false)
             setSelectedVenue(null)
           }}
+        />
+      )}
+
+      {/* Room Management Dialog */}
+      {roomManagementVenue && (
+        <RoomManagement
+          venueId={roomManagementVenue.venueId}
+          venueName={roomManagementVenue.name}
+          onClose={() => setRoomManagementVenue(null)}
         />
       )}
     </Card>

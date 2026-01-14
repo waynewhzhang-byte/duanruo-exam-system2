@@ -20,15 +20,15 @@ export default function NavigationWrapper() {
   // 转换用户数据格式以匹配ConditionalNavigation的props
   const navigationUser = user ? {
     id: user.id,
-    name: user.name,
+    name: user.fullName || user.username || '',
     email: user.email,
     roles: user.roles || [],
   } : undefined;
 
   return (
-    <ConditionalNavigation 
-      user={navigationUser} 
-      onSignOut={handleSignOut} 
+    <ConditionalNavigation
+      user={navigationUser}
+      onSignOut={handleSignOut}
     />
   );
 }

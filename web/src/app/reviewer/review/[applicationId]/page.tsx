@@ -96,6 +96,7 @@ export default function ReviewDetailPage() {
       setShowRejectDialog(false)
       alert('审核拒绝成功')
       router.push('/reviewer/queue')
+    } catch (error) {
       console.error('Failed to reject:', error)
       alert('审核失败，请重试')
     } finally {

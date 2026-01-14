@@ -16,9 +16,10 @@ interface DynamicFieldProps {
   field: FormFieldType
   form: UseFormReturn<any>
   template: FormTemplate
+  tenantId?: string // Optional: for file uploads when not in TenantProvider context
 }
 
-export default function DynamicField({ field, form, template }: DynamicFieldProps) {
+export default function DynamicField({ field, form, template, tenantId }: DynamicFieldProps) {
   const renderField = () => {
     switch (field.type) {
       case 'text':
@@ -311,6 +312,7 @@ export default function DynamicField({ field, form, template }: DynamicFieldProp
             multiple={field.fileConfig.maxFiles > 1}
             required={field.required}
             category={field.fileConfig.category}
+            tenantId={tenantId}
           />
         )
 

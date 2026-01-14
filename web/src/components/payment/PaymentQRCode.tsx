@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 interface PaymentQRCodeProps {
   qrCodeUrl: string
-  paymentMethod: 'ALIPAY' | 'WECHAT'
+  paymentMethod: 'ALIPAY' | 'WECHAT' | 'MOCK'
   orderNo?: string
   onRefresh?: () => void
   isRefreshing?: boolean
@@ -22,7 +22,7 @@ export function PaymentQRCode({
 }: PaymentQRCodeProps) {
   const [imageError, setImageError] = useState(false)
 
-  const methodName = paymentMethod === 'ALIPAY' ? '支付宝' : '微信'
+  const methodName = paymentMethod === 'ALIPAY' ? '支付宝' : paymentMethod === 'WECHAT' ? '微信' : '模拟支付'
 
   return (
     <Card>

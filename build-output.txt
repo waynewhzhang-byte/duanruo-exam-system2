@@ -1,0 +1,173 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] Exam Registration System                                           [pom]
+[INFO] Exam Registration - Shared                                         [jar]
+[INFO] Exam Registration - Domain                                         [jar]
+[INFO] Exam Registration - Application                                    [jar]
+[INFO] Exam Registration - Infrastructure                                 [jar]
+[INFO] Exam Registration - REST Adapter                                   [jar]
+[INFO] Exam Registration - Scheduler Adapter                              [jar]
+[INFO] Exam Registration - Bootstrap                                      [jar]
+[INFO] 
+[INFO] -------------------< com.duanruo:exam-registration >--------------------
+[INFO] Building Exam Registration System 0.0.1-SNAPSHOT                   [1/8]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ exam-registration ---
+[INFO] 
+[INFO] ----------------------< com.duanruo:exam-shared >-----------------------
+[INFO] Building Exam Registration - Shared 0.0.1-SNAPSHOT                 [2/8]
+[INFO]   from exam-shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ exam-shared ---
+[INFO] Deleting D:\duanruo-exam-system2\exam-shared\target
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ exam-shared ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\duanruo-exam-system2\exam-shared\src\main\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:compile (default-compile) @ exam-shared ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 14 source files with javac [debug target 21] to target\classes
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ exam-shared ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\duanruo-exam-system2\exam-shared\src\test\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:testCompile (default-testCompile) @ exam-shared ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- maven-surefire-plugin:3.2.5:test (default-test) @ exam-shared ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- maven-jar-plugin:2.4:jar (default-jar) @ exam-shared ---
+[INFO] Building jar: D:\duanruo-exam-system2\exam-shared\target\exam-shared-0.0.1-SNAPSHOT.jar
+[INFO] 
+[INFO] ----------------------< com.duanruo:exam-domain >-----------------------
+[INFO] Building Exam Registration - Domain 0.0.1-SNAPSHOT                 [3/8]
+[INFO]   from exam-domain\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ exam-domain ---
+[INFO] Deleting D:\duanruo-exam-system2\exam-domain\target
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ exam-domain ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\duanruo-exam-system2\exam-domain\src\main\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:compile (default-compile) @ exam-domain ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 115 source files with javac [debug target 21] to target\classes
+[INFO] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/tenant/UserTenantRole.java: D:\duanruo-exam-system2\exam-domain\src\main\java\com\duanruo\exam\domain\tenant\UserTenantRole.java使用或覆盖了已过时的 API。
+[INFO] /D:/duanruo-exam-system2/exam-domain/src/main/java/com/duanruo/exam/domain/tenant/UserTenantRole.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ exam-domain ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\duanruo-exam-system2\exam-domain\src\test\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:testCompile (default-testCompile) @ exam-domain ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 12 source files with javac [debug target 21] to target\test-classes
+[INFO] 
+[INFO] --- maven-surefire-plugin:3.2.5:test (default-test) @ exam-domain ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- maven-jar-plugin:2.4:jar (default-jar) @ exam-domain ---
+[INFO] Building jar: D:\duanruo-exam-system2\exam-domain\target\exam-domain-0.0.1-SNAPSHOT.jar
+[INFO] 
+[INFO] --------------------< com.duanruo:exam-application >--------------------
+[INFO] Building Exam Registration - Application 0.0.1-SNAPSHOT            [4/8]
+[INFO]   from exam-application\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ exam-application ---
+[INFO] Deleting D:\duanruo-exam-system2\exam-application\target
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ exam-application ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\duanruo-exam-system2\exam-application\src\main\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:compile (default-compile) @ exam-application ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 133 source files with javac [debug target 21] to target\classes
+[INFO] /D:/duanruo-exam-system2/exam-application/src/main/java/com/duanruo/exam/application/service/AuthenticationService.java: D:\duanruo-exam-system2\exam-application\src\main\java\com\duanruo\exam\application\service\AuthenticationService.java使用或覆盖了已过时的 API。
+[INFO] /D:/duanruo-exam-system2/exam-application/src/main/java/com/duanruo/exam/application/service/AuthenticationService.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] /D:/duanruo-exam-system2/exam-application/src/main/java/com/duanruo/exam/application/adapter/RuleConfigAdapter.java: D:\duanruo-exam-system2\exam-application\src\main\java\com\duanruo\exam\application\adapter\RuleConfigAdapter.java使用了未经检查或不安全的操作。
+[INFO] /D:/duanruo-exam-system2/exam-application/src/main/java/com/duanruo/exam/application/adapter/RuleConfigAdapter.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ exam-application ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\duanruo-exam-system2\exam-application\src\test\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.11.0:testCompile (default-testCompile) @ exam-application ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 9 source files with javac [debug target 21] to target\test-classes
+[INFO] /D:/duanruo-exam-system2/exam-application/src/test/java/com/duanruo/exam/application/service/UserDirectoryApplicationServiceTest.java: D:\duanruo-exam-system2\exam-application\src\test\java\com\duanruo\exam\application\service\UserDirectoryApplicationServiceTest.java使用或覆盖了已过时的 API。
+[INFO] /D:/duanruo-exam-system2/exam-application/src/test/java/com/duanruo/exam/application/service/UserDirectoryApplicationServiceTest.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] /D:/duanruo-exam-system2/exam-application/src/test/java/com/duanruo/exam/application/adapter/RuleConfigAdapterTest.java: D:\duanruo-exam-system2\exam-application\src\test\java\com\duanruo\exam\application\adapter\RuleConfigAdapterTest.java使用了未经检查或不安全的操作。
+[INFO] /D:/duanruo-exam-system2/exam-application/src/test/java/com/duanruo/exam/application/adapter/RuleConfigAdapterTest.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/duanruo-exam-system2/exam-application/src/test/java/com/duanruo/exam/application/service/NotificationHooksTest.java:[61,45] 对于ApplicationApplicationService(com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.ApplicationFileAttachmentPort,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository,com.duanruo.exam.domain.exam.PositionRepository,com.duanruo.exam.application.service.ReviewApplicationService,com.duanruo.exam.domain.rule.RuleEngine,com.duanruo.exam.domain.file.AttachmentValidationService,com.duanruo.exam.domain.tenant.UserTenantRoleRepository,com.duanruo.exam.application.port.TenantContextPort), 找不到合适的构造器
+    构造器 com.duanruo.exam.application.service.ApplicationApplicationService.ApplicationApplicationService(com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.ApplicationFileAttachmentPort,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository,com.duanruo.exam.domain.exam.PositionRepository,com.duanruo.exam.domain.user.UserRepository,com.duanruo.exam.application.service.ReviewApplicationService,com.duanruo.exam.domain.rule.RuleEngine,com.duanruo.exam.domain.file.AttachmentValidationService,com.duanruo.exam.domain.tenant.UserTenantRoleRepository,com.duanruo.exam.application.port.TenantContextPort)不适用
+      (实际参数列表和形式参数列表长度不同)
+    构造器 com.duanruo.exam.application.service.ApplicationApplicationService.ApplicationApplicationService(com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.ApplicationFileAttachmentPort,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository)不适用
+      (实际参数列表和形式参数列表长度不同)
+[ERROR] /D:/duanruo-exam-system2/exam-application/src/test/java/com/duanruo/exam/application/service/NotificationHooksTest.java:[115,45] 对于ApplicationApplicationService(com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.ApplicationFileAttachmentPort,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository,com.duanruo.exam.domain.exam.PositionRepository,com.duanruo.exam.application.service.ReviewApplicationService,com.duanruo.exam.domain.rule.RuleEngine,com.duanruo.exam.domain.file.AttachmentValidationService,com.duanruo.exam.domain.tenant.UserTenantRoleRepository,com.duanruo.exam.application.port.TenantContextPort), 找不到合适的构造器
+    构造器 com.duanruo.exam.application.service.ApplicationApplicationService.ApplicationApplicationService(com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.ApplicationFileAttachmentPort,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository,com.duanruo.exam.domain.exam.PositionRepository,com.duanruo.exam.domain.user.UserRepository,com.duanruo.exam.application.service.ReviewApplicationService,com.duanruo.exam.domain.rule.RuleEngine,com.duanruo.exam.domain.file.AttachmentValidationService,com.duanruo.exam.domain.tenant.UserTenantRoleRepository,com.duanruo.exam.application.port.TenantContextPort)不适用
+      (实际参数列表和形式参数列表长度不同)
+    构造器 com.duanruo.exam.application.service.ApplicationApplicationService.ApplicationApplicationService(com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.ApplicationFileAttachmentPort,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository)不适用
+      (实际参数列表和形式参数列表长度不同)
+[ERROR] /D:/duanruo-exam-system2/exam-application/src/test/java/com/duanruo/exam/application/service/NotificationHooksTest.java:[161,46] 无法将类 com.duanruo.exam.application.service.TicketApplicationService中的构造器 TicketApplicationService应用到给定类型;
+  需要: com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository,com.duanruo.exam.domain.exam.PositionRepository,com.duanruo.exam.application.service.TicketNumberRuleApplicationService,com.duanruo.exam.domain.ticket.TicketRepository,com.duanruo.exam.domain.seating.SeatAssignmentRepository,com.duanruo.exam.domain.venue.VenueRepository,com.duanruo.exam.domain.venue.RoomRepository,com.duanruo.exam.domain.user.UserRepository
+  找到:    com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository,com.duanruo.exam.domain.exam.PositionRepository,com.duanruo.exam.application.service.TicketNumberRuleApplicationService,com.duanruo.exam.domain.ticket.TicketRepository
+  原因: 实际参数列表和形式参数列表长度不同
+[INFO] 3 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for Exam Registration System 0.0.1-SNAPSHOT:
+[INFO] 
+[INFO] Exam Registration System ........................... SUCCESS [  0.179 s]
+[INFO] Exam Registration - Shared ......................... SUCCESS [  3.362 s]
+[INFO] Exam Registration - Domain ......................... SUCCESS [  3.675 s]
+[INFO] Exam Registration - Application .................... FAILURE [  3.758 s]
+[INFO] Exam Registration - Infrastructure ................. SKIPPED
+[INFO] Exam Registration - REST Adapter ................... SKIPPED
+[INFO] Exam Registration - Scheduler Adapter .............. SKIPPED
+[INFO] Exam Registration - Bootstrap ...................... SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  11.636 s
+[INFO] Finished at: 2025-12-03T03:11:56+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:testCompile (default-testCompile) on project exam-application: Compilation failure: Compilation failure: 
+[ERROR] /D:/duanruo-exam-system2/exam-application/src/test/java/com/duanruo/exam/application/service/NotificationHooksTest.java:[61,45] 对于ApplicationApplicationService(com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.ApplicationFileAttachmentPort,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository,com.duanruo.exam.domain.exam.PositionRepository,com.duanruo.exam.application.service.ReviewApplicationService,com.duanruo.exam.domain.rule.RuleEngine,com.duanruo.exam.domain.file.AttachmentValidationService,com.duanruo.exam.domain.tenant.UserTenantRoleRepository,com.duanruo.exam.application.port.TenantContextPort), 找不到合适的构造器
+[ERROR]     构造器 com.duanruo.exam.application.service.ApplicationApplicationService.ApplicationApplicationService(com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.ApplicationFileAttachmentPort,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository,com.duanruo.exam.domain.exam.PositionRepository,com.duanruo.exam.domain.user.UserRepository,com.duanruo.exam.application.service.ReviewApplicationService,com.duanruo.exam.domain.rule.RuleEngine,com.duanruo.exam.domain.file.AttachmentValidationService,com.duanruo.exam.domain.tenant.UserTenantRoleRepository,com.duanruo.exam.application.port.TenantContextPort)不适用
+[ERROR]       (实际参数列表和形式参数列表长度不同)
+[ERROR]     构造器 com.duanruo.exam.application.service.ApplicationApplicationService.ApplicationApplicationService(com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.ApplicationFileAttachmentPort,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository)不适用
+[ERROR]       (实际参数列表和形式参数列表长度不同)
+[ERROR] /D:/duanruo-exam-system2/exam-application/src/test/java/com/duanruo/exam/application/service/NotificationHooksTest.java:[115,45] 对于ApplicationApplicationService(com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.ApplicationFileAttachmentPort,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository,com.duanruo.exam.domain.exam.PositionRepository,com.duanruo.exam.application.service.ReviewApplicationService,com.duanruo.exam.domain.rule.RuleEngine,com.duanruo.exam.domain.file.AttachmentValidationService,com.duanruo.exam.domain.tenant.UserTenantRoleRepository,com.duanruo.exam.application.port.TenantContextPort), 找不到合适的构造器
+[ERROR]     构造器 com.duanruo.exam.application.service.ApplicationApplicationService.ApplicationApplicationService(com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.ApplicationFileAttachmentPort,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository,com.duanruo.exam.domain.exam.PositionRepository,com.duanruo.exam.domain.user.UserRepository,com.duanruo.exam.application.service.ReviewApplicationService,com.duanruo.exam.domain.rule.RuleEngine,com.duanruo.exam.domain.file.AttachmentValidationService,com.duanruo.exam.domain.tenant.UserTenantRoleRepository,com.duanruo.exam.application.port.TenantContextPort)不适用
+[ERROR]       (实际参数列表和形式参数列表长度不同)
+[ERROR]     构造器 com.duanruo.exam.application.service.ApplicationApplicationService.ApplicationApplicationService(com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.ApplicationFileAttachmentPort,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository)不适用
+[ERROR]       (实际参数列表和形式参数列表长度不同)
+[ERROR] /D:/duanruo-exam-system2/exam-application/src/test/java/com/duanruo/exam/application/service/NotificationHooksTest.java:[161,46] 无法将类 com.duanruo.exam.application.service.TicketApplicationService中的构造器 TicketApplicationService应用到给定类型;
+[ERROR]   需要: com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository,com.duanruo.exam.domain.exam.PositionRepository,com.duanruo.exam.application.service.TicketNumberRuleApplicationService,com.duanruo.exam.domain.ticket.TicketRepository,com.duanruo.exam.domain.seating.SeatAssignmentRepository,com.duanruo.exam.domain.venue.VenueRepository,com.duanruo.exam.domain.venue.RoomRepository,com.duanruo.exam.domain.user.UserRepository
+[ERROR]   找到:    com.duanruo.exam.domain.application.ApplicationRepository,com.duanruo.exam.domain.application.ApplicationAuditLogRepository,com.duanruo.exam.application.port.NotificationPort,com.duanruo.exam.domain.exam.ExamRepository,com.duanruo.exam.domain.exam.PositionRepository,com.duanruo.exam.application.service.TicketNumberRuleApplicationService,com.duanruo.exam.domain.ticket.TicketRepository
+[ERROR]   原因: 实际参数列表和形式参数列表长度不同
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :exam-application

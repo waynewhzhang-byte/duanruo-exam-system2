@@ -4,8 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { TenantType, TenantContextType, Tenant } from '@/types/tenant'
 import { apiGet } from '@/lib/api'
 
-// Create context
-const TenantContext = createContext<TenantContextType | null>(null)
+// Create context - exported for direct useContext usage in components that may be outside TenantProvider
+export const TenantContext = createContext<TenantContextType | null>(null)
 
 // Provider props
 interface TenantProviderProps {

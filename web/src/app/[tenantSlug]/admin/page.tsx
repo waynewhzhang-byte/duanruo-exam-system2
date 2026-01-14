@@ -62,14 +62,6 @@ export default function TenantAdminDashboard() {
       color: 'text-pink-600',
       bgColor: 'bg-pink-50'
     },
-    {
-      title: '系统设置',
-      description: '配置系统参数',
-      icon: <Settings className="h-8 w-8" />,
-      href: `/${tenantSlug}/admin/settings`,
-      color: 'text-gray-600',
-      bgColor: 'bg-gray-50'
-    }
   ]
 
   return (

@@ -3,16 +3,17 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useTenant } from '@/hooks/useTenant'
-import { apiGet } from '@/lib/api'
+import { apiGetWithTenant } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/loading'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, CheckCircle2, XCircle, Clock, CreditCard, Download, AlertTriangle, FileText, Award, TrendingUp } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, XCircle, Clock, CreditCard, Download, AlertTriangle, FileText, Award, TrendingUp, Eye, Image as ImageIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import { useState } from 'react'
 
 interface Application {
   id: string
@@ -25,7 +26,7 @@ interface Application {
   submittedAt: string
   updatedAt: string
   payload: Record<string, any>
-  attachments: any[]
+  attachments: Attachment[]
   feeRequired: boolean
   feeAmount: number
   feePaid: boolean
@@ -33,6 +34,26 @@ interface Application {
   secondaryReviewComment?: string
   primaryReviewedAt?: string
   secondaryReviewedAt?: string
+}
+
+interface Attachment {
+  fileId: string
+  fieldKey: string
+  fileName: string
+  fileSize: number
+  contentType: string
+  virusScanStatus?: string
+  uploadedAt?: string
+}
+
+interface FormField {
+  fieldKey: string
+  label: string
+  fieldType: string
+}
+
+interface FormTemplate {
+  fields: FormField[]
 }
 
 interface AuditLog {
@@ -46,10 +67,15 @@ interface AuditLog {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
+  DRAFT: { label: '草稿', icon: Clock, color: 'text-gray-500' },
   SUBMITTED: { label: '已提交', icon: Clock, color: 'text-blue-600' },
+  AUTO_REJECTED: { label: '自动审核未通过', icon: XCircle, color: 'text-red-600' },
+  AUTO_PASSED: { label: '自动审核通过', icon: CheckCircle2, color: 'text-green-600' },
+  PENDING_PRIMARY_REVIEW: { label: '待初审', icon: Clock, color: 'text-yellow-600' },
   PRIMARY_PASSED: { label: '初审通过', icon: CheckCircle2, color: 'text-green-600' },
   PRIMARY_REJECTED: { label: '初审未通过', icon: XCircle, color: 'text-red-600' },
-  APPROVED: { label: '复审通过', icon: CheckCircle2, color: 'text-green-600' },
+  PENDING_SECONDARY_REVIEW: { label: '待复审', icon: Clock, color: 'text-yellow-600' },
+  APPROVED: { label: '审核通过', icon: CheckCircle2, color: 'text-green-600' },
   SECONDARY_REJECTED: { label: '复审未通过', icon: XCircle, color: 'text-red-600' },
   PAID: { label: '已缴费', icon: CheckCircle2, color: 'text-green-600' },
   TICKET_ISSUED: { label: '已发证', icon: CheckCircle2, color: 'text-green-600' },
@@ -65,24 +91,71 @@ export default function ApplicationDetailPage() {
   const tenantSlug = params.tenantSlug as string
   const router = useRouter()
   const { tenant, isLoading: tenantLoading } = useTenant()
+  const [previewAttachment, setPreviewAttachment] = useState<{url: string, name: string, type: string} | null>(null)
 
   // Fetch application details
   const { data: application, isLoading: applicationLoading } = useQuery<Application>({
     queryKey: ['application', applicationId],
     queryFn: async () => {
-      return apiGet<Application>(`/applications/${applicationId}`)
+      if (!tenant?.id) throw new Error('Tenant not loaded')
+      return apiGetWithTenant<Application>(`/applications/${applicationId}`, tenant.id)
     },
-    enabled: !!applicationId,
+    enabled: !!applicationId && !!tenant?.id,
+  })
+
+  // Fetch form template to get field labels
+  const { data: formTemplate } = useQuery<FormTemplate>({
+    queryKey: ['form-template', application?.positionId],
+    queryFn: async () => {
+      if (!tenant?.id || !application?.positionId) throw new Error('Position not available')
+      const resp = await apiGetWithTenant<{ templateJson: string }>(`/positions/${application.positionId}/form-template`, tenant.id)
+      return JSON.parse(resp.templateJson || '{"fields":[]}')
+    },
+    enabled: !!application?.positionId && !!tenant?.id,
   })
 
   // Fetch audit logs
   const { data: auditLogs, isLoading: logsLoading } = useQuery<AuditLog[]>({
     queryKey: ['application-audit-logs', applicationId],
     queryFn: async () => {
-      return apiGet<AuditLog[]>(`/applications/${applicationId}/audit-logs`)
+      if (!tenant?.id) throw new Error('Tenant not loaded')
+      return apiGetWithTenant<AuditLog[]>(`/applications/${applicationId}/audit-logs`, tenant.id)
     },
-    enabled: !!applicationId,
+    enabled: !!applicationId && !!tenant?.id,
   })
+
+  // Build field key to label map
+  const fieldLabelMap = new Map<string, string>()
+  if (formTemplate?.fields) {
+    formTemplate.fields.forEach(field => {
+      fieldLabelMap.set(field.fieldKey, field.label)
+    })
+  }
+
+  // Get download URL for attachment
+  const handleViewAttachment = async (attachment: Attachment) => {
+    if (!tenant?.id) return
+    try {
+      const resp = await apiGetWithTenant<{ url: string }>(`/files/${attachment.fileId}/download-url`, tenant.id)
+      setPreviewAttachment({
+        url: resp.url,
+        name: attachment.fileName,
+        type: attachment.contentType
+      })
+    } catch (error) {
+      console.error('Failed to get download URL', error)
+    }
+  }
+
+  const handleDownloadAttachment = async (attachment: Attachment) => {
+    if (!tenant?.id) return
+    try {
+      const resp = await apiGetWithTenant<{ url: string }>(`/files/${attachment.fileId}/download-url`, tenant.id)
+      window.open(resp.url, '_blank')
+    } catch (error) {
+      console.error('Failed to get download URL', error)
+    }
+  }
 
   const isLoading = tenantLoading || applicationLoading || logsLoading
 
@@ -241,14 +314,25 @@ export default function ApplicationDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {Object.entries(application.payload || {}).map(([key, value]) => (
-                  <div key={key} className="grid grid-cols-3 gap-4">
-                    <div className="text-sm text-muted-foreground">{key}</div>
-                    <div className="col-span-2 text-sm">
-                      {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+                {Object.entries(application.payload || {}).map(([key, value]) => {
+                  // 使用中文标签，如果没有则显示原始 key
+                  const label = fieldLabelMap.get(key) || key
+                  // 格式化值
+                  let displayValue = ''
+                  if (typeof value === 'boolean') {
+                    displayValue = value ? '是' : '否'
+                  } else if (typeof value === 'object') {
+                    displayValue = JSON.stringify(value, null, 2)
+                  } else {
+                    displayValue = String(value || '-')
+                  }
+                  return (
+                    <div key={key} className="grid grid-cols-3 gap-4 py-2 border-b last:border-0">
+                      <div className="text-sm text-muted-foreground">{label}</div>
+                      <div className="col-span-2 text-sm font-medium">{displayValue}</div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
@@ -258,26 +342,48 @@ export default function ApplicationDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle>附件材料</CardTitle>
-                <CardDescription>您上传的证明材料</CardDescription>
+                <CardDescription>您上传的证明材料 (共 {application.attachments.length} 个)</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {application.attachments.map((attachment, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{attachment.fieldName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {attachment.files?.length || 0} 个文件
-                          </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {application.attachments.map((attachment) => {
+                    const fieldLabel = fieldLabelMap.get(attachment.fieldKey) || attachment.fieldKey
+                    return (
+                      <div key={attachment.fileId} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-start gap-3">
+                          {attachment.contentType?.startsWith('image/') ? (
+                            <ImageIcon className="h-8 w-8 text-blue-500 flex-shrink-0" />
+                          ) : (
+                            <FileText className="h-8 w-8 text-orange-500 flex-shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{attachment.fileName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {fieldLabel} · {(attachment.fileSize / 1024).toFixed(2)} KB
+                            </p>
+                            <div className="flex gap-2 mt-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewAttachment(attachment)}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                预览
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadAttachment(attachment)}
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                下载
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm">
-                        查看
-                      </Button>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -349,6 +455,41 @@ export default function ApplicationDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Attachment Preview Modal */}
+      {previewAttachment && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setPreviewAttachment(null)}
+        >
+          <div
+            className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="font-medium">{previewAttachment.name}</h3>
+              <Button variant="ghost" size="sm" onClick={() => setPreviewAttachment(null)}>
+                关闭
+              </Button>
+            </div>
+            <div className="p-4">
+              {previewAttachment.type?.startsWith('image/') ? (
+                <img
+                  src={previewAttachment.url}
+                  alt={previewAttachment.name}
+                  className="max-w-full h-auto"
+                />
+              ) : (
+                <iframe
+                  src={previewAttachment.url}
+                  className="w-full h-[600px]"
+                  title={previewAttachment.name}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

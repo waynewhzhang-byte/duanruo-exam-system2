@@ -22,7 +22,8 @@ import {
   StopCircle,
   CheckCircle,
   Users,
-  Settings
+  Settings,
+  Copy
 } from 'lucide-react'
 
 interface Exam {
@@ -122,6 +123,26 @@ export default function TenantAdminExamsPage() {
     },
   })
 
+  // 复制考试 mutation
+  const copyExamMutation = useMutation({
+    mutationFn: async (exam: Exam) => {
+      if (!tenant?.id) throw new Error('No tenant selected')
+      const timestamp = Date.now()
+      return apiPostWithTenant(`/exams/${exam.id}/copy`, tenant.id, {
+        newCode: `${exam.code}_COPY_${timestamp}`,
+        newTitle: `${exam.title} (副本)`,
+        copyPositions: true,
+        copySubjects: true,
+        copyAnnouncement: true,
+        copyRulesConfig: true,
+        copyFeeSettings: true
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-exams', tenant?.id] })
+    },
+  })
+
   // Show loading state while tenant is being fetched OR if tenant is not yet loaded
   if (tenantLoading || !tenant) {
     return (
@@ -186,6 +207,17 @@ export default function TenantAdminExamsPage() {
         alert('考试已完成')
       } catch (error) {
         alert(`完成考试失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      }
+    }
+  }
+
+  const handleCopyExam = async (exam: Exam) => {
+    if (confirm(`确定要复制考试"${exam.title}"吗？将创建一个包含所有岗位、科目和表单配置的新考试。`)) {
+      try {
+        const result = await copyExamMutation.mutateAsync(exam) as Exam
+        alert(`考试复制成功！新考试：${result.title}`)
+      } catch (error) {
+        alert(`复制考试失败: ${error instanceof Error ? error.message : '未知错误'}`)
       }
     }
   }
@@ -270,8 +302,8 @@ export default function TenantAdminExamsPage() {
             </div>
 
             <div className="flex items-end">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full"
                 onClick={() => setFilters({ status: 'ALL', search: '' })}
               >
@@ -395,6 +427,14 @@ export default function TenantAdminExamsPage() {
                             title="配置报名表单"
                           >
                             <Settings className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCopyExam(exam)}
+                            title="复制考试"
+                          >
+                            <Copy className="h-3 w-3" />
                           </Button>
 
                           {/* 状态操作按钮 */}

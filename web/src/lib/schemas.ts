@@ -199,6 +199,18 @@ export const AttachmentRef = z.object({
   fieldKey: z.string(),
 })
 
+// Mirrors backend ApplicationAttachmentResponse DTO
+export const ApplicationAttachmentResponse = z.object({
+  fileId: UUID,
+  fieldKey: z.string(),
+  fileName: z.string(),
+  fileSize: z.number(),
+  contentType: z.string(),
+  virusScanStatus: z.string().optional(),
+  uploadedAt: DateTimeString.optional(),
+})
+export type ApplicationAttachmentResponse = z.infer<typeof ApplicationAttachmentResponse>
+
 export const ApplicationSubmitRequest = z.object({
   examId: UUID,
   positionId: UUID,
@@ -218,6 +230,12 @@ export const ApplicationResponse = z.object({
   // optional enriched fields from /applications/my
   examTitle: z.string().optional(),
   positionTitle: z.string().optional(),
+  // fee info
+  feeRequired: z.boolean().optional(),
+  feeAmount: z.number().optional(),
+  // tenant info
+  tenantCode: z.string().optional(),
+  tenantSlug: z.string().optional(),
 })
 
 export const ApplicationDetailResponse = z.object({
@@ -234,6 +252,7 @@ export const ApplicationDetailResponse = z.object({
   statusUpdatedAt: DateTimeString.optional(),
   createdAt: DateTimeString,
   updatedAt: DateTimeString,
+  attachments: z.array(ApplicationAttachmentResponse).optional(),
 })
 
 export const ApplicationListResponse = PaginationResponse(ApplicationResponse)
@@ -258,6 +277,39 @@ export const UserResponse = z.object({
   jobTitle: z.string().optional(),
   createdAt: DateTimeString,
 })
+
+// Reviewer schemas
+export const ReviewerRole = z.enum(['PRIMARY_REVIEWER', 'SECONDARY_REVIEWER'])
+
+export const ExamReviewerResponse = z.object({
+  id: z.string(),
+  examId: z.string(),
+  userId: z.string(),
+  role: ReviewerRole,
+  username: z.string().optional(),
+  fullName: z.string().optional(),
+  email: z.string().optional(),
+  assignedAt: DateTimeString.optional(),
+  assignedBy: z.string().optional(),
+})
+
+export const AddReviewerRequest = z.object({
+  userId: UUID,
+  role: ReviewerRole,
+})
+
+export const AvailableReviewer = z.object({
+  id: z.string(),
+  username: z.string(),
+  fullName: z.string(),
+  email: z.string(),
+  roles: z.array(z.string()).optional(),
+})
+
+export type ReviewerRole = z.infer<typeof ReviewerRole>
+export type ExamReviewerResponse = z.infer<typeof ExamReviewerResponse>
+export type AddReviewerRequest = z.infer<typeof AddReviewerRequest>
+export type AvailableReviewer = z.infer<typeof AvailableReviewer>
 
 export const LoginRequest = z.object({
   username: z.string(),
@@ -305,6 +357,36 @@ export const ExamResponse = z.object({
   createdBy: z.string(),
   createdAt: DateTimeString,
   updatedAt: DateTimeString,
+  // 租户信息（用于跨租户查询）
+  tenantId: z.string().nullable().optional(),
+  tenantName: z.string().nullable().optional(),
+  tenantCode: z.string().nullable().optional(),
+})
+
+/**
+ * 已发布考试响应（全局考试目录）
+ * 用于跨租户考试查询，包含完整的租户信息
+ */
+export const PublishedExamResponse = z.object({
+  id: UUID,
+  tenantId: z.string(),
+  tenantName: z.string().nullable().optional(),
+  tenantCode: z.string().nullable().optional(),
+  examId: z.string(),
+  code: z.string(),
+  title: z.string(),
+  description: z.string().nullable().optional(),
+  announcement: z.string().nullable().optional(),
+  registrationStart: DateTimeString.nullable().optional(),
+  registrationEnd: DateTimeString.nullable().optional(),
+  examStart: DateTimeString.nullable().optional(),
+  examEnd: DateTimeString.nullable().optional(),
+  feeRequired: z.boolean().nullable().optional(),
+  feeAmount: z.coerce.number().nullable().optional(),
+  status: z.string(),
+  positionCount: z.number().nullable().optional(),
+  publishedAt: DateTimeString.nullable().optional(),
+  updatedAt: DateTimeString.nullable().optional(),
 })
 
 export const ExamCreateRequest = z.object({
@@ -695,6 +777,19 @@ export const ReviewStatisticsResponse = z.object({
   })).optional(),
 })
 
+// Review task list (pending reviews)
+export const ReviewTaskSummaryResponse = z.object({
+  taskId: UUID,
+  applicationId: UUID,
+  stage: z.enum(['PRIMARY', 'SECONDARY']),
+  status: z.string(),
+  assignedTo: UUID.optional(),
+  lockedAt: DateTimeString.optional(),
+  createdAt: DateTimeString,
+})
+
+export const PendingReviewTaskResponse = PaginationResponse(ReviewTaskSummaryResponse)
+
 export const PlatformStatisticsResponse = z.object({
   totalTenants: z.number(),
   activeTenants: z.number(),
@@ -709,6 +804,9 @@ export type ExamStatisticsResponse = z.infer<typeof ExamStatisticsResponse>
 export type ApplicationStatisticsResponse = z.infer<typeof ApplicationStatisticsResponse>
 export type ReviewStatisticsResponse = z.infer<typeof ReviewStatisticsResponse>
 export type PlatformStatisticsResponse = z.infer<typeof PlatformStatisticsResponse>
+
+export type ReviewTaskSummaryResponse = z.infer<typeof ReviewTaskSummaryResponse>
+export type PendingReviewTaskResponse = z.infer<typeof PendingReviewTaskResponse>
 
 // Notification schemas
 export const NotificationChannel = z.enum(['EMAIL', 'SMS', 'IN_APP'])

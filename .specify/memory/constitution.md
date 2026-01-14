@@ -1,50 +1,51 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Version: 0.0.0 → 1.0.0
+- Modified principles: N/A (initial issue)
+- Added sections: Core Principles, Operational Guardrails, Workflow Expectations, Governance
+- Removed sections: None
+- Templates requiring updates:
+  - ✅ .specify/templates/spec-template.md (no changes needed; already compatible)
+  - ✅ .specify/templates/plan-template.md (no changes needed; Constitution Check references remain valid)
+  - ✅ .specify/templates/tasks-template.md (no changes needed; task categories already cover new guardrails)
+- Follow-up TODOs: None
+-->
+
+# Exam Registration SaaS Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Tenant Isolation & RBAC Enforcement
+Every artifact (spec, plan, implementation) MUST preserve schema-per-tenant isolation and role-based access control. Never mix public-schema data with tenant data, and every endpoint or UI flow must state how tenancy and RBAC are enforced. Cross-tenant reads/writes are prohibited unless explicitly authorized for SUPER_ADMIN.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. DDD Boundaries & Clean Ports
+Domain models stay framework-free. All dependencies cross layers via ports/adapters. Plans/tasks must cite which layer they touch, and no persistence, HTTP, or cloud SDK appears inside the domain layer. Shared abstractions live in `exam-shared` only when reused by two or more bounded contexts.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Security & PII Protection (NON-NEGOTIABLE)
+PII (ID numbers, phone, education docs) must be encrypted at rest, transferred via TLS 1.3+, and never logged in plaintext. JWT auth, RBAC checks, audit logging, and virus scanning are mandatory acceptance criteria for any feature that touches candidate data. Secrets and keys must follow rotation policy.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Test & Quality Gates
+Unit tests cover ≥80% of new backend code, UI flows require Playwright coverage for happy path plus at least one negative scenario, and integration tests exist for cross-layer workflows (e.g., application submission → review → payment). No code merges without automated tests demonstrating the requirement.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Observability-First Operations
+Structured logging, metrics, and trace spans must be defined for tenant onboarding, payment flow, seat allocation, and ticket generation. Plans/tasks will call out the signals required (latency, error rate, tenantId tags) so production incidents can be detected and triaged quickly.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Operational Guardrails
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- Technology stack is fixed: Java 21 + Spring Boot 3.4.x backend, PostgreSQL 15+, Next.js 14 frontend, MinIO for storage, Redis for caching. Deviations require governance approval.
+- Multi-tenant schema migrations use Flyway with tenant-specific locations; any manual schema work must document rollback.
+- Payments integrate only with WeChat Pay and Alipay; all other methods are out of scope for MVP.
+- Performance targets from the spec’s Success Criteria are mandatory non-functional requirements and must appear in plans/tests when relevant.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Workflow Expectations
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Specifications must include user stories, functional/non-functional requirements, success criteria, edge cases, and clarifications before `/speckit.plan`.
+- Plans must include a Constitution Check section confirming adherence (tenant isolation, security, testing, observability). Violations require entries in “Complexity Tracking”.
+- Tasks must map each deliverable to at least one requirement or success criterion and flag security/observability work explicitly (tag `[SEC]`, `[OBS]` where applicable).
+- Code reviews verify: DDD boundaries, RBAC checks, encryption usage, and required tests/logging before approval.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes ad-hoc practices. Amendments require: (1) rationale recorded in PR description, (2) semantic version bump, (3) confirmation that spec/plan/task templates remain aligned. Ratification and amendments occur via repository PR reviewed by technical lead plus product owner. Compliance is reviewed at the end of each major feature cycle; unresolved violations block release. Runtime guidance is recorded in `docs/security-guidelines.md` and `README.md`, which must remain consistent with this constitution.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-01-19 | **Last Amended**: 2025-11-19

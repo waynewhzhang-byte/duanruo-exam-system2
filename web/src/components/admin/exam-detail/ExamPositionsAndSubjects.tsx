@@ -1,24 +1,30 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useExamPositions, useDeletePosition, useDeleteSubject } from '@/lib/api-hooks'
 import { useQuery } from '@tanstack/react-query'
-import { apiGet } from '@/lib/api'
-import { Plus, Users, BookOpen, Clock, Award, TrendingUp, Calendar, Edit, Trash2 } from 'lucide-react'
+import { apiGet, apiGetWithTenant } from '@/lib/api'
+import { Plus, Users, BookOpen, Clock, Award, TrendingUp, Calendar, Edit, Trash2, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
 import CreateSubjectDialog from '@/components/admin/CreateSubjectDialog'
 import EditSubjectDialog from '@/components/admin/EditSubjectDialog'
 import CreatePositionDialog from './CreatePositionDialog'
 import EditPositionDialog from './EditPositionDialog'
+import { useTenant } from '@/hooks/useTenant'
 
 interface ExamPositionsAndSubjectsProps {
   examId: string
 }
 
 export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSubjectsProps) {
+  const router = useRouter()
+  const params = useParams()
+  const tenantSlug = params.tenantSlug as string
+
   const [selectedPositionId, setSelectedPositionId] = useState<string>('')
   const [createSubjectDialogOpen, setCreateSubjectDialogOpen] = useState(false)
   const [createPositionDialogOpen, setCreatePositionDialogOpen] = useState(false)
@@ -27,17 +33,18 @@ export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSub
   const [selectedPosition, setSelectedPosition] = useState<any>(null)
   const [selectedSubject, setSelectedSubject] = useState<any>(null)
 
-  const { data: positions, isLoading: positionsLoading, refetch: refetchPositions } = useExamPositions(examId)
+  const { tenant } = useTenant()
+  const { data: positions, isLoading: positionsLoading, refetch: refetchPositions } = useExamPositions(examId, tenant?.id)
   const deletePositionMutation = useDeletePosition()
   const deleteSubjectMutation = useDeleteSubject()
 
   const { data: subjects, isLoading: subjectsLoading, refetch: refetchSubjects } = useQuery<any[]>({
-    queryKey: ['subjects', selectedPositionId],
+    queryKey: ['subjects', selectedPositionId, tenant?.id],
     queryFn: async () => {
-      if (!selectedPositionId) return []
-      return await apiGet(`/positions/${selectedPositionId}/subjects`)
+      if (!selectedPositionId || !tenant?.id) return []
+      return await apiGetWithTenant(`/positions/${selectedPositionId}/subjects`, tenant.id)
     },
-    enabled: !!selectedPositionId
+    enabled: !!selectedPositionId && !!tenant?.id
   })
 
   const currentPosition = positions?.find((p: any) => p.id === selectedPositionId)
@@ -52,8 +59,16 @@ export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSub
       return
     }
 
+    if (!tenant?.id) {
+      toast.error('租户信息缺失')
+      return
+    }
+
     try {
-      await deletePositionMutation.mutateAsync(position.id)
+      await deletePositionMutation.mutateAsync({
+        id: position.id,
+        tenantId: tenant.id,
+      })
       toast.success('岗位删除成功')
       if (selectedPositionId === position.id) {
         setSelectedPositionId('')
@@ -74,8 +89,16 @@ export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSub
       return
     }
 
+    if (!tenant?.id) {
+      toast.error('租户信息缺失')
+      return
+    }
+
     try {
-      await deleteSubjectMutation.mutateAsync(subject.id)
+      await deleteSubjectMutation.mutateAsync({
+        subjectId: subject.id,
+        tenantId: tenant.id,
+      })
       toast.success('科目删除成功')
       refetchSubjects()
     } catch (error: any) {
@@ -141,7 +164,7 @@ export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSub
                     )}
                   </div>
 
-                  <div className="flex gap-2 mt-3 pt-3 border-t">
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
                     <Button
                       variant="outline"
                       size="sm"
@@ -153,6 +176,19 @@ export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSub
                     >
                       <Edit className="h-3 w-3 mr-1" />
                       编辑
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/${tenantSlug}/admin/exams/${examId}/positions/${position.id}/rules`)
+                      }}
+                      className="flex-1"
+                      title="配置岗位级别自动审核规则"
+                    >
+                      <Settings2 className="h-3 w-3 mr-1" />
+                      规则
                     </Button>
                     <Button
                       variant="outline"

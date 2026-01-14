@@ -1,9 +1,9 @@
 'use client'
 
-import { use } from 'react'
-import { useRouter } from 'next/navigation'
+import React from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { apiGet } from '@/lib/api'
+import { apiGet, apiGetWithTenant } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,12 +13,6 @@ import { ArrowLeft, Award, TrendingUp, TrendingDown, Minus, Trophy, CheckCircle,
 import { Spinner } from '@/components/ui/loading'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts'
 import { useScoreRanking } from '@/lib/api-hooks'
-
-interface ApplicationScoresPageProps {
-  params: Promise<{
-    applicationId: string
-  }>
-}
 
 interface Score {
   id: string
@@ -47,34 +41,102 @@ interface ScoreDetail {
   examTitle: string
 }
 
-export default function ApplicationScoresPage({ params }: ApplicationScoresPageProps) {
-  const resolvedParams = use(params)
+export default function ApplicationScoresPage() {
+  const params = useParams()
   const router = useRouter()
+  const applicationId = params?.applicationId as string
+  const [selectedTenantId, setSelectedTenantId] = React.useState<string>('')
 
-  // 获取成绩详情
-  const { data: scores, isLoading: scoresLoading, error } = useQuery<Score[]>({
-    queryKey: ['scores', 'application', resolvedParams.applicationId],
-    queryFn: async () => {
-      const response = await apiGet(`/scores/application/${resolvedParams.applicationId}`)
-      return Array.isArray(response) ? response : []
-    },
+  // 获取用户关联的租户列表
+  const { data: tenants } = useQuery<any[]>({
+    queryKey: ['my-tenants'],
+    queryFn: async () => apiGet<any[]>('/tenants/me'),
   })
 
-  // 获取申请信息以获取考试ID和岗位ID
+  // 自动选择第一个租户
+  React.useEffect(() => {
+    if (!selectedTenantId && tenants && tenants.length > 0) {
+      setSelectedTenantId(tenants[0].id)
+    }
+  }, [tenants, selectedTenantId])
+
+  // 获取申请信息以获取考试ID和岗位ID（需要租户上下文）
   const { data: application } = useQuery({
-    queryKey: ['application', resolvedParams.applicationId],
-    queryFn: () => apiGet(`/applications/${resolvedParams.applicationId}`),
-    enabled: !!resolvedParams.applicationId,
+    queryKey: ['application', applicationId, selectedTenantId],
+    queryFn: async () => {
+      if (!applicationId || !selectedTenantId) throw new Error('Application ID and Tenant ID are required')
+      return await apiGetWithTenant(`/applications/${applicationId}`, selectedTenantId)
+    },
+    enabled: !!applicationId && !!selectedTenantId,
   })
 
-  // 获取排名信息
+  // 获取成绩详情（需要租户上下文）
+  const { data: scores, isLoading: scoresLoading, error: scoresError } = useQuery<Score[]>({
+    queryKey: ['scores', 'application', applicationId, selectedTenantId],
+    queryFn: async () => {
+      if (!applicationId) throw new Error('Application ID is required')
+      if (!selectedTenantId) throw new Error('Tenant ID is required')
+      try {
+        const response = await apiGetWithTenant(`/scores/application/${applicationId}`, selectedTenantId)
+      return Array.isArray(response) ? response : []
+      } catch (err: any) {
+        console.error('Failed to fetch scores:', err)
+        // 如果是权限错误，提供更友好的提示
+        if (err?.status === 403 || err?.message?.includes('Access denied') || err?.message?.includes('belong')) {
+          throw new Error('您没有权限查看此成绩，或该申请不属于当前租户')
+        }
+        if (err?.status === 404) {
+          throw new Error('成绩数据不存在')
+        }
+        throw err
+      }
+    },
+    enabled: !!applicationId && !!selectedTenantId,
+  })
+
+  // 获取申请信息时的错误
+  const { error: applicationError } = useQuery({
+    queryKey: ['application', applicationId, selectedTenantId],
+    queryFn: async () => {
+      if (!applicationId || !selectedTenantId) throw new Error('Application ID and Tenant ID are required')
+      try {
+        return await apiGetWithTenant(`/applications/${applicationId}`, selectedTenantId)
+      } catch (err: any) {
+        console.error('Failed to fetch application:', err)
+        if (err?.status === 403 || err?.message?.includes('Access denied') || err?.message?.includes('belong')) {
+          throw new Error('您没有权限查看此申请，或该申请不属于当前租户')
+        }
+        throw err
+      }
+    },
+    enabled: !!applicationId && !!selectedTenantId,
+  })
+
+  // 合并错误（优先显示成绩错误，其次申请错误）
+  const error = scoresError || applicationError
+
+  // 获取排名信息（需要租户上下文）
   const examId = (application as any)?.examId
   const positionId = (application as any)?.positionId
-  const { data: rankings } = useScoreRanking(examId || '', positionId)
+  const { data: rankings } = useQuery({
+    queryKey: ['scores', 'ranking', examId, positionId, selectedTenantId],
+    queryFn: async () => {
+      if (!examId || !selectedTenantId) return []
+      const params = new URLSearchParams()
+      if (positionId) {
+        params.set('positionId', positionId)
+      }
+      const query = params.toString()
+      const url = query ? `/scores/ranking/exam/${examId}?${query}` : `/scores/ranking/exam/${examId}`
+      const response = await apiGetWithTenant(url, selectedTenantId)
+      return Array.isArray(response) ? response : []
+    },
+    enabled: !!examId && !!selectedTenantId,
+  })
 
   // 查找当前申请的排名
   const currentRanking = rankings?.find(
-    (r) => r.applicationId === resolvedParams.applicationId
+    (r) => r.applicationId === applicationId
   )
 
   // 构建成绩详情
@@ -105,13 +167,16 @@ export default function ApplicationScoresPage({ params }: ApplicationScoresPageP
     absentCount: scores.filter((s) => s.isAbsent).length,
     rank: currentRanking?.rank,
     totalCandidates: currentRanking?.totalCandidates,
-    isInterviewEligible: currentRanking?.isInterviewEligible || false,
+    // 面试资格：优先从申请状态判断，其次从排名信息判断
+    isInterviewEligible: (application as any)?.status === 'INTERVIEW_ELIGIBLE' 
+      || currentRanking?.isInterviewEligible 
+      || false,
     candidateName: currentRanking?.candidateName || '未知',
     positionTitle: currentRanking?.positionName || (application as any)?.positionTitle || '未知',
     examTitle: (application as any)?.examTitle || '未知考试',
   } : null
 
-  const isLoading = scoresLoading
+  const isLoading = scoresLoading || !selectedTenantId
 
   if (isLoading) {
     return (
@@ -122,13 +187,35 @@ export default function ApplicationScoresPage({ params }: ApplicationScoresPageP
   }
 
   if (error) {
+    const errorMessage = (error as any)?.message || (error as any)?.code || '系统内部错误'
+    const errorDetails = (error as any)?.status 
+      ? `HTTP ${(error as any).status}: ${errorMessage}`
+      : errorMessage
+    
     return (
       <div className="container mx-auto py-8">
         <Card>
           <CardContent className="pt-6">
             <div className="text-center text-destructive">
               <XCircle className="h-12 w-12 mx-auto mb-3" />
-              <p>加载失败：{(error as any).message}</p>
+              <h3 className="text-lg font-semibold mb-2">加载失败</h3>
+              <p className="mb-4">{errorDetails}</p>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>请检查：</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>网络连接是否正常</li>
+                  <li>是否已选择正确的租户</li>
+                  <li>该申请是否属于当前租户</li>
+                </ul>
+              </div>
+              <div className="mt-4 space-x-2">
+                <Button variant="outline" onClick={() => router.back()}>
+                  返回
+                </Button>
+                <Button onClick={() => window.location.reload()}>
+                  刷新重试
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

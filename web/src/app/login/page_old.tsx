@@ -3,15 +3,15 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { LoginRequest, type LoginRequestType } from '@/types/auth'
+import { LoginRequest } from '@/types/auth'
 import { apiPost } from '@/lib/api'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const role = searchParams.get('role')
-  
-  const [formData, setFormData] = useState<LoginRequestType>({
+
+  const [formData, setFormData] = useState<LoginRequest>({
     username: '',
     password: '',
   })
@@ -63,10 +63,10 @@ function LoginForm() {
     }
   }
 
-  const handleInputChange = (field: keyof LoginRequestType) => (
+  const handleInputChange = (field: keyof LoginRequest) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setFormData(prev => ({ ...prev, [field]: e.target.value }))
+    setFormData((prev: LoginRequest) => ({ ...prev, [field]: e.target.value }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
@@ -97,14 +97,14 @@ function LoginForm() {
             端若数智考盟 - 智能招聘考试平台
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {errors.general && (
             <div className="bg-danger-50 border border-danger-200 text-danger-700 px-4 py-3 rounded">
               {errors.general}
             </div>
           )}
-          
+
           <div className="space-y-4">
             <div>
               <label htmlFor="username" className="label">
@@ -125,7 +125,7 @@ function LoginForm() {
                 <p className="mt-1 text-sm text-danger-600">{errors.username}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="password" className="label">
                 密码

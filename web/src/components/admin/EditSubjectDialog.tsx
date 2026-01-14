@@ -12,10 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner'
 import { useUpdateSubject } from '@/lib/api-hooks'
 import { Loader2 } from 'lucide-react'
+import { useTenant } from '@/hooks/useTenant'
 
 const SubjectFormSchema = z.object({
   name: z.string().min(1, '科目名称不能为空').max(100, '科目名称最多100个字符'),
-  duration: z.number().min(1, '考试时长必须大于0').max(480, '考试时长不能超过480分钟'),
+  durationMinutes: z.number().min(1, '考试时长必须大于0').max(480, '考试时长不能超过480分钟'),
   type: z.enum(['WRITTEN', 'INTERVIEW'], { message: '请选择科目类型' }),
   maxScore: z.number().min(1, '满分必须大于0').max(1000, '满分不能超过1000'),
   passingScore: z.number().min(0, '及格分不能为负数'),
@@ -40,6 +41,7 @@ export default function EditSubjectDialog({
   onSuccess,
 }: EditSubjectDialogProps) {
   const updateMutation = useUpdateSubject()
+  const { tenant } = useTenant()
 
   const {
     register,
@@ -65,7 +67,7 @@ export default function EditSubjectDialog({
 
       reset({
         name: subject.name || '',
-        duration: subject.duration || subject.durationMinutes || 120,
+        durationMinutes: subject.durationMinutes || subject.duration || 120,
         type: subject.type || 'WRITTEN',
         maxScore: subject.maxScore || 100,
         passingScore: subject.passingScore || 60,
@@ -77,6 +79,11 @@ export default function EditSubjectDialog({
   }, [subject, reset])
 
   const onSubmit = async (data: SubjectFormData) => {
+    if (!tenant?.id) {
+      toast.error('租户信息缺失')
+      return
+    }
+
     try {
       // 转换datetime-local格式为后端需要的格式 (yyyy-MM-dd HH:mm:ss)
       const scheduleFormatted = data.schedule.includes('T')
@@ -88,7 +95,11 @@ export default function EditSubjectDialog({
         schedule: scheduleFormatted,
       }
 
-      await updateMutation.mutateAsync({ subjectId: subject.id, data: payload })
+      await updateMutation.mutateAsync({
+        subjectId: subject.id,
+        data: payload,
+        tenantId: tenant.id,
+      })
       toast.success('科目更新成功')
       onSuccess()
     } catch (error: any) {
@@ -151,16 +162,16 @@ export default function EditSubjectDialog({
 
             {/* 考试时长 */}
             <div>
-              <Label htmlFor="duration">考试时长（分钟） *</Label>
+              <Label htmlFor="durationMinutes">考试时长（分钟） *</Label>
               <Input
-                id="duration"
+                id="durationMinutes"
                 type="number"
-                {...register('duration', { valueAsNumber: true })}
+                {...register('durationMinutes', { valueAsNumber: true })}
                 placeholder="120"
                 disabled={updateMutation.isPending}
               />
-              {errors.duration && (
-                <p className="text-sm text-red-500 mt-1">{errors.duration.message}</p>
+              {errors.durationMinutes && (
+                <p className="text-sm text-red-500 mt-1">{errors.durationMinutes.message}</p>
               )}
             </div>
 

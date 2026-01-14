@@ -46,8 +46,8 @@ export default function TenantPositionsPage({ params }: PositionsPageProps) {
     data: positionsData,
     isLoading: positionsLoading,
     error: positionsError,
-  } = useExamPositions(examId)
-  
+  } = useExamPositions(examId, tenant?.id)
+
   const positions: Position[] = positionsData || []
 
   if (examError) {

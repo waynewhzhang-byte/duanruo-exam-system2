@@ -30,10 +30,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { api } from '@/lib/api'
+import { apiGetWithTenant, apiPostWithTenant } from '@/lib/api'
 import { toast } from 'sonner'
-import { Search, MapPin, Users, Play, FileSpreadsheet } from 'lucide-react'
+import { Search, MapPin, Users, Play, FileSpreadsheet, Ticket, DollarSign, CheckCircle } from 'lucide-react'
 
 interface Exam {
   id: string
@@ -44,6 +45,27 @@ interface Exam {
   examEnd: string
   registrationStart: string
   registrationEnd: string
+  feeRequired: boolean
+  feeAmount?: number
+}
+
+// 座位分配策略映射
+const ALLOCATION_STRATEGIES = [
+  { code: 'POSITION_FIRST_SUBMITTED_AT', label: '按岗位分组（报名顺序）', description: '相同岗位考生在同一教室，按报名时间排序' },
+  { code: 'POSITION_FIRST_RANDOM', label: '按岗位分组（随机）', description: '相同岗位考生在同一教室，随机排序' },
+  { code: 'RANDOM', label: '完全随机', description: '打乱所有考生顺序，随机分配' },
+  { code: 'SUBMITTED_AT_FIRST', label: '按报名顺序', description: '按照报名时间先后顺序分配' },
+]
+
+interface ArrangeResult {
+  batchId: string
+  totalCandidates: number
+  totalSeatsAssigned: number
+  totalVenues: number
+  feeRequired: boolean
+  totalTicketsIssued: number
+  strategy: string
+  strategyDescription: string
 }
 
 interface SeatArrangementPageProps {
@@ -59,19 +81,21 @@ export default function SeatArrangementPage({ params }: SeatArrangementPageProps
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedExam, setSelectedExam] = useState<string>('')
   const [isArrangeDialogOpen, setIsArrangeDialogOpen] = useState(false)
-  const [arrangementRule, setArrangementRule] = useState<string>('按岗位分组')
+  const [selectedStrategy, setSelectedStrategy] = useState<string>('POSITION_FIRST_SUBMITTED_AT')
+  const [arrangeResult, setArrangeResult] = useState<ArrangeResult | null>(null)
+  const [showResultDialog, setShowResultDialog] = useState(false)
 
-  // Fetch exams
+  // Fetch exams with tenant context
   const { data: exams, isLoading } = useQuery<Exam[]>({
-    queryKey: ['exams'],
+    queryKey: ['exams', tenantSlug],
     queryFn: async () => {
-      return api<Exam[]>('/exams')
+      return apiGetWithTenant<Exam[]>(tenantSlug, '/exams')
     },
   })
 
-  // Filter exams - only show exams with closed registration
+  // Filter exams - only show exams with closed registration (CLOSED status)
   const eligibleExams = exams?.filter((exam) => {
-    const isEligible = exam.status === 'REGISTRATION_CLOSED' || exam.status === 'IN_PROGRESS' || exam.status === 'COMPLETED'
+    const isEligible = exam.status === 'CLOSED' || exam.status === 'IN_PROGRESS' || exam.status === 'COMPLETED'
     const searchLower = searchTerm.toLowerCase()
     const matchesSearch =
       exam.title.toLowerCase().includes(searchLower) ||
@@ -79,16 +103,23 @@ export default function SeatArrangementPage({ params }: SeatArrangementPageProps
     return isEligible && matchesSearch
   })
 
-  // Arrange seats mutation
-  const arrangeSeats = useMutation({
-    mutationFn: async (examId: string) => {
-      return api(`/seating/arrange`, { method: 'POST', body: JSON.stringify({ examId }) })
+  // Get selected exam details
+  const selectedExamDetails = exams?.find(e => e.id === selectedExam)
+
+  // Arrange seats and issue tickets mutation (batch operation)
+  const arrangeAndIssue = useMutation({
+    mutationFn: async ({ examId, strategy }: { examId: string; strategy: string }) => {
+      return apiPostWithTenant<ArrangeResult>(
+        tenantSlug,
+        `/exams/${examId}/arrange-and-issue?strategy=${strategy}`,
+        {}
+      )
     },
-    onSuccess: () => {
-      toast.success('座位安排成功')
+    onSuccess: (result) => {
+      setArrangeResult(result)
+      setShowResultDialog(true)
       queryClient.invalidateQueries({ queryKey: ['exams'] })
       setIsArrangeDialogOpen(false)
-      setSelectedExam('')
     },
     onError: (error: any) => {
       toast.error(error?.message || '座位安排失败')
@@ -104,15 +135,14 @@ export default function SeatArrangementPage({ params }: SeatArrangementPageProps
   }
 
   const confirmArrange = () => {
-    arrangeSeats.mutate(selectedExam)
+    arrangeAndIssue.mutate({ examId: selectedExam, strategy: selectedStrategy })
   }
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
       DRAFT: { label: '草稿', variant: 'secondary' },
-      PUBLISHED: { label: '已发布', variant: 'default' },
-      REGISTRATION_OPEN: { label: '报名中', variant: 'default' },
-      REGISTRATION_CLOSED: { label: '报名结束', variant: 'outline' },
+      OPEN: { label: '报名中', variant: 'default' },
+      CLOSED: { label: '报名结束', variant: 'outline' },
       IN_PROGRESS: { label: '进行中', variant: 'default' },
       COMPLETED: { label: '已结束', variant: 'outline' },
       CANCELLED: { label: '已取消', variant: 'destructive' },
@@ -165,19 +195,45 @@ export default function SeatArrangementPage({ params }: SeatArrangementPageProps
                 <SelectContent>
                   {eligibleExams.map((exam) => (
                     <SelectItem key={exam.id} value={exam.id}>
-                      {exam.title} ({exam.code})
+                      <div className="flex items-center gap-2">
+                        {exam.title} ({exam.code})
+                        {exam.feeRequired && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            <DollarSign className="h-3 w-3 mr-1" />
+                            收费
+                          </Badge>
+                        )}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Button
                 onClick={handleArrangeSeats}
-                disabled={!selectedExam || arrangeSeats.isPending}
+                disabled={!selectedExam || arrangeAndIssue.isPending}
               >
                 <Play className="h-4 w-4 mr-2" />
-                开始安排座位
+                {arrangeAndIssue.isPending ? '处理中...' : '开始安排座位'}
               </Button>
             </div>
+          )}
+          {selectedExamDetails && (
+            <Alert>
+              <AlertDescription>
+                {selectedExamDetails.feeRequired ? (
+                  <span className="flex items-center gap-1">
+                    <DollarSign className="h-4 w-4" />
+                    收费考试：将为所有<strong>已缴费</strong>的考生分配座位并生成准考证
+                    {selectedExamDetails.feeAmount && ` (费用: ¥${selectedExamDetails.feeAmount})`}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    免费考试：将为所有<strong>审核通过</strong>的考生分配座位并生成准考证
+                  </span>
+                )}
+              </AlertDescription>
+            </Alert>
           )}
         </CardContent>
       </Card>
@@ -205,6 +261,7 @@ export default function SeatArrangementPage({ params }: SeatArrangementPageProps
                 <TableRow>
                   <TableHead>考试名称</TableHead>
                   <TableHead>考试编号</TableHead>
+                  <TableHead>收费</TableHead>
                   <TableHead>考试时间</TableHead>
                   <TableHead>状态</TableHead>
                   <TableHead className="text-right">操作</TableHead>
@@ -216,13 +273,23 @@ export default function SeatArrangementPage({ params }: SeatArrangementPageProps
                     <TableCell className="font-medium">{exam.title}</TableCell>
                     <TableCell className="font-mono text-sm">{exam.code}</TableCell>
                     <TableCell>
-                      {new Date(exam.examStart).toLocaleDateString('zh-CN', {
+                      {exam.feeRequired ? (
+                        <Badge variant="outline">
+                          <DollarSign className="h-3 w-3 mr-1" />
+                          ¥{exam.feeAmount || 0}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">免费</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {exam.examStart ? new Date(exam.examStart).toLocaleDateString('zh-CN', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',
                         hour: '2-digit',
                         minute: '2-digit',
-                      })}
+                      }) : '-'}
                     </TableCell>
                     <TableCell>{getStatusBadge(exam.status)}</TableCell>
                     <TableCell className="text-right">
@@ -230,20 +297,20 @@ export default function SeatArrangementPage({ params }: SeatArrangementPageProps
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => router.push(`/${tenantSlug}/admin/exams/${exam.id}/seating`)}
+                          onClick={() => router.push(`/${tenantSlug}/admin/venues`)}
                         >
                           <MapPin className="h-4 w-4 mr-2" />
                           配置考场
                         </Button>
                         <Button
-                          variant="ghost"
+                          variant="default"
                           size="sm"
                           onClick={() => {
                             setSelectedExam(exam.id)
-                            handleArrangeSeats()
+                            setIsArrangeDialogOpen(true)
                           }}
                         >
-                          <Users className="h-4 w-4 mr-2" />
+                          <Ticket className="h-4 w-4 mr-2" />
                           安排座位
                         </Button>
                       </div>
@@ -258,33 +325,61 @@ export default function SeatArrangementPage({ params }: SeatArrangementPageProps
 
       {/* Arrange Seats Dialog */}
       <Dialog open={isArrangeDialogOpen} onOpenChange={setIsArrangeDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>确认座位安排</DialogTitle>
+            <DialogTitle>座位安排与准考证生成</DialogTitle>
             <DialogDescription>
-              系统将自动为所有已缴费的考生分配座位。此操作将清除现有的座位安排。
+              {selectedExamDetails?.feeRequired
+                ? '系统将为所有已缴费的考生分配座位并生成准考证'
+                : '系统将为所有审核通过的考生分配座位并生成准考证'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* 考试信息 */}
+            {selectedExamDetails && (
+              <Alert>
+                <AlertTitle className="flex items-center gap-2">
+                  {selectedExamDetails.title}
+                  {selectedExamDetails.feeRequired ? (
+                    <Badge variant="outline"><DollarSign className="h-3 w-3" /> 收费</Badge>
+                  ) : (
+                    <Badge variant="secondary">免费</Badge>
+                  )}
+                </AlertTitle>
+                <AlertDescription className="text-sm text-muted-foreground">
+                  考试编号: {selectedExamDetails.code}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* 策略选择 */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">安排规则</label>
-              <Select value={arrangementRule} onValueChange={setArrangementRule}>
+              <label className="text-sm font-medium">分配策略</label>
+              <Select value={selectedStrategy} onValueChange={setSelectedStrategy}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="按岗位分组">按岗位分组</SelectItem>
-                  <SelectItem value="随机分配">随机分配</SelectItem>
-                  <SelectItem value="按报名顺序">按报名顺序</SelectItem>
+                  {ALLOCATION_STRATEGIES.map((strategy) => (
+                    <SelectItem key={strategy.code} value={strategy.code}>
+                      {strategy.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                {ALLOCATION_STRATEGIES.find(s => s.code === selectedStrategy)?.description}
+              </p>
             </div>
+
+            {/* 说明 */}
             <div className="rounded-lg bg-muted p-4 text-sm">
-              <p className="font-medium mb-2">安排规则说明：</p>
+              <p className="font-medium mb-2">操作说明：</p>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                <li>按岗位分组：相同岗位的考生安排在同一教室</li>
-                <li>随机分配：随机分配座位，打乱岗位顺序</li>
-                <li>按报名顺序：按照报名时间先后顺序分配</li>
+                <li>系统将自动分配座位并生成准考证</li>
+                <li>相同岗位的考生优先安排在同一考场</li>
+                <li>此操作会清除现有的座位安排</li>
+                <li>考生可在个人中心查看准考证</li>
               </ul>
             </div>
           </div>
@@ -292,8 +387,61 @@ export default function SeatArrangementPage({ params }: SeatArrangementPageProps
             <Button variant="outline" onClick={() => setIsArrangeDialogOpen(false)}>
               取消
             </Button>
-            <Button onClick={confirmArrange} disabled={arrangeSeats.isPending}>
-              {arrangeSeats.isPending ? '安排中...' : '确认开始安排'}
+            <Button onClick={confirmArrange} disabled={arrangeAndIssue.isPending}>
+              {arrangeAndIssue.isPending ? (
+                <>
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  处理中...
+                </>
+              ) : (
+                <>
+                  <Ticket className="h-4 w-4 mr-2" />
+                  确认执行
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Result Dialog */}
+      <Dialog open={showResultDialog} onOpenChange={setShowResultDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              座位安排完成
+            </DialogTitle>
+          </DialogHeader>
+          {arrangeResult && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-lg border p-4 text-center">
+                  <p className="text-2xl font-bold text-primary">{arrangeResult.totalCandidates}</p>
+                  <p className="text-sm text-muted-foreground">符合条件考生</p>
+                </div>
+                <div className="rounded-lg border p-4 text-center">
+                  <p className="text-2xl font-bold text-primary">{arrangeResult.totalSeatsAssigned}</p>
+                  <p className="text-sm text-muted-foreground">已分配座位</p>
+                </div>
+                <div className="rounded-lg border p-4 text-center">
+                  <p className="text-2xl font-bold text-primary">{arrangeResult.totalVenues}</p>
+                  <p className="text-sm text-muted-foreground">使用考场</p>
+                </div>
+                <div className="rounded-lg border p-4 text-center">
+                  <p className="text-2xl font-bold text-green-600">{arrangeResult.totalTicketsIssued}</p>
+                  <p className="text-sm text-muted-foreground">已发准考证</p>
+                </div>
+              </div>
+              <div className="rounded-lg bg-muted p-4 text-sm">
+                <p><strong>分配策略:</strong> {arrangeResult.strategyDescription || arrangeResult.strategy}</p>
+                <p><strong>批次ID:</strong> <code className="text-xs">{arrangeResult.batchId}</code></p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setShowResultDialog(false)}>
+              关闭
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -301,4 +449,3 @@ export default function SeatArrangementPage({ params }: SeatArrangementPageProps
     </div>
   )
 }
-

@@ -1,12 +1,14 @@
 "use client"
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Spinner, EmptyState } from '@/components/ui/loading'
 import { useApplication, useTicketByApplication, useGenerateTicket, useTicketDownload } from '@/lib/api-hooks'
+import { apiGet } from '@/lib/api'
 import { ArrowLeft, Ticket as TicketIcon, Download, Eye, AlertTriangle, MapPin, Clock, User, CheckCircle2 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -15,6 +17,20 @@ export default function CandidateTicketPage() {
   const params = useParams()
   const router = useRouter()
   const applicationId = (params as any)?.applicationId as string
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('')
+
+  // 获取用户关联的租户列表
+  const { data: tenants } = useQuery<any[]>({
+    queryKey: ['my-tenants'],
+    queryFn: async () => apiGet<any[]>('/tenants/me'),
+  })
+
+  // 自动选择第一个租户
+  useEffect(() => {
+    if (tenants && tenants.length > 0 && !selectedTenantId) {
+      setSelectedTenantId(tenants[0].id)
+    }
+  }, [tenants, selectedTenantId])
 
   const { data: application, isLoading: appLoading } = useApplication(applicationId)
   const { data: ticket, isLoading, refetch } = useTicketByApplication(applicationId)
@@ -39,18 +55,41 @@ export default function CandidateTicketPage() {
     }
   }
 
-  const handleView = () => {
-    if (!ticket) return
-    const url = `/api/v1/tickets/${(ticket as any).id}/view`
+  const handleView = async () => {
+    if (!ticket || !selectedTenantId) return
+    try {
+      // 使用fetch API获取PDF，传递租户ID
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+      const response = await fetch(`/api/v1/tickets/${(ticket as any).id}/view`, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          'X-Tenant-ID': selectedTenantId,
+        },
+        credentials: 'include',
+      })
+      
+      if (!response.ok) {
+        throw new Error('查看失败')
+      }
+      
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
     window.open(url, '_blank')
+      // 注意：不立即revoke URL，让新窗口可以访问
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000)
+    } catch (error) {
+      console.error('View error:', error)
+      alert('查看失败，请重试')
+    }
   }
 
   const handleDownload = async () => {
-    if (!ticket) return
+    if (!ticket || !selectedTenantId) return
     try {
-      await download.mutateAsync((ticket as any).id)
+      await download.mutateAsync({ ticketId: (ticket as any).id, tenantId: selectedTenantId })
     } catch (e) {
       console.error('download ticket error', e)
+      alert('下载失败，请重试')
     }
   }
 
@@ -130,24 +169,46 @@ export default function CandidateTicketPage() {
               </div>
             </div>
 
-            {/* Candidate & venue */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <div className="text-sm text-gray-500">考生</div>
-                <div className="flex items-center gap-2 text-gray-900">
-                  <User className="h-4 w-4" /> {(ticket as any).candidateName}（{(ticket as any).candidateIdNumber}）
+            {/* Candidate info */}
+            <div className="space-y-2">
+              <div className="text-sm text-gray-500">考生信息</div>
+              <div className="flex items-center gap-2 text-gray-900">
+                <User className="h-4 w-4" /> {(ticket as any).candidateName}（{(ticket as any).candidateIdNumber}）
+              </div>
+            </div>
+
+            {/* 座位安排信息 - 醒目显示 */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="text-sm font-medium text-blue-800 mb-3 flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                座位安排
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white rounded-lg p-3 shadow-sm">
+                  <div className="text-xs text-gray-500 mb-1">考场地点</div>
+                  <div className="font-semibold text-gray-900">
+                    {(ticket as any).venue || (ticket as any).venueName || '待安排'}
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg p-3 shadow-sm">
+                  <div className="text-xs text-gray-500 mb-1">教室/考场</div>
+                  <div className="font-semibold text-gray-900">
+                    {(ticket as any).room || (ticket as any).roomNumber || '待安排'}
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg p-3 shadow-sm">
+                  <div className="text-xs text-gray-500 mb-1">座位号</div>
+                  <div className="font-semibold text-xl text-blue-600">
+                    {(ticket as any).seat || (ticket as any).seatNumber || '待安排'}
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <div className="text-sm text-gray-500">考场</div>
-                <div className="flex items-center gap-2 text-gray-900">
-                  <MapPin className="h-4 w-4" /> {(ticket as any).venue} {(ticket as any).room}
+              {!(ticket as any).venue && !(ticket as any).venueName && (
+                <div className="mt-3 text-xs text-blue-600 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  座位尚未分配，请等待管理员安排后再查看
                 </div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-sm text-gray-500">座位</div>
-                <div className="text-gray-900">{(ticket as any).seat}</div>
-              </div>
+              )}
             </div>
 
             {/* Time */}

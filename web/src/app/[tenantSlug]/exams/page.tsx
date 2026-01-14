@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useTenant } from '@/hooks/useTenant'
-import { apiGet } from '@/lib/api'
+import { apiGet, apiGetWithTenant } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -33,11 +33,13 @@ export default function CandidateExamsPage() {
   const router = useRouter()
   const { tenant, isLoading: tenantLoading } = useTenant()
 
-  // Fetch open exams
+  // Fetch open exams for current tenant
   const { data: exams, isLoading: examsLoading } = useQuery<Exam[]>({
     queryKey: ['open-exams', tenant?.id],
     queryFn: async () => {
-      return apiGet<Exam[]>('/exams/open')
+      if (!tenant?.id) throw new Error('Tenant ID is required')
+      // 只获取状态为 Open 的考试（后端使用首字母大写格式）
+      return apiGetWithTenant<Exam[]>('/exams?status=Open', tenant.id)
     },
     enabled: !!tenant?.id,
   })

@@ -19,7 +19,7 @@ import {
   List,
   Grid
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/components/ui/use-toast'
 
 type AllocationStrategy = 'POSITION_FIRST_SUBMITTED_AT' | 'RANDOM' | 'SUBMITTED_AT_FIRST' | 'POSITION_FIRST_RANDOM' | 'CUSTOM_GROUP'
 

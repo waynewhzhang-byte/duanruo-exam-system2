@@ -1,7 +1,7 @@
 ﻿'use client'
 
-import { useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useTenant } from '@/hooks/useTenant'
 import { apiGetWithTenant, apiPost } from '@/lib/api'
@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/loading'
-import { ArrowLeft, FileText, Users, ClipboardList, Building2, Settings, Send, MapPin, Award, UserCheck, ListChecks } from 'lucide-react'
+import { ArrowLeft, FileText, Users, ClipboardList, Building2, Settings, Send, MapPin, Award, UserCheck, ListChecks, Ticket } from 'lucide-react'
 import ExamBasicInfo from '@/components/admin/exam-detail/ExamBasicInfo'
 import ExamPositionsAndSubjects from '@/components/admin/exam-detail/ExamPositionsAndSubjects'
 import ExamApplicationForm from '@/components/admin/exam-detail/ExamApplicationForm'
@@ -19,8 +19,11 @@ import ExamSeating from '@/components/admin/exam-detail/ExamSeating'
 import ExamScores from '@/components/admin/exam-detail/ExamScores'
 import ExamApplications from '@/components/admin/exam-detail/ExamApplications'
 import ExamReviewers from '@/components/admin/exam-detail/ExamReviewers'
+import ExamTickets from '@/components/admin/exam-detail/ExamTickets'
 import ExamPublishDialog from '@/components/admin/exam-detail/ExamPublishDialog'
 import { toast } from 'sonner'
+import ExamStatusActions from '@/components/admin/exam-detail/ExamStatusActions'
+import ExamStatusEditor from '@/components/admin/exam-detail/ExamStatusEditor'
 
 interface Exam {
   id: string
@@ -36,12 +39,21 @@ interface Exam {
 
 export default function TenantExamDetailPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const examId = params.examId as string
   const tenantSlug = params.tenantSlug as string
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('basic')
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
   const { tenant, isLoading: tenantLoading } = useTenant()
+
+  // Support URL parameter ?tab=form to open specific tab
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
 
   // Fetch exam with tenant context
   const { data: exam, isLoading: examLoading, error, refetch } = useQuery<Exam>({
@@ -57,7 +69,8 @@ export default function TenantExamDetailPage() {
 
   const handlePublish = async () => {
     try {
-      await apiPost(`/exams/${examId}/open`, {})
+      if (!tenant?.id) throw new Error('No tenant selected')
+      await apiPost(`/exams/${examId}/open`, {}, { tenantId: tenant.id })
       await refetch()
       toast.success('考试发布成功！')
     } catch (error: any) {
@@ -87,16 +100,14 @@ export default function TenantExamDetailPage() {
     switch (status) {
       case 'DRAFT':
         return <Badge variant="outline">草稿</Badge>
-      case 'PUBLISHED':
-        return <Badge variant="default">已发布</Badge>
-      case 'REGISTRATION_OPEN':
-        return <Badge variant="default">报名中</Badge>
-      case 'REGISTRATION_CLOSED':
-        return <Badge variant="secondary">报名截止</Badge>
+      case 'OPEN':
+        return <Badge variant="default" className="bg-green-600">开放报名</Badge>
+      case 'CLOSED':
+        return <Badge variant="secondary">报名关闭</Badge>
+      case 'IN_PROGRESS':
+        return <Badge variant="default" className="bg-blue-600">考试进行中</Badge>
       case 'COMPLETED':
         return <Badge variant="secondary">已完成</Badge>
-      case 'CANCELLED':
-        return <Badge variant="destructive">已取消</Badge>
       default:
         return <Badge>{status}</Badge>
     }
@@ -121,15 +132,37 @@ export default function TenantExamDetailPage() {
             </p>
           </div>
         </div>
+
+
         <div className="flex items-center gap-2">
+          {/* 主要的状态编辑器 - 更直观的按钮 */}
+          {tenant?.id && (
+            <ExamStatusEditor
+              examId={examId}
+              currentStatus={exam.status}
+              tenantId={tenant.id}
+              onStatusChange={refetch}
+            />
+          )}
+
+          {/* 保留原有的下拉菜单作为快捷操作 */}
+          {tenant?.id && (
+            <ExamStatusActions
+              examId={examId}
+              currentStatus={exam.status}
+              tenantId={tenant.id}
+              onStatusChange={refetch}
+            />
+          )}
+
           {exam.status === 'DRAFT' && (
-            <Button onClick={() => setPublishDialogOpen(true)}>
+            <Button onClick={() => setPublishDialogOpen(true)} disabled={!tenant?.id}>
               <Send className="h-4 w-4 mr-2" />
               发布考试
             </Button>
           )}
           {exam.status === 'OPEN' && (
-            <Button variant="outline" onClick={() => setPublishDialogOpen(true)}>
+            <Button variant="outline" onClick={() => setPublishDialogOpen(true)} disabled={!tenant?.id}>
               <Send className="h-4 w-4 mr-2" />
               重新发布
             </Button>
@@ -139,7 +172,7 @@ export default function TenantExamDetailPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-10">
           <TabsTrigger value="basic" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             基本信息
@@ -167,6 +200,10 @@ export default function TenantExamDetailPage() {
           <TabsTrigger value="seating" className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
             座位分配
+          </TabsTrigger>
+          <TabsTrigger value="tickets" className="flex items-center gap-2">
+            <Ticket className="h-4 w-4" />
+            准考证
           </TabsTrigger>
           <TabsTrigger value="scores" className="flex items-center gap-2">
             <Award className="h-4 w-4" />
@@ -204,6 +241,10 @@ export default function TenantExamDetailPage() {
 
         <TabsContent value="seating" className="space-y-6">
           <ExamSeating examId={examId} />
+        </TabsContent>
+
+        <TabsContent value="tickets" className="space-y-6">
+          <ExamTickets examId={examId} />
         </TabsContent>
 
         <TabsContent value="scores" className="space-y-6">

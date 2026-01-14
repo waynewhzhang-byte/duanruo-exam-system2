@@ -13,7 +13,10 @@ interface SeatAssignment {
   candidateName: string
   positionTitle: string
   venueName: string
-  seatNumber: number
+  roomName?: string
+  roomCode?: string
+  seatNo?: number
+  seatNumber: string  // Full seat label: venue--room--seatNo
 }
 
 interface SeatAssignmentExportProps {

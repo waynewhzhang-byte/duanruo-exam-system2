@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useExams } from '@/lib/api-hooks'
+import { useOpenExams } from '@/lib/api-hooks'
 import {
   Search,
   Filter,
@@ -14,43 +14,49 @@ import {
   Clock,
   BookOpen,
   DollarSign,
-  ArrowRight
+  ArrowRight,
+  Building2
 } from 'lucide-react'
 
 export default function ExamsPage() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('REGISTRATION_OPEN')
 
+  // 获取所有租户的公开考试（状态为 OPEN）
   const {
-    data: examsData,
+    data: exams,
     isLoading
-  } = useExams({
-    page: 0,
-    size: 100,
-    status: statusFilter === 'ALL' ? undefined : statusFilter
-  })
+  } = useOpenExams()
 
-  const filteredExams = examsData?.content?.filter(exam =>
+  const filteredExams = exams?.filter(exam =>
     searchQuery === '' ||
     exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     exam.description?.toLowerCase().includes(searchQuery.toLowerCase())
   ) || []
 
-  const handleExamSelect = (examId: string) => {
-    router.push(`/candidate/exams/${examId}/positions`)
+  // 考生选择考试后，跳转到对应租户的考试详情页面
+  const handleExamSelect = (tenantCode: string | null | undefined, examId: string) => {
+    if (tenantCode) {
+      // 跳转到租户级别的考试详情/报名页面
+      router.push(`/${tenantCode}/exams/${examId}`)
+    } else {
+      // 如果没有租户信息，回退到全局路径
+      router.push(`/candidate/exams/${examId}/positions`)
+    }
   }
 
   const getStatusBadge = (status: string) => {
+    // 使用大写进行比较，兼容后端返回的各种大小写格式
+    const normalizedStatus = status?.toUpperCase() || ''
     const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-      REGISTRATION_OPEN: { label: '报名中', variant: 'default' },
-      REGISTRATION_CLOSED: { label: '已截止', variant: 'destructive' },
       DRAFT: { label: '草稿', variant: 'secondary' },
-      PUBLISHED: { label: '已发布', variant: 'outline' },
-      COMPLETED: { label: '已完成', variant: 'secondary' },
-      CANCELLED: { label: '已取消', variant: 'destructive' }
+      OPEN: { label: '报名中', variant: 'default' },
+      CLOSED: { label: '已截止', variant: 'destructive' },
+      INPROGRESS: { label: '考试中', variant: 'outline' },
+      IN_PROGRESS: { label: '考试中', variant: 'outline' },
+      COMPLETED: { label: '已完成', variant: 'secondary' }
     }
-    const config = statusMap[status] || { label: status, variant: 'secondary' as const }
+    const config = statusMap[normalizedStatus] || { label: status, variant: 'secondary' as const }
     return <Badge variant={config.variant}>{config.label}</Badge>
   }
 
@@ -70,36 +76,18 @@ export default function ExamsPage() {
         <p className="text-muted-foreground mt-2">选择您要报名的考试</p>
       </div>
 
-      {/* Search and Filters */}
+      {/* Search */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <input
-                type="text"
-                placeholder="搜索考试名称或描述..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-
-            {/* Status Filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="ALL">全部状态</option>
-                <option value="REGISTRATION_OPEN">报名中</option>
-                <option value="PUBLISHED">已发布</option>
-                <option value="REGISTRATION_CLOSED">已截止</option>
-              </select>
-            </div>
+          <div className="flex items-center gap-4">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="搜索考试名称或描述..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
           </div>
         </CardContent>
       </Card>
@@ -140,11 +128,26 @@ export default function ExamsPage() {
             <Card key={exam.id} className="group hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary">
               <CardHeader>
                 <div className="flex justify-between items-start mb-2">
-                  <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                    {exam.title}
-                  </CardTitle>
+                  <div className="flex-1">
+                    <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                      {exam.title}
+                    </CardTitle>
+                    {/* 租户信息 */}
+                    {exam.tenantName && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                        <Building2 className="h-3 w-3" />
+                        <span>{exam.tenantName}</span>
+                      </div>
+                    )}
+                    {/* 岗位数量 */}
+                    {exam.positionCount !== null && exam.positionCount !== undefined && exam.positionCount > 0 && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        共 {exam.positionCount} 个岗位
+                      </div>
+                    )}
+                  </div>
+                  {getStatusBadge(exam.status)}
                 </div>
-                {getStatusBadge(exam.status)}
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Description */}
@@ -178,13 +181,13 @@ export default function ExamsPage() {
                   )}
                 </div>
 
-                {/* Action Button */}
+                {/* Action Button - 使用 examId 和 tenantCode 跳转到租户级别的考试详情 */}
                 <Button
-                  onClick={() => handleExamSelect(exam.id)}
+                  onClick={() => handleExamSelect(exam.tenantCode, exam.examId)}
                   className="w-full group-hover:shadow-md transition-shadow"
-                  disabled={exam.status !== 'REGISTRATION_OPEN'}
+                  disabled={exam.status?.toUpperCase() !== 'OPEN'}
                 >
-                  {exam.status === 'REGISTRATION_OPEN' ? (
+                  {exam.status?.toUpperCase() === 'OPEN' ? (
                     <>
                       查看岗位
                       <ArrowRight className="ml-2 h-4 w-4" />

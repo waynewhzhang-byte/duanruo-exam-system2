@@ -4,21 +4,31 @@ import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Eye, Code, Save, Undo, Redo } from 'lucide-react'
+import { Plus, Eye, Code, Save, Undo, Redo, FileText } from 'lucide-react'
 import { FormTemplate, FormSection, FormField } from '@/types/form-template'
 import FormBuilderCanvas from './FormBuilderCanvas'
 import FormBuilderSidebar from './FormBuilderSidebar'
 import FormBuilderPreview from './FormBuilderPreview'
 import { toast } from 'sonner'
+import { BASIC_TEMPLATE, COMPREHENSIVE_TEMPLATE, FORM_TEMPLATES } from '@/data/form-templates'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface FormBuilderProps {
   examId: string
   positionId?: string
   initialTemplate?: FormTemplate
   onSave?: (template: FormTemplate) => Promise<void>
+  readOnly?: boolean
 }
 
-export default function FormBuilder({ examId, positionId, initialTemplate, onSave }: FormBuilderProps) {
+export default function FormBuilder({ examId, positionId, initialTemplate, onSave, readOnly = false }: FormBuilderProps) {
   const [template, setTemplate] = useState<FormTemplate>(
     initialTemplate || createDefaultTemplate()
   )
@@ -26,6 +36,22 @@ export default function FormBuilder({ examId, positionId, initialTemplate, onSav
   const [selectedField, setSelectedField] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'design' | 'preview' | 'json'>('design')
   const [isSaving, setIsSaving] = useState(false)
+
+  // 应用预定义模板
+  const handleApplyTemplate = (templateId: string) => {
+    const presetTemplate = FORM_TEMPLATES.find(t => t.id === templateId)
+    if (presetTemplate) {
+      // 深拷贝模板并保持当前的ID和时间戳
+      const newTemplate = JSON.parse(JSON.stringify(presetTemplate)) as FormTemplate
+      newTemplate.id = template.id
+      newTemplate.createdAt = template.createdAt
+      newTemplate.updatedAt = new Date().toISOString()
+      setTemplate(newTemplate)
+      setSelectedSection(null)
+      setSelectedField(null)
+      toast.success(`已应用模板：${presetTemplate.name}`)
+    }
+  }
 
   // 添加新分区
   const handleAddSection = () => {
@@ -145,18 +171,50 @@ export default function FormBuilder({ examId, positionId, initialTemplate, onSav
               <CardDescription>拖拽字段设计报名表单，支持实时预览</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled>
-                <Undo className="h-4 w-4 mr-1" />
-                撤销
-              </Button>
-              <Button variant="outline" size="sm" disabled>
-                <Redo className="h-4 w-4 mr-1" />
-                重做
-              </Button>
-              <Button onClick={handleSave} disabled={isSaving}>
-                <Save className="h-4 w-4 mr-1" />
-                {isSaving ? '保存中...' : '保存模板'}
-              </Button>
+              {!readOnly && (
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <FileText className="h-4 w-4 mr-1" />
+                        选择模板
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel>预定义模板</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {FORM_TEMPLATES.map((t) => (
+                        <DropdownMenuItem
+                          key={t.id}
+                          onClick={() => handleApplyTemplate(t.id)}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{t.name}</span>
+                            <span className="text-xs text-muted-foreground">{t.description}</span>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button variant="outline" size="sm" disabled>
+                    <Undo className="h-4 w-4 mr-1" />
+                    撤销
+                  </Button>
+                  <Button variant="outline" size="sm" disabled>
+                    <Redo className="h-4 w-4 mr-1" />
+                    重做
+                  </Button>
+                  <Button onClick={handleSave} disabled={isSaving}>
+                    <Save className="h-4 w-4 mr-1" />
+                    {isSaving ? '保存中...' : '保存模板'}
+                  </Button>
+                </>
+              )}
+              {readOnly && (
+                <div className="text-sm text-muted-foreground">
+                  只读模式 - 已发布的表单无法修改
+                </div>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -181,36 +239,52 @@ export default function FormBuilder({ examId, positionId, initialTemplate, onSav
 
         {/* 设计视图 */}
         <TabsContent value="design" className="space-y-4">
-          <div className="grid grid-cols-12 gap-4">
-            {/* 左侧：字段库 */}
-            <div className="col-span-3">
-              <FormBuilderSidebar
-                onAddField={(field) => {
-                  if (selectedSection) {
-                    handleAddField(selectedSection, field)
-                  } else {
-                    toast.error('请先选择一个分区')
-                  }
-                }}
-              />
-            </div>
+          {readOnly ? (
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center space-y-4">
+                  <p className="text-muted-foreground">
+                    此表单已发布，处于只读模式。如需修改，请创建新版本。
+                  </p>
+                  <Button variant="outline" onClick={() => setActiveTab('preview')}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    查看预览
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-12 gap-4">
+              {/* 左侧：字段库 */}
+              <div className="col-span-3">
+                <FormBuilderSidebar
+                  onAddField={(field) => {
+                    if (selectedSection) {
+                      handleAddField(selectedSection, field)
+                    } else {
+                      toast.error('请先选择一个分区')
+                    }
+                  }}
+                />
+              </div>
 
-            {/* 中间：画布 */}
-            <div className="col-span-9">
-              <FormBuilderCanvas
-                template={template}
-                selectedSection={selectedSection}
-                selectedField={selectedField}
-                onSelectSection={setSelectedSection}
-                onSelectField={setSelectedField}
-                onAddSection={handleAddSection}
-                onUpdateSection={handleUpdateSection}
-                onDeleteSection={handleDeleteSection}
-                onUpdateField={handleUpdateField}
-                onDeleteField={handleDeleteField}
-              />
+              {/* 中间：画布 */}
+              <div className="col-span-9">
+                <FormBuilderCanvas
+                  template={template}
+                  selectedSection={selectedSection}
+                  selectedField={selectedField}
+                  onSelectSection={setSelectedSection}
+                  onSelectField={setSelectedField}
+                  onAddSection={handleAddSection}
+                  onUpdateSection={handleUpdateSection}
+                  onDeleteSection={handleDeleteSection}
+                  onUpdateField={handleUpdateField}
+                  onDeleteField={handleDeleteField}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </TabsContent>
 
         {/* 预览视图 */}
@@ -237,24 +311,13 @@ export default function FormBuilder({ examId, positionId, initialTemplate, onSav
   )
 }
 
-// 创建默认模板
+// 创建默认模板 - 使用基础报名模板作为默认
 function createDefaultTemplate(): FormTemplate {
-  return {
-    id: `template-${Date.now()}`,
-    name: '新建表单模板',
-    description: '请添加分区和字段来设计您的报名表单',
-    version: '1.0.0',
-    category: 'custom',
-    tags: [],
-    sections: [],
-    fileRequirements: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    createdBy: 'admin',
-    isActive: true,
-    allowSaveDraft: true,
-    allowMultipleSubmissions: false,
-    submitButtonText: '提交报名',
-  }
+  // 深拷贝 BASIC_TEMPLATE 并生成新的 ID
+  const template = JSON.parse(JSON.stringify(BASIC_TEMPLATE)) as FormTemplate
+  template.id = `template-${Date.now()}`
+  template.createdAt = new Date().toISOString()
+  template.updatedAt = new Date().toISOString()
+  return template
 }
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPost, apiDelete } from '@/lib/api'
+import { apiGet, apiPost, apiDelete, apiGetWithTenant } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Spinner } from '@/components/ui/loading'
 import { UserPlus, Trash2, UserCheck, Users, Shield } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTenant } from '@/hooks/useTenant'
 
 interface Reviewer {
   id: string
@@ -40,11 +41,18 @@ export default function ExamReviewers({ examId }: ExamReviewersProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string>('')
   const [selectedRole, setSelectedRole] = useState<'PRIMARY_REVIEWER' | 'SECONDARY_REVIEWER'>('PRIMARY_REVIEWER')
+  const { tenant } = useTenant()
 
   // 获取审核员列表
   const { data: reviewers, isLoading } = useQuery<Reviewer[]>({
     queryKey: ['exam-reviewers', examId],
-    queryFn: () => apiGet<Reviewer[]>(`/exams/${examId}/reviewers`),
+    queryFn: () => {
+      if (!tenant?.id) {
+        throw new Error('Tenant ID is required')
+      }
+      return apiGetWithTenant<Reviewer[]>(`/exams/${examId}/reviewers`, tenant.id)
+    },
+    enabled: !!tenant?.id,
   })
 
   // 获取可用用户列表（用于添加审核员）

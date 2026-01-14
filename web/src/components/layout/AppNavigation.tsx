@@ -32,10 +32,46 @@ export default function AppNavigation({ user, onSignOut }: AppNavigationProps) {
     return null;
   }
 
-  // 角色判断
-  const isSystemAdmin = user.roles.includes('SYSTEM_ADMIN');
-  const isTenantAdmin = user.roles.includes('INSTANCE_ADMIN');
-  const isReviewer = user.roles.includes('REVIEWER_L1') || user.roles.includes('REVIEWER_L2');
+  // 角色中文映射
+  const ROLE_LABELS: Record<string, string> = {
+    'SUPER_ADMIN': '超级管理员',
+    'ADMIN': '超级管理员',
+    'TENANT_ADMIN': '租户管理员',
+    'EXAM_ADMIN': '考试管理员',
+    'PRIMARY_REVIEWER': '初审员',
+    'SECONDARY_REVIEWER': '复审员',
+    'CANDIDATE': '考生',
+    'EXAMINER': '考官',
+  };
+
+  // 角色优先级定义 (数值越小优先级越高)
+  const ROLE_PRIORITY: Record<string, number> = {
+    'SUPER_ADMIN': 1,
+    'ADMIN': 2,
+    'TENANT_ADMIN': 3,
+    'EXAM_ADMIN': 4,
+    'PRIMARY_REVIEWER': 5,
+    'SECONDARY_REVIEWER': 6,
+    'EXAMINER': 7,
+    'CANDIDATE': 99,
+  };
+
+  // 获取主角色（优先级最高的角色）
+  const getPrimaryRole = (roles: string[]) => {
+    if (!roles || roles.length === 0) return 'CANDIDATE';
+    return roles.reduce((prev, curr) => {
+      const prevPriority = ROLE_PRIORITY[prev] || 100;
+      const currPriority = ROLE_PRIORITY[curr] || 100;
+      return prevPriority < currPriority ? prev : curr;
+    });
+  };
+
+  const primaryRole = getPrimaryRole(user.roles);
+
+  // 角色判断 - 修正角色名称
+  const isSystemAdmin = user.roles.includes('SUPER_ADMIN') || user.roles.includes('ADMIN');
+  const isTenantAdmin = user.roles.includes('TENANT_ADMIN');
+  const isReviewer = user.roles.includes('PRIMARY_REVIEWER') || user.roles.includes('SECONDARY_REVIEWER');
   const isCandidate = user.roles.includes('CANDIDATE');
 
   const handleSignOut = () => {
@@ -60,8 +96,8 @@ export default function AppNavigation({ user, onSignOut }: AppNavigationProps) {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
             {/* Dashboard */}
-            <Link 
-              href="/dashboard" 
+            <Link
+              href="/dashboard"
               className={cn(
                 "text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                 pathname === '/dashboard' && "bg-gray-100 text-gray-900"
@@ -126,8 +162,8 @@ export default function AppNavigation({ user, onSignOut }: AppNavigationProps) {
 
             {/* Reviewer Menu */}
             {(isSystemAdmin || isTenantAdmin || isReviewer) && (
-              <Link 
-                href="/reviewer/queue" 
+              <Link
+                href="/reviewer/queue"
                 className={cn(
                   "text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                   pathname.startsWith('/reviewer') && "bg-gray-100 text-gray-900"
@@ -139,8 +175,8 @@ export default function AppNavigation({ user, onSignOut }: AppNavigationProps) {
 
             {/* Candidate Menu */}
             {isCandidate && (
-              <Link 
-                href="/candidate/exams" 
+              <Link
+                href="/candidate/exams"
                 className={cn(
                   "text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                   pathname.startsWith('/candidate') && "bg-gray-100 text-gray-900"
@@ -162,7 +198,7 @@ export default function AppNavigation({ user, onSignOut }: AppNavigationProps) {
                   <div className="hidden lg:block text-left">
                     <div className="text-sm font-medium">{user.name}</div>
                     <div className="text-xs text-gray-500">
-                      {user.roles.join(', ')}
+                      {ROLE_LABELS[primaryRole] || primaryRole}
                     </div>
                   </div>
                   <ChevronDown className="h-4 w-4" />
@@ -175,7 +211,7 @@ export default function AppNavigation({ user, onSignOut }: AppNavigationProps) {
                   <div className="flex flex-wrap gap-1 mt-1">
                     {user.roles.map((role, index) => (
                       <Badge key={index} variant="secondary" className="text-xs">
-                        {role}
+                        {ROLE_LABELS[role] || role}
                       </Badge>
                     ))}
                   </div>
@@ -224,8 +260,8 @@ export default function AppNavigation({ user, onSignOut }: AppNavigationProps) {
               href="/dashboard"
               className={cn(
                 "block px-3 py-2 rounded-md text-base font-medium",
-                pathname === '/dashboard' 
-                  ? "bg-gray-100 text-gray-900" 
+                pathname === '/dashboard'
+                  ? "bg-gray-100 text-gray-900"
                   : "text-gray-700 hover:bg-gray-100"
               )}
             >

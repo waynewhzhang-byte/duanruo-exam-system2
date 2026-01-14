@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useContext } from 'react'
 import { Upload, X, File, CheckCircle, AlertCircle } from 'lucide-react'
-import { apiPost } from '@/lib/api'
+import { apiPostWithTenant } from '@/lib/api'
+import { TenantContext } from '@/contexts/TenantContext'
 
 interface FileUploadProps {
   onUploadComplete?: (fileId: string, fileName: string) => void
@@ -12,6 +13,7 @@ interface FileUploadProps {
   multiple?: boolean
   className?: string
   fieldKey?: string // 表单字段键，用于后端关联
+  tenantId?: string // 可选：直接传入租户 ID（用于不在 TenantProvider 内的场景）
 }
 
 interface UploadingFile {
@@ -31,25 +33,42 @@ export default function FileUpload({
   multiple = false,
   className = '',
   fieldKey = 'general',
+  tenantId: propTenantId,
 }: FileUploadProps) {
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // 安全地获取租户上下文（如果在 TenantProvider 内）
+  const tenantContext = useContext(TenantContext)
+  const contextTenantId = tenantContext?.tenant?.id
+
+  // 优先使用 prop 传入的 tenantId，其次使用上下文中的
+  const effectiveTenantId = propTenantId || contextTenantId
+
   const uploadFile = useCallback(async (file: File, uploadId: string) => {
     try {
+      // Validate tenant context
+      if (!effectiveTenantId) {
+        throw new Error('租户信息缺失，无法上传文件')
+      }
+
       // Step 1: Get upload URL
-      setUploadingFiles(prev => prev.map(f => 
+      setUploadingFiles(prev => prev.map(f =>
         f.id === uploadId ? { ...f, progress: 10 } : f
       ))
 
-      const uploadUrlResponse = await apiPost<{ url: string; fileId: string }>('/files/upload-url', {
-        fileName: file.name,
-        contentType: file.type,
-        fieldKey: fieldKey,
-      })
+      const uploadUrlResponse = await apiPostWithTenant<{ url: string; fileId: string }>(
+        '/files/upload-url',
+        effectiveTenantId,
+        {
+          fileName: file.name,
+          contentType: file.type,
+          fieldKey: fieldKey,
+        }
+      )
 
-      setUploadingFiles(prev => prev.map(f => 
+      setUploadingFiles(prev => prev.map(f =>
         f.id === uploadId ? { ...f, progress: 30, fileId: uploadUrlResponse.fileId } : f
       ))
 
@@ -66,14 +85,14 @@ export default function FileUpload({
         throw new Error('文件上传失败')
       }
 
-      setUploadingFiles(prev => prev.map(f => 
+      setUploadingFiles(prev => prev.map(f =>
         f.id === uploadId ? { ...f, progress: 80 } : f
       ))
 
       // Step 3: Confirm upload
-      await apiPost(`/files/${uploadUrlResponse.fileId}/confirm`, {})
+      await apiPostWithTenant(`/files/${uploadUrlResponse.fileId}/confirm`, effectiveTenantId, {})
 
-      setUploadingFiles(prev => prev.map(f => 
+      setUploadingFiles(prev => prev.map(f =>
         f.id === uploadId ? { ...f, progress: 100, status: 'success' } : f
       ))
 
@@ -86,12 +105,12 @@ export default function FileUpload({
 
     } catch (error: any) {
       const errorMessage = error.message || '上传失败'
-      setUploadingFiles(prev => prev.map(f => 
+      setUploadingFiles(prev => prev.map(f =>
         f.id === uploadId ? { ...f, status: 'error', error: errorMessage } : f
       ))
       onUploadError?.(errorMessage)
     }
-  }, [onUploadComplete, onUploadError, fieldKey])
+  }, [onUploadComplete, onUploadError, fieldKey, effectiveTenantId])
 
   const handleFiles = useCallback((files: FileList) => {
     const fileArray = Array.from(files)

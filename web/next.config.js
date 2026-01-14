@@ -13,7 +13,7 @@ const nextConfig = {
   },
 
   async rewrites() {
-    const backendOrigin = process.env.BACKEND_ORIGIN || `http://localhost:${process.env.BACKEND_PORT || 8081}`
+    const backendOrigin = process.env.BACKEND_ORIGIN || `http://127.0.0.1:${process.env.BACKEND_PORT || 8081}`
     return [
       {
         source: '/api/v1/:path*',

@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useTenant } from '@/hooks/useTenant'
-import { apiGet } from '@/lib/api'
+import { apiGetWithTenant } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -44,22 +44,30 @@ export default function CandidateExamDetailPage() {
   const router = useRouter()
   const { tenant, isLoading: tenantLoading } = useTenant()
 
-  // Fetch exam details
+  // Fetch exam details - 使用带认证的 API，通过 X-Tenant-ID header 传递租户ID
   const { data: exam, isLoading: examLoading } = useQuery<Exam>({
-    queryKey: ['exam', examId],
+    queryKey: ['exam', examId, tenant?.id],
     queryFn: async () => {
-      return apiGet<Exam>(`/exams/${examId}`)
+      if (!tenant?.id) {
+        throw new Error('Tenant ID is required')
+      }
+      // 使用 apiGetWithTenant 自动注入 X-Tenant-ID header 和认证 token
+      return apiGetWithTenant<Exam>(`/exams/${examId}`, tenant.id)
     },
-    enabled: !!examId,
+    enabled: !!examId && !!tenant?.id,
   })
 
-  // Fetch positions
+  // Fetch positions - 使用带认证的 API，通过 X-Tenant-ID header 传递租户ID
   const { data: positions, isLoading: positionsLoading } = useQuery<Position[]>({
-    queryKey: ['exam-positions', examId],
+    queryKey: ['exam-positions', examId, tenant?.id],
     queryFn: async () => {
-      return apiGet<Position[]>(`/exams/${examId}/positions`)
+      if (!tenant?.id) {
+        throw new Error('Tenant ID is required')
+      }
+      // 使用 apiGetWithTenant 自动注入 X-Tenant-ID header 和认证 token
+      return apiGetWithTenant<Position[]>(`/exams/${examId}/positions`, tenant.id)
     },
-    enabled: !!examId,
+    enabled: !!examId && !!tenant?.id,
   })
 
   const isLoading = tenantLoading || examLoading || positionsLoading

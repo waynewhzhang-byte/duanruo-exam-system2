@@ -29,9 +29,15 @@ export default function NotificationsPage({ params }: NotificationsPageProps) {
   const { data: notifications, isLoading } = useQuery({
     queryKey: ['notifications', filter],
     queryFn: async () => {
-      const params = filter !== 'all' ? { read: filter === 'read' } : {}
-      const response: any = await apiGet('/notifications/my', { params })
-      return response.data
+      const response: any = await apiGet('/notification-histories/my')
+      const items = response.items || []
+      // 根据filter过滤
+      if (filter === 'unread') {
+        return items.filter((n: any) => !n.read)
+      } else if (filter === 'read') {
+        return items.filter((n: any) => n.read)
+      }
+      return items
     },
   })
 

@@ -1,0 +1,340 @@
+openapi: 3.0.3
+info:
+  title: Exam Registration Platform API
+  version: "0.1.0"
+  description: >
+    Core endpoints needed for tenant onboarding, exam management, candidate
+    applications, multi-tier reviews, payments, ticketing, seat allocation,
+    and score publication. All requests require `Authorization: Bearer <JWT>`
+    and `X-Tenant-ID` headers unless noted.
+servers:
+  - url: https://api.localhost:8081/api/v1
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    TenantIdPath:
+      name: tenantId
+      in: path
+      required: true
+      schema:
+        type: integer
+    ExamIdPath:
+      name: examId
+      in: path
+      required: true
+      schema:
+        type: integer
+  schemas:
+    Result:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          type: object
+    TenantRequest:
+      type: object
+      required: [code, name, adminEmail]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        adminEmail:
+          type: string
+          format: email
+    ExamRequest:
+      type: object
+      required: [title, registrationStart, registrationEnd, examDate, location, feeAmount]
+      properties:
+        title:
+          type: string
+        registrationStart:
+          type: string
+          format: date-time
+        registrationEnd:
+          type: string
+          format: date-time
+        examDate:
+          type: string
+          format: date-time
+        location:
+          type: string
+        feeAmount:
+          type: number
+          format: double
+    PositionRequest:
+      type: object
+      required: [title, hiringCount, ageRange, educationRequirement]
+      properties:
+        title:
+          type: string
+        hiringCount:
+          type: integer
+        ageRange:
+          type: object
+          properties:
+            min:
+              type: integer
+            max:
+              type: integer
+        genderRequirement:
+          type: string
+          enum: [MALE, FEMALE, ANY]
+        educationRequirement:
+          type: string
+          enum: [DIPLOMA, BACHELOR, MASTER, DOCTORATE]
+    ApplicationRequest:
+      type: object
+      required: [examId, positionId, formPayload, attachments]
+      properties:
+        examId:
+          type: integer
+        positionId:
+          type: integer
+        formPayload:
+          type: object
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              fieldKey:
+                type: string
+              objectKey:
+                type: string
+    ReviewDecision:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [APPROVE, REJECT, RETURN]
+        reason:
+          type: string
+    PaymentRequest:
+      type: object
+      required: [applicationId, channel]
+      properties:
+        applicationId:
+          type: integer
+        channel:
+          type: string
+          enum: [ALIPAY, WECHAT]
+    SeatAllocationRequest:
+      type: object
+      required: [strategy]
+      properties:
+        strategy:
+          type: string
+          enum: [POSITION_FIRST, RANDOM, SUBMITTED_TIME_FIRST]
+    ScoreImportRequest:
+      type: object
+      required: [examId, fileUrl]
+      properties:
+        examId:
+          type: integer
+        fileUrl:
+          type: string
+paths:
+  /tenants:
+    post:
+      summary: Create tenant (SUPER_ADMIN)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantRequest'
+      responses:
+        "201":
+          description: Tenant created with schema + storage namespace initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Result'
+
+  /tenants/{tenantId}/exams:
+    post:
+      summary: Create exam (TENANT_ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExamRequest'
+      responses:
+        "201":
+          description: Exam created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Result'
+    get:
+      summary: List exams
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdPath'
+      responses:
+        "200":
+          description: Exams
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Result'
+
+  /tenants/{tenantId}/exams/{examId}/positions:
+    post:
+      summary: Create position
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdPath'
+        - $ref: '#/components/parameters/ExamIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PositionRequest'
+      responses:
+        "201":
+          description: Position created
+
+  /applications:
+    post:
+      summary: Candidate submit application
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationRequest'
+      responses:
+        "201":
+          description: Application stored, auto-review triggered
+
+  /reviews/{applicationId}/decision:
+    post:
+      summary: Reviewer decision (primary or secondary)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewDecision'
+      responses:
+        "200":
+          description: Decision recorded
+
+  /payments/orders:
+    post:
+      summary: Create payment order
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+      responses:
+        "201":
+          description: Order created, returns QR/deeplink data
+
+  /payments/callback/{channel}:
+    post:
+      summary: Payment gateway callback (public)
+      parameters:
+        - name: channel
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [alipay, wechat]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Callback processed idempotently
+
+  /tenants/{tenantId}/exams/{examId}/seats/allocate:
+    post:
+      summary: Trigger seat allocation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdPath'
+        - $ref: '#/components/parameters/ExamIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeatAllocationRequest'
+      responses:
+        "202":
+          description: Allocation started
+
+  /tenants/{tenantId}/exams/{examId}/scores/import:
+    post:
+      summary: Import scores via CSV
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdPath'
+        - $ref: '#/components/parameters/ExamIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoreImportRequest'
+      responses:
+        "202":
+          description: Import queued with validation report
+
+  /tenants/{tenantId}/applications/{applicationId}/ticket:
+    get:
+      summary: Download admission ticket
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdPath'
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Returns presigned URL for PDF
+

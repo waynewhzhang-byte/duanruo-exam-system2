@@ -40,14 +40,14 @@ export default function TenantExamsPage() {
   const router = useRouter()
   const { tenant, isLoading: tenantLoading } = useTenant()
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('REGISTRATION_OPEN')
+  const [statusFilter, setStatusFilter] = useState<string>('OPEN')
   const [currentPage, setCurrentPage] = useState(0)
   const pageSize = 12
 
-  const { 
-    data: examsData, 
-    isLoading: examsLoading, 
-    error 
+  const {
+    data: examsData,
+    isLoading: examsLoading,
+    error
   } = useQuery({
     queryKey: ['exams', tenant?.id, currentPage, pageSize, statusFilter],
     queryFn: () => apiGetWithTenant<ExamsResponse>(
@@ -65,24 +65,22 @@ export default function TenantExamsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'REGISTRATION_OPEN': return 'bg-green-100 text-green-800'
-      case 'REGISTRATION_CLOSED': return 'bg-red-100 text-red-800'
       case 'DRAFT': return 'bg-gray-100 text-gray-800'
-      case 'PUBLISHED': return 'bg-blue-100 text-blue-800'
+      case 'OPEN': return 'bg-green-100 text-green-800'
+      case 'CLOSED': return 'bg-red-100 text-red-800'
+      case 'IN_PROGRESS': return 'bg-blue-100 text-blue-800'
       case 'COMPLETED': return 'bg-purple-100 text-purple-800'
-      case 'CANCELLED': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'REGISTRATION_OPEN': return '报名中'
-      case 'REGISTRATION_CLOSED': return '已截止'
       case 'DRAFT': return '草稿'
-      case 'PUBLISHED': return '已发布'
+      case 'OPEN': return '报名中'
+      case 'CLOSED': return '已截止'
+      case 'IN_PROGRESS': return '考试中'
       case 'COMPLETED': return '已完成'
-      case 'CANCELLED': return '已取消'
       default: return status
     }
   }
@@ -168,9 +166,10 @@ export default function TenantExamsPage() {
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="ALL">全部状态</option>
-                <option value="REGISTRATION_OPEN">报名中</option>
-                <option value="PUBLISHED">已发布</option>
-                <option value="REGISTRATION_CLOSED">已截止</option>
+                <option value="OPEN">报名中</option>
+                <option value="CLOSED">已截止</option>
+                <option value="IN_PROGRESS">考试中</option>
+                <option value="COMPLETED">已完成</option>
               </select>
             </div>
           </div>
@@ -247,14 +246,14 @@ export default function TenantExamsPage() {
                 {/* Action Button */}
                 <button
                   className={`w-full py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-                    exam.status === 'REGISTRATION_OPEN'
+                    exam.status === 'OPEN'
                       ? 'bg-primary-600 text-white hover:bg-primary-700'
                       : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   }`}
-                  disabled={exam.status !== 'REGISTRATION_OPEN'}
+                  disabled={exam.status !== 'OPEN'}
                   onClick={() => router.push(`/${tenant.slug}/candidate/exams/${exam.id}/positions`)}
                 >
-                  {exam.status === 'REGISTRATION_OPEN' ? (
+                  {exam.status === 'OPEN' ? (
                     <>
                       查看岗位
                       <ChevronRight className="h-4 w-4" />

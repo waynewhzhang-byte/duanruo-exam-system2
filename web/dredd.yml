@@ -1,0 +1,82 @@
+# Dredd API Contract Testing Configuration
+#
+# This file configures Dredd to validate that the backend API implementation
+# matches the OpenAPI specification.
+#
+# Usage:
+#   npm run test:contract
+#
+# Prerequisites:
+#   1. Backend must be running on http://localhost:8081
+#   2. Valid JWT token for authentication (set in hooks)
+
+# OpenAPI specification file
+blueprint: openapi/exam-system-api.json
+
+# Backend server URL
+endpoint: http://localhost:8081
+
+# Test report output
+reporter: [markdown, html]
+output:
+  - test-results/contract/dredd-report.md
+  - test-results/contract/dredd-report.html
+
+# Logging
+loglevel: info
+color: true
+
+# Test execution options
+dry-run: false
+method: []
+only: []
+header: []
+user: null
+hookfiles: tests/contract/dredd-hooks.js
+language: nodejs
+
+# Test behavior
+sorted: false
+names: false
+only: []
+reporter-options: []
+
+# Timeouts (in milliseconds)
+timeout: 10000
+
+# Hooks data directory
+hooks-worker-timeout: 5000
+hooks-worker-connect-timeout: 1500
+hooks-worker-connect-retry: 500
+hooks-worker-after-connect-wait: 100
+hooks-worker-term-timeout: 5000
+hooks-worker-term-retry: 500
+hooks-worker-handler-host: 127.0.0.1
+hooks-worker-handler-port: 61321
+
+# Require SSL (disable for local testing)
+require-ssl: false
+
+# Ignore specific endpoints or scenarios
+# Add endpoints to skip here (e.g., file uploads, external integrations)
+skip:
+  # Skip file upload endpoints (binary data handling)
+  - POST /api/v1/files
+  - POST /api/v1/tenants/*/exams/*/applications/*/attachments
+
+  # Skip payment callbacks (external service webhooks)
+  - POST /api/v1/payments/callback
+  - POST /api/v1/payments/webhook
+
+  # Skip MinIO presigned URL endpoints (temporary URLs)
+  - GET /api/v1/files/*/presigned-url
+
+# Test only specific paths (uncomment to enable selective testing)
+# only:
+#   - GET /api/v1/tenants/*
+#   - POST /api/v1/auth/login
+
+# Additional headers to include in all requests
+# header:
+#   - "Accept-Language: zh-CN"
+#   - "User-Agent: Dredd Contract Test"

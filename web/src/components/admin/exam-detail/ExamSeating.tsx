@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPost } from '@/lib/api'
+import { apiGetWithTenant, apiPostWithTenant } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -14,17 +14,16 @@ import { Label } from '@/components/ui/label'
 import { MapPin, Users, CheckCircle2, AlertTriangle, Info, RefreshCw, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import SeatAssignmentExport from './SeatAssignmentExport'
+import { useTenant } from '@/hooks/useTenant'
 
 interface ExamSeatingProps {
   examId: string
 }
 
 interface Venue {
-  id: string
+  venueId: string
   name: string
-  address: string
   capacity: number
-  assignedCount: number
 }
 
 interface SeatAssignment {
@@ -33,7 +32,10 @@ interface SeatAssignment {
   candidateName: string
   positionTitle: string
   venueName: string
-  seatNumber: number
+  roomName?: string      // 教室名称
+  roomCode?: string      // 教室编码
+  seatNo?: number        // 座位号（数字）
+  seatNumber: string     // 座位标签（格式化后的，如 "考场A--101--15"）
 }
 
 interface AllocationResult {
@@ -77,36 +79,54 @@ export default function ExamSeating({ examId }: ExamSeatingProps) {
   const [isAllocating, setIsAllocating] = useState(false)
   const [selectedStrategy, setSelectedStrategy] = useState('POSITION_FIRST_SUBMITTED_AT')
   const [showStrategySelector, setShowStrategySelector] = useState(false)
+  const { tenant } = useTenant()
 
   // Fetch venues
-  const { data: venues, isLoading: venuesLoading } = useQuery<Venue[]>({
+  const { data: venuesData, isLoading: venuesLoading } = useQuery<{ items: Venue[], total: number }>({
     queryKey: ['exam-venues', examId],
     queryFn: async () => {
-      return apiGet<Venue[]>(`/exams/${examId}/venues`)
+      if (!tenant?.id) {
+        throw new Error('Tenant ID is required')
+      }
+      return apiGetWithTenant<{ items: Venue[], total: number }>(`/exams/${examId}/venues`, tenant.id)
     },
-    enabled: !!examId,
+    enabled: !!examId && !!tenant?.id,
   })
+
+  // Extract venues array from response
+  const venues = venuesData?.items || []
 
   // Fetch seat assignments
   const { data: assignments, isLoading: assignmentsLoading } = useQuery<SeatAssignment[]>({
     queryKey: ['seat-assignments', examId],
     queryFn: async () => {
-      return apiGet<SeatAssignment[]>(`/exams/${examId}/seat-assignments`)
+      if (!tenant?.id) {
+        throw new Error('Tenant ID is required')
+      }
+      return apiGetWithTenant<SeatAssignment[]>(`/exams/${examId}/seat-assignments`, tenant.id)
     },
-    enabled: !!examId,
+    enabled: !!examId && !!tenant?.id,
   })
 
   // Allocate seats mutation
   const allocateMutation = useMutation({
     mutationFn: async (strategy: string) => {
-      return apiPost<AllocationResult>(`/exams/${examId}/allocate-seats-with-strategy`, {
-        strategy,
-      })
+      if (!tenant?.id) {
+        throw new Error('Tenant ID is required')
+      }
+      // 后端使用 @RequestParam，需要通过 URL 查询参数传递 strategy
+      return apiPostWithTenant<AllocationResult>(
+        `/exams/${examId}/allocate-seats-with-strategy?strategy=${encodeURIComponent(strategy)}`,
+        tenant.id
+      )
     },
     onSuccess: (result) => {
       toast.success(`座位分配成功！共分配 ${result.totalAssigned} 个座位`)
+      // 强制重新获取座位分配列表
       queryClient.invalidateQueries({ queryKey: ['seat-assignments', examId] })
       queryClient.invalidateQueries({ queryKey: ['exam-venues', examId] })
+      // 强制重新获取，确保数据更新
+      queryClient.refetchQueries({ queryKey: ['seat-assignments', examId] })
       setShowStrategySelector(false)
     },
     onError: (error: any) => {
@@ -280,11 +300,11 @@ export default function ExamSeating({ examId }: ExamSeatingProps) {
         </CardContent>
       </Card>
 
-      {/* Venue Statistics */}
+      {/* Venue & Room Statistics */}
       <Card>
         <CardHeader>
-          <CardTitle>考场统计</CardTitle>
-          <CardDescription>各考场的座位分配情况</CardDescription>
+          <CardTitle>考场教室分配统计</CardTitle>
+          <CardDescription>各考场和教室的座位分配情况</CardDescription>
         </CardHeader>
         <CardContent>
           {!venueStats || venueStats.length === 0 ? (
@@ -293,46 +313,71 @@ export default function ExamSeating({ examId }: ExamSeatingProps) {
               <p>暂无考场信息</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>考场名称</TableHead>
-                  <TableHead>地址</TableHead>
-                  <TableHead className="text-right">容量</TableHead>
-                  <TableHead className="text-right">已分配</TableHead>
-                  <TableHead className="text-right">剩余</TableHead>
-                  <TableHead className="text-right">利用率</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {venueStats.map((venue) => (
-                  <TableRow key={venue.id}>
-                    <TableCell className="font-medium">{venue.name}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{venue.address}</TableCell>
-                    <TableCell className="text-right">{venue.capacity}</TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant={venue.assignedCount > 0 ? 'default' : 'outline'}>
-                        {venue.assignedCount}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{venue.remainingCapacity}</TableCell>
-                    <TableCell className="text-right">
-                      <Badge
-                        variant={
-                          venue.utilizationRate >= 90
-                            ? 'destructive'
-                            : venue.utilizationRate >= 70
-                            ? 'default'
-                            : 'outline'
-                        }
-                      >
-                        {venue.utilizationRate.toFixed(1)}%
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="space-y-4">
+              {venueStats.map((venue) => {
+                // 获取该考场下各教室的分配情况
+                const roomStats = assignments
+                  ? Array.from(
+                      assignments
+                        .filter((a) => a.venueName === venue.name && a.roomCode)
+                        .reduce((map, a) => {
+                          const key = a.roomCode || 'unknown'
+                          if (!map.has(key)) {
+                            map.set(key, { roomCode: a.roomCode, roomName: a.roomName, count: 0 })
+                          }
+                          map.get(key)!.count++
+                          return map
+                        }, new Map<string, { roomCode?: string; roomName?: string; count: number }>())
+                        .values()
+                    )
+                  : []
+
+                return (
+                  <div key={venue.venueId} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{venue.name}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span>容量: {venue.capacity}</span>
+                        <Badge variant={venue.assignedCount > 0 ? 'default' : 'outline'}>
+                          已分配: {venue.assignedCount}
+                        </Badge>
+                        <Badge
+                          variant={
+                            venue.utilizationRate >= 90
+                              ? 'destructive'
+                              : venue.utilizationRate >= 70
+                              ? 'default'
+                              : 'outline'
+                          }
+                        >
+                          {venue.utilizationRate.toFixed(1)}%
+                        </Badge>
+                      </div>
+                    </div>
+                    {roomStats.length > 0 ? (
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                        {roomStats.map((room) => (
+                          <div
+                            key={room.roomCode}
+                            className="flex items-center justify-between p-2 bg-muted rounded text-sm"
+                          >
+                            <span className="font-medium">{room.roomName || room.roomCode}</span>
+                            <Badge variant="secondary" className="ml-2">
+                              {room.count}人
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">暂无教室分配数据</p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -357,6 +402,7 @@ export default function ExamSeating({ examId }: ExamSeatingProps) {
                     <TableHead>考生姓名</TableHead>
                     <TableHead>报考岗位</TableHead>
                     <TableHead>考场</TableHead>
+                    <TableHead>教室</TableHead>
                     <TableHead className="text-right">座位号</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -366,6 +412,7 @@ export default function ExamSeating({ examId }: ExamSeatingProps) {
                       <TableCell className="font-medium">{assignment.candidateName}</TableCell>
                       <TableCell>{assignment.positionTitle}</TableCell>
                       <TableCell>{assignment.venueName}</TableCell>
+                      <TableCell>{assignment.roomName || '-'}</TableCell>
                       <TableCell className="text-right">
                         <Badge variant="outline">{assignment.seatNumber}</Badge>
                       </TableCell>
