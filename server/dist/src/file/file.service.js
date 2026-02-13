@@ -59,28 +59,41 @@ let FileService = FileService_1 = class FileService {
     configService;
     prisma;
     logger = new common_1.Logger(FileService_1.name);
-    bucketName;
     constructor(minioClient, configService, prisma) {
         this.minioClient = minioClient;
         this.configService = configService;
         this.prisma = prisma;
-        this.bucketName = this.configService.get('MINIO_BUCKET', 'exam-uploads');
-        void this.initializeBucket();
     }
-    async initializeBucket() {
+    getTenantBucketName(tenantCode) {
+        const sanitizedCode = tenantCode.toLowerCase().replace(/_/g, '-');
+        return `tenant-${sanitizedCode}-files`;
+    }
+    async ensureTenantBucket(tenantCode) {
+        const bucketName = this.getTenantBucketName(tenantCode);
         try {
-            const exists = await this.minioClient.bucketExists(this.bucketName);
+            const exists = await this.minioClient.bucketExists(bucketName);
             if (!exists) {
-                await this.minioClient.makeBucket(this.bucketName);
-                this.logger.log(`Created MinIO bucket: ${this.bucketName}`);
+                this.logger.warn(`Tenant bucket does not exist: ${bucketName}, creating...`);
+                await this.minioClient.makeBucket(bucketName, 'us-east-1');
+                this.logger.log(`Created MinIO bucket: ${bucketName}`);
             }
+            return bucketName;
         }
         catch (error) {
-            this.logger.error(`Failed to initialize MinIO bucket: ${error instanceof Error ? error.message : String(error)}`);
+            this.logger.error(`Failed to ensure tenant bucket ${bucketName}: ${error instanceof Error ? error.message : String(error)}`);
+            throw new common_1.BadRequestException(`Storage bucket not available for tenant: ${tenantCode}`);
         }
     }
     async generateUploadUrl(tenantId, userId, req) {
         const { fileName, contentType, fieldKey, applicationId } = req;
+        const tenant = await this.prisma.tenant.findUnique({
+            where: { id: tenantId },
+            select: { code: true },
+        });
+        if (!tenant) {
+            throw new common_1.BadRequestException('Tenant not found');
+        }
+        const bucketName = await this.ensureTenantBucket(tenant.code);
         const nameValid = file_validator_1.FileValidator.validateFileName(fileName);
         if (!nameValid.valid)
             throw new common_1.BadRequestException(nameValid.errorMessage);
@@ -93,7 +106,7 @@ let FileService = FileService_1 = class FileService {
         const fileId = (0, uuid_1.v4)();
         const extension = fileName.split('.').pop();
         const storedName = `${fileId}${extension ? '.' + extension : ''}`;
-        const objectKey = `tenants/${tenantId}/uploads/${userId}/${fieldKey || 'general'}/${storedName}`;
+        const objectKey = `uploads/${userId}/${fieldKey || 'general'}/${storedName}`;
         await this.prisma.client.fileRecord.create({
             data: {
                 id: fileId,
@@ -108,7 +121,7 @@ let FileService = FileService_1 = class FileService {
             },
         });
         const expiresIn = parseInt(this.configService.get('MINIO_PRESIGN_EXPIRES', '3600'));
-        const uploadUrl = await this.minioClient.presignedPutObject(this.bucketName, objectKey, expiresIn);
+        const uploadUrl = await this.minioClient.presignedPutObject(bucketName, objectKey, expiresIn);
         return {
             fileId,
             uploadUrl,
@@ -127,18 +140,23 @@ let FileService = FileService_1 = class FileService {
             throw new common_1.NotFoundException('File not found');
         if (file.status !== 'UPLOADING')
             throw new common_1.BadRequestException('File is not in UPLOADING state');
-        if (!file.objectKey.startsWith(`tenants/${tenantId}/`)) {
-            throw new common_1.BadRequestException('File does not belong to your tenant');
+        const tenant = await this.prisma.tenant.findUnique({
+            where: { id: tenantId },
+            select: { code: true },
+        });
+        if (!tenant) {
+            throw new common_1.BadRequestException('Tenant not found');
         }
+        const bucketName = this.getTenantBucketName(tenant.code);
         try {
-            await this.minioClient.statObject(this.bucketName, file.objectKey);
+            await this.minioClient.statObject(bucketName, file.objectKey);
         }
         catch {
             throw new common_1.BadRequestException('File not found in storage');
         }
         const sizeValid = file_validator_1.FileValidator.validateFileSize(fileSize);
         if (!sizeValid.valid) {
-            await this.minioClient.removeObject(this.bucketName, file.objectKey);
+            await this.minioClient.removeObject(bucketName, file.objectKey);
             await this.prisma.client.fileRecord.update({
                 where: { id: fileId },
                 data: { status: 'DELETED' },
@@ -161,11 +179,16 @@ let FileService = FileService_1 = class FileService {
             throw new common_1.NotFoundException('File not found');
         if (file.status === 'DELETED')
             throw new common_1.BadRequestException('File has been deleted');
-        if (!file.objectKey.startsWith(`tenants/${tenantId}/`)) {
-            throw new common_1.BadRequestException('Access denied to this file');
+        const tenant = await this.prisma.tenant.findUnique({
+            where: { id: tenantId },
+            select: { code: true },
+        });
+        if (!tenant) {
+            throw new common_1.BadRequestException('Tenant not found');
         }
+        const bucketName = this.getTenantBucketName(tenant.code);
         const expiresIn = 1800;
-        const url = await this.minioClient.presignedGetObject(this.bucketName, file.objectKey, expiresIn);
+        const url = await this.minioClient.presignedGetObject(bucketName, file.objectKey, expiresIn);
         await this.prisma.client.fileRecord.update({
             where: { id: fileId },
             data: {

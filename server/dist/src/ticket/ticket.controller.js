@@ -29,6 +29,10 @@ let TicketController = class TicketController {
         const result = await this.ticketService.findByApplicationId(applicationId);
         return api_result_dto_1.ApiResult.ok(result);
     }
+    async batchGenerate(examId) {
+        const result = await this.ticketService.batchGenerateForExam(examId);
+        return api_result_dto_1.ApiResult.ok(result);
+    }
 };
 exports.TicketController = TicketController;
 __decorate([
@@ -39,6 +43,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], TicketController.prototype, "getByApplication", null);
+__decorate([
+    (0, common_1.Post)('batch-generate/:examId'),
+    (0, permissions_decorator_1.Permissions)('ticket:batch-generate'),
+    __param(0, (0, common_1.Param)('examId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], TicketController.prototype, "batchGenerate", null);
 exports.TicketController = TicketController = __decorate([
     (0, common_1.Controller)('tickets'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, tenant_guard_1.TenantGuard, permissions_guard_1.PermissionsGuard),

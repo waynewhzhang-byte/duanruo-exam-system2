@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SuperAdminModule = void 0;
 const common_1 = require("@nestjs/common");
 const super_admin_controller_1 = require("./super-admin.controller");
+const super_admin_service_1 = require("./super-admin.service");
 const tenant_module_1 = require("../tenant/tenant.module");
 const prisma_module_1 = require("../prisma/prisma.module");
 let SuperAdminModule = class SuperAdminModule {
@@ -18,6 +19,8 @@ exports.SuperAdminModule = SuperAdminModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule, tenant_module_1.TenantModule],
         controllers: [super_admin_controller_1.SuperAdminController],
+        providers: [super_admin_service_1.SuperAdminService],
+        exports: [super_admin_service_1.SuperAdminService],
     })
 ], SuperAdminModule);
 //# sourceMappingURL=super-admin.module.js.map

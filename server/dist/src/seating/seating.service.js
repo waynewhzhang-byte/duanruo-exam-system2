@@ -108,6 +108,30 @@ let SeatingService = SeatingService_1 = class SeatingService {
                     data: assignments,
                 });
             }
+            this.logger.log('Updating tickets with seat assignments...');
+            let ticketsUpdated = 0;
+            for (const assignment of assignments) {
+                const venue = venueRoomStates.find((v) => v.id === assignment.venueId);
+                const room = venue?.rooms.find((r) => r.id === assignment.roomId);
+                if (venue && room) {
+                    const ticket = await tx.ticket.findFirst({
+                        where: { applicationId: assignment.applicationId },
+                    });
+                    if (ticket) {
+                        await tx.ticket.update({
+                            where: { id: ticket.id },
+                            data: {
+                                venueName: venue.name,
+                                roomNumber: room.code,
+                                seatNumber: assignment.seatLabel,
+                                updatedAt: new Date(),
+                            },
+                        });
+                        ticketsUpdated++;
+                    }
+                }
+            }
+            this.logger.log(`Updated ${ticketsUpdated} tickets with seat info`);
             const batch = await tx.allocationBatch.create({
                 data: {
                     id: batchId,
@@ -124,6 +148,7 @@ let SeatingService = SeatingService_1 = class SeatingService {
                 totalCandidates: applications.length,
                 totalAssigned: assignments.length,
                 totalVenues: venues.length,
+                ticketsUpdated,
             };
         });
     }

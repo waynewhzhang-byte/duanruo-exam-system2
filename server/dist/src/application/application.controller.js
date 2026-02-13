@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ApplicationController = void 0;
 const common_1 = require("@nestjs/common");
 const application_service_1 = require("./application.service");
+const review_service_1 = require("../review/review.service");
 const application_dto_1 = require("./dto/application.dto");
 const api_result_dto_1 = require("../common/dto/api-result.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
@@ -23,8 +24,10 @@ const tenant_guard_1 = require("../auth/tenant.guard");
 const permissions_decorator_1 = require("../auth/permissions.decorator");
 let ApplicationController = class ApplicationController {
     applicationService;
-    constructor(applicationService) {
+    reviewService;
+    constructor(applicationService, reviewService) {
         this.applicationService = applicationService;
+        this.reviewService = reviewService;
     }
     async getMyApplications(req) {
         const apps = await this.applicationService.listMyEnriched(req.user.userId);
@@ -45,6 +48,10 @@ let ApplicationController = class ApplicationController {
     async getById(id) {
         const app = await this.applicationService.findById(id);
         return api_result_dto_1.ApiResult.ok(app);
+    }
+    async getReviews(id) {
+        const reviews = await this.reviewService.getByApplicationId(id);
+        return api_result_dto_1.ApiResult.ok(reviews);
     }
 };
 exports.ApplicationController = ApplicationController;
@@ -90,9 +97,18 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], ApplicationController.prototype, "getById", null);
+__decorate([
+    (0, common_1.Get)(':id/reviews'),
+    (0, permissions_decorator_1.Permissions)('review:view'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ApplicationController.prototype, "getReviews", null);
 exports.ApplicationController = ApplicationController = __decorate([
     (0, common_1.Controller)('applications'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, tenant_guard_1.TenantGuard, permissions_guard_1.PermissionsGuard),
-    __metadata("design:paramtypes", [application_service_1.ApplicationService])
+    __metadata("design:paramtypes", [application_service_1.ApplicationService,
+        review_service_1.ReviewService])
 ], ApplicationController);
 //# sourceMappingURL=application.controller.js.map

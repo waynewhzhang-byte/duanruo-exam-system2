@@ -7,4 +7,10 @@ export declare class TicketService {
     private get client();
     generate(applicationId: string): Promise<string>;
     findByApplicationId(applicationId: string): Promise<TicketResponse[]>;
+    batchGenerateForExam(examId: string): Promise<{
+        totalGenerated: number;
+        alreadyExisted: number;
+        failed: number;
+        ticketNos: string[];
+    }>;
 }

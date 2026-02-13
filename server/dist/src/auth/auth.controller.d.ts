@@ -54,4 +54,22 @@ export declare class AuthController {
         updatedAt: string;
     }>>;
     logout(): ApiResult<null>;
+    refresh(req: AuthenticatedRequest): Promise<ApiResult<{
+        token: string;
+        tokenType: string;
+        expiresIn: number;
+        user: {
+            id: string;
+            username: string;
+            email: string;
+            fullName: string;
+            status: string;
+            roles: string[];
+            permissions: string[];
+            emailVerified: boolean;
+            phoneVerified: boolean;
+            createdAt: string;
+            updatedAt: string;
+        };
+    }>>;
 }

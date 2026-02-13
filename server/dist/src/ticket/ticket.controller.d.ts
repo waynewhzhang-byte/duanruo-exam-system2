@@ -4,4 +4,10 @@ export declare class TicketController {
     private readonly ticketService;
     constructor(ticketService: TicketService);
     getByApplication(applicationId: string): Promise<ApiResult<import("./dto/ticket.dto").TicketResponse[]>>;
+    batchGenerate(examId: string): Promise<ApiResult<{
+        totalGenerated: number;
+        alreadyExisted: number;
+        failed: number;
+        ticketNos: string[];
+    }>>;
 }

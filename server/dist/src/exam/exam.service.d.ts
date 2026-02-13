@@ -4,7 +4,10 @@ export declare class ExamService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     private get client();
-    findAll(): Promise<ExamResponse[]>;
+    findAll(page?: number, size?: number, status?: string): Promise<{
+        content: ExamResponse[];
+        total: number;
+    }>;
     findById(id: string): Promise<ExamResponse>;
     findByCode(code: string): Promise<ExamResponse>;
     create(request: ExamCreateRequest, userId: string): Promise<ExamResponse>;
@@ -12,4 +15,5 @@ export declare class ExamService {
     delete(id: string): Promise<void>;
     updateStatus(id: string, status: string): Promise<ExamResponse>;
     private mapToResponse;
+    getStatistics(id: string): Promise<any>;
 }

@@ -14,17 +14,11 @@ exports.ExamSchedulerService = void 0;
 const common_1 = require("@nestjs/common");
 const schedule_1 = require("@nestjs/schedule");
 const prisma_service_1 = require("../prisma/prisma.service");
-const exam_service_1 = require("../exam/exam.service");
-const seating_service_1 = require("../seating/seating.service");
 let ExamSchedulerService = ExamSchedulerService_1 = class ExamSchedulerService {
     prisma;
-    examService;
-    seatingService;
     logger = new common_1.Logger(ExamSchedulerService_1.name);
-    constructor(prisma, examService, seatingService) {
+    constructor(prisma) {
         this.prisma = prisma;
-        this.examService = examService;
-        this.seatingService = seatingService;
     }
     async closeExpiredRegistrations() {
         this.logger.debug('[RegistrationClosure] Starting scan...');
@@ -105,8 +99,6 @@ __decorate([
 ], ExamSchedulerService.prototype, "runAutoSeating", null);
 exports.ExamSchedulerService = ExamSchedulerService = ExamSchedulerService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        exam_service_1.ExamService,
-        seating_service_1.SeatingService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], ExamSchedulerService);
 //# sourceMappingURL=exam-scheduler.service.js.map

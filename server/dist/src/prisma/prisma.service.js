@@ -42,12 +42,13 @@ let PrismaService = class PrismaService extends client_1.PrismaClient {
     }
     get client() {
         const schema = PrismaService_1.getTenantSchema() || 'public';
+        const self = this;
         return this.$extends({
             query: {
                 $allModels: {
                     async $allOperations({ args, query }) {
                         return await PrismaService_1.als.run({ schema }, async () => {
-                            return await this.$transaction(async (tx) => {
+                            return await self.$transaction(async (tx) => {
                                 await tx.$executeRawUnsafe(`SET LOCAL search_path TO "${schema}", public`);
                                 return query(args);
                             });

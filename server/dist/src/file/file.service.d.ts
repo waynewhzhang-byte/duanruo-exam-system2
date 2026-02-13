@@ -8,9 +8,9 @@ export declare class FileService {
     private readonly configService;
     private readonly prisma;
     private readonly logger;
-    private readonly bucketName;
     constructor(minioClient: Minio.Client, configService: ConfigService, prisma: PrismaService);
-    private initializeBucket;
+    private getTenantBucketName;
+    private ensureTenantBucket;
     generateUploadUrl(tenantId: string, userId: string, req: FileUploadUrlRequest): Promise<FileUploadUrlResponse>;
     confirmUpload(tenantId: string, fileId: string, fileSize: number): Promise<{
         id: string;

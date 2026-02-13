@@ -16,6 +16,7 @@ const tenant_module_1 = require("./tenant/tenant.module");
 const auth_module_1 = require("./auth/auth.module");
 const user_module_1 = require("./user/user.module");
 const review_module_1 = require("./review/review.module");
+const statistics_module_1 = require("./statistics/statistics.module");
 const payment_module_1 = require("./payment/payment.module");
 const ticket_module_1 = require("./ticket/ticket.module");
 const seating_module_1 = require("./seating/seating.module");
@@ -46,6 +47,7 @@ exports.AppModule = AppModule = __decorate([
             exam_module_1.ExamModule,
             application_module_1.ApplicationModule,
             review_module_1.ReviewModule,
+            statistics_module_1.StatisticsModule,
             payment_module_1.PaymentModule,
             ticket_module_1.TicketModule,
             seating_module_1.SeatingModule,

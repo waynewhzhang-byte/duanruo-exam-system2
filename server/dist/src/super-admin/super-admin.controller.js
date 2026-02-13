@@ -48,39 +48,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SuperAdminController = void 0;
 const crypto = __importStar(require("crypto"));
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
-const tenant_service_1 = require("../tenant/tenant.service");
+const super_admin_service_1 = require("./super-admin.service");
 const api_result_dto_1 = require("../common/dto/api-result.dto");
-const paginated_response_dto_1 = require("../common/dto/paginated-response.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const create_tenant_dto_1 = require("./dto/create-tenant.dto");
 let SuperAdminController = class SuperAdminController {
-    prisma;
-    tenantService;
-    constructor(prisma, tenantService) {
-        this.prisma = prisma;
-        this.tenantService = tenantService;
+    superAdminService;
+    constructor(superAdminService) {
+        this.superAdminService = superAdminService;
     }
     async getAllTenants(page = 0, size = 10) {
         const pageNum = Number(page);
         const sizeNum = Number(size);
-        const skip = pageNum * sizeNum;
-        const [tenants, total] = await Promise.all([
-            this.prisma.tenant.findMany({
-                skip,
-                take: sizeNum,
-                orderBy: { createdAt: 'desc' },
-            }),
-            this.prisma.tenant.count(),
-        ]);
-        const tenantsWithSlug = tenants.map((t) => ({
-            ...t,
-            slug: t.code,
-        }));
-        return paginated_response_dto_1.PaginationHelper.createResponse(tenantsWithSlug, total, pageNum, sizeNum);
+        return this.superAdminService.getAllTenants(pageNum, sizeNum);
     }
     async createTenant(dto) {
-        const tenant = await this.tenantService.createTenant({
+        const tenant = await this.superAdminService.createTenant({
             id: crypto.randomUUID(),
             name: dto.name,
             code: dto.code,
@@ -90,47 +73,21 @@ let SuperAdminController = class SuperAdminController {
         return api_result_dto_1.ApiResult.ok(tenant);
     }
     async activateTenant(id) {
-        const tenant = await this.prisma.tenant.update({
-            where: { id },
-            data: { status: 'ACTIVE', activatedAt: new Date() },
-        });
+        const tenant = await this.superAdminService.activateTenant(id);
         return api_result_dto_1.ApiResult.ok(tenant);
     }
     async deactivateTenant(id) {
-        const tenant = await this.prisma.tenant.update({
-            where: { id },
-            data: { status: 'INACTIVE', deactivatedAt: new Date() },
-        });
+        const tenant = await this.superAdminService.deactivateTenant(id);
         return api_result_dto_1.ApiResult.ok(tenant);
     }
     async deleteTenant(id) {
-        await this.prisma.tenant.delete({
-            where: { id },
-        });
+        await this.superAdminService.deleteTenant(id);
         return api_result_dto_1.ApiResult.ok(null, 'Tenant deleted');
     }
     async getAllUsers(page = 0, size = 10) {
         const pageNum = Number(page);
         const sizeNum = Number(size);
-        const skip = pageNum * sizeNum;
-        const [users, total] = await Promise.all([
-            this.prisma.user.findMany({
-                skip,
-                take: sizeNum,
-                orderBy: { createdAt: 'desc' },
-                select: {
-                    id: true,
-                    username: true,
-                    email: true,
-                    fullName: true,
-                    status: true,
-                    roles: true,
-                    createdAt: true,
-                },
-            }),
-            this.prisma.user.count(),
-        ]);
-        return paginated_response_dto_1.PaginationHelper.createResponse(users, total, pageNum, sizeNum);
+        return this.superAdminService.getAllUsers(pageNum, sizeNum);
     }
 };
 exports.SuperAdminController = SuperAdminController;
@@ -181,7 +138,6 @@ __decorate([
 exports.SuperAdminController = SuperAdminController = __decorate([
     (0, common_1.Controller)('super-admin'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        tenant_service_1.TenantService])
+    __metadata("design:paramtypes", [super_admin_service_1.SuperAdminService])
 ], SuperAdminController);
 //# sourceMappingURL=super-admin.controller.js.map

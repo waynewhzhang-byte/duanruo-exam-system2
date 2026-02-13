@@ -10,6 +10,7 @@ export declare class SeatingService {
         totalCandidates: number;
         totalAssigned: number;
         totalVenues: number;
+        ticketsUpdated: number;
     }>;
     listAssignments(examId: string): Promise<SeatAssignmentDetail[]>;
 }

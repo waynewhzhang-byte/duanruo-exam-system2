@@ -10,16 +10,18 @@ exports.TenantModule = void 0;
 const common_1 = require("@nestjs/common");
 const tenant_service_1 = require("./tenant.service");
 const tenant_controller_1 = require("./tenant.controller");
+const tenant_bucket_service_1 = require("./tenant-bucket.service");
 const prisma_module_1 = require("../prisma/prisma.module");
+const file_module_1 = require("../file/file.module");
 let TenantModule = class TenantModule {
 };
 exports.TenantModule = TenantModule;
 exports.TenantModule = TenantModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule],
+        imports: [prisma_module_1.PrismaModule, file_module_1.FileModule],
         controllers: [tenant_controller_1.TenantController],
-        providers: [tenant_service_1.TenantService],
-        exports: [tenant_service_1.TenantService],
+        providers: [tenant_service_1.TenantService, tenant_bucket_service_1.TenantBucketService],
+        exports: [tenant_service_1.TenantService, tenant_bucket_service_1.TenantBucketService],
     })
 ], TenantModule);
 //# sourceMappingURL=tenant.module.js.map

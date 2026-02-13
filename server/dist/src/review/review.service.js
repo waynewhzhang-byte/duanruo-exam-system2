@@ -167,6 +167,63 @@ let ReviewService = ReviewService_1 = class ReviewService {
             return { applicationId: app.id, fromStatus, toStatus };
         });
     }
+    async getByApplicationId(applicationId) {
+        const reviews = await this.client.review.findMany({
+            where: { applicationId },
+            orderBy: { reviewedAt: 'asc' },
+        });
+        return reviews;
+    }
+    async heartbeat(taskId, reviewerId) {
+        const task = await this.client.reviewTask.findUnique({
+            where: { id: taskId },
+        });
+        if (!task || task.assignedTo !== reviewerId || task.status !== 'ASSIGNED') {
+            throw new common_1.BadRequestException('Task not found or not assigned to you');
+        }
+        await this.client.reviewTask.update({
+            where: { id: taskId },
+            data: { lastHeartbeatAt: new Date(), lockedAt: new Date() },
+        });
+        return { success: true };
+    }
+    async release(taskId, reviewerId) {
+        const task = await this.client.reviewTask.findUnique({
+            where: { id: taskId },
+        });
+        if (!task || task.assignedTo !== reviewerId || task.status !== 'ASSIGNED') {
+            throw new common_1.BadRequestException('Task not found or not assigned to you');
+        }
+        await this.client.reviewTask.update({
+            where: { id: taskId },
+            data: { status: 'OPEN', assignedTo: null, lockedAt: null },
+        });
+        return { success: true };
+    }
+    async getQueue(params) {
+        const { examId, stage, status, page, size } = params;
+        const skip = page * size;
+        const where = { stage };
+        if (status) {
+            where.status = status;
+        }
+        where.applicationId = {
+            in: (await this.client.application.findMany({
+                where: { examId },
+                select: { id: true },
+            })).map((a) => a.id),
+        };
+        const [tasks, total] = await Promise.all([
+            this.client.reviewTask.findMany({
+                where,
+                skip,
+                take: size,
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.client.reviewTask.count({ where }),
+        ]);
+        return { content: tasks, total };
+    }
 };
 exports.ReviewService = ReviewService;
 exports.ReviewService = ReviewService = ReviewService_1 = __decorate([

@@ -1,18 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
-import { ExamService } from '../exam/exam.service';
-import { SeatingService } from '../seating/seating.service';
 
 @Injectable()
 export class ExamSchedulerService {
   private readonly logger = new Logger(ExamSchedulerService.name);
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly examService: ExamService,
-    private readonly seatingService: SeatingService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /**
    * 自动关闭报名定时任务 (每 5 分钟执行一次)

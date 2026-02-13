@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReviewModule = void 0;
 const common_1 = require("@nestjs/common");
 const review_service_1 = require("./review.service");
+const auto_review_service_1 = require("./auto-review.service");
 const review_controller_1 = require("./review.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
 let ReviewModule = class ReviewModule {
@@ -17,9 +18,9 @@ exports.ReviewModule = ReviewModule;
 exports.ReviewModule = ReviewModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule],
-        providers: [review_service_1.ReviewService],
+        providers: [review_service_1.ReviewService, auto_review_service_1.AutoReviewService],
         controllers: [review_controller_1.ReviewController],
-        exports: [review_service_1.ReviewService],
+        exports: [review_service_1.ReviewService, auto_review_service_1.AutoReviewService],
     })
 ], ReviewModule);
 //# sourceMappingURL=review.module.js.map

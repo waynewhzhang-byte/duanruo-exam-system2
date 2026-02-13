@@ -20,11 +20,22 @@ let ExamService = class ExamService {
     get client() {
         return this.prisma.client;
     }
-    async findAll() {
-        const exams = await this.client.exam.findMany({
-            orderBy: { createdAt: 'desc' },
-        });
-        return exams.map((e) => this.mapToResponse(e));
+    async findAll(page = 0, size = 10, status) {
+        const skip = page * size;
+        const where = status ? { status } : {};
+        const [exams, total] = await Promise.all([
+            this.client.exam.findMany({
+                where,
+                skip,
+                take: size,
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.client.exam.count({ where }),
+        ]);
+        return {
+            content: exams.map((e) => this.mapToResponse(e)),
+            total,
+        };
     }
     async findById(id) {
         const exam = await this.client.exam.findUnique({
@@ -133,6 +144,66 @@ let ExamService = class ExamService {
             createdBy: exam.createdBy || undefined,
             createdAt: exam.createdAt,
             updatedAt: exam.updatedAt,
+        };
+    }
+    async getStatistics(id) {
+        const exam = await this.findById(id);
+        const [applications, tickets, paymentOrders] = await Promise.all([
+            this.client.application.findMany({
+                where: { examId: id },
+            }),
+            this.client.ticket.findMany({
+                where: { examId: id, status: 'ACTIVE' },
+            }),
+            this.client.paymentOrder.findMany({
+                where: {
+                    status: 'SUCCESS',
+                    applicationId: {
+                        in: (await this.client.application.findMany({
+                            where: { examId: id },
+                            select: { id: true },
+                        })).map((a) => a.id),
+                    },
+                },
+            }),
+        ]);
+        const paidApplicationIds = new Set(paymentOrders.map((p) => p.applicationId));
+        const ticketApplicationIds = new Set(tickets.map((t) => t.applicationId));
+        const counts = {
+            total: applications.length,
+            draft: applications.filter((a) => a.status === 'DRAFT').length,
+            submitted: applications.filter((a) => a.status === 'SUBMITTED').length,
+            pendingPrimary: applications.filter((a) => a.status === 'PENDING_PRIMARY_REVIEW').length,
+            primaryPassed: applications.filter((a) => a.status === 'PRIMARY_PASSED')
+                .length,
+            primaryRejected: applications.filter((a) => a.status === 'PRIMARY_REJECTED').length,
+            pendingSecondary: applications.filter((a) => a.status === 'PENDING_SECONDARY_REVIEW').length,
+            approved: applications.filter((a) => a.status === 'APPROVED').length,
+            secondaryRejected: applications.filter((a) => a.status === 'SECONDARY_REJECTED').length,
+            paid: applications.filter((a) => paidApplicationIds.has(a.id)).length,
+            ticketIssued: applications.filter((a) => ticketApplicationIds.has(a.id))
+                .length,
+        };
+        return {
+            examId: exam.id,
+            examCode: exam.code,
+            examTitle: exam.title,
+            totalApplications: counts.total,
+            draftApplications: counts.draft,
+            submittedApplications: counts.submitted,
+            pendingPrimaryReviewApplications: counts.pendingPrimary,
+            primaryPassedApplications: counts.primaryPassed,
+            primaryRejectedApplications: counts.primaryRejected,
+            pendingSecondaryReviewApplications: counts.pendingSecondary,
+            approvedApplications: counts.approved,
+            secondaryRejectedApplications: counts.secondaryRejected,
+            paidApplications: counts.paid,
+            ticketIssuedApplications: counts.ticketIssued,
+            primaryApprovalRate: counts.total > 0 ? (counts.primaryPassed / counts.total) * 100 : 0,
+            secondaryApprovalRate: counts.primaryPassed > 0
+                ? (counts.approved / counts.primaryPassed) * 100
+                : 0,
+            overallApprovalRate: counts.total > 0 ? (counts.approved / counts.total) * 100 : 0,
         };
     }
 };

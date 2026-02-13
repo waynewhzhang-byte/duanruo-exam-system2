@@ -42,6 +42,10 @@ let AuthController = class AuthController {
     logout() {
         return api_result_dto_1.ApiResult.ok(null, 'Logged out');
     }
+    async refresh(req) {
+        const result = await this.authService.refreshToken(req.user.userId);
+        return api_result_dto_1.ApiResult.ok(result);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -74,6 +78,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "logout", null);
+__decorate([
+    (0, common_1.Post)('refresh'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "refresh", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

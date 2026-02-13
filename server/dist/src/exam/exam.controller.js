@@ -19,6 +19,7 @@ const position_service_1 = require("./position.service");
 const exam_dto_1 = require("./dto/exam.dto");
 const position_dto_1 = require("./dto/position.dto");
 const api_result_dto_1 = require("../common/dto/api-result.dto");
+const paginated_response_dto_1 = require("../common/dto/paginated-response.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const permissions_guard_1 = require("../auth/permissions.guard");
 const tenant_guard_1 = require("../auth/tenant.guard");
@@ -30,9 +31,9 @@ let ExamController = class ExamController {
         this.examService = examService;
         this.positionService = positionService;
     }
-    async getAll() {
-        const exams = await this.examService.findAll();
-        return api_result_dto_1.ApiResult.ok(exams);
+    async getAll(page = 0, size = 10, status) {
+        const { content, total } = await this.examService.findAll(Number(page), Number(size), status);
+        return paginated_response_dto_1.PaginationHelper.createResponse(content, total, Number(page), Number(size));
     }
     async getById(id) {
         const exam = await this.examService.findById(id);
@@ -75,8 +76,11 @@ exports.ExamController = ExamController;
 __decorate([
     (0, common_1.Get)(),
     (0, permissions_decorator_1.Permissions)('exam:view'),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('size')),
+    __param(2, (0, common_1.Query)('status')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object, Object, String]),
     __metadata("design:returntype", Promise)
 ], ExamController.prototype, "getAll", null);
 __decorate([

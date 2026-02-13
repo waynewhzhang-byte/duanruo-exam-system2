@@ -34,6 +34,15 @@ let PaymentController = class PaymentController {
         const result = await this.paymentService.handleCallback(request);
         return api_result_dto_1.ApiResult.ok(result);
     }
+    async queryOrder(orderId) {
+        const result = await this.paymentService.queryOrder(orderId);
+        return api_result_dto_1.ApiResult.ok(result);
+    }
+    async listMyOrders(req) {
+        const candidateId = req.user.userId;
+        const result = await this.paymentService.listMyOrders(candidateId);
+        return api_result_dto_1.ApiResult.ok(result);
+    }
 };
 exports.PaymentController = PaymentController;
 __decorate([
@@ -52,6 +61,22 @@ __decorate([
     __metadata("design:paramtypes", [payment_dto_1.PaymentCallbackRequest]),
     __metadata("design:returntype", Promise)
 ], PaymentController.prototype, "callback", null);
+__decorate([
+    (0, common_1.Get)('order/:orderId'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('orderId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], PaymentController.prototype, "queryOrder", null);
+__decorate([
+    (0, common_1.Get)('my-orders'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], PaymentController.prototype, "listMyOrders", null);
 exports.PaymentController = PaymentController = __decorate([
     (0, common_1.Controller)('payments'),
     __metadata("design:paramtypes", [payment_service_1.PaymentService])

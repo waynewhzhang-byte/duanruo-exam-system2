@@ -17,6 +17,9 @@ const common_1 = require("@nestjs/common");
 const seating_service_1 = require("./seating.service");
 const api_result_dto_1 = require("../common/dto/api-result.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
+const tenant_guard_1 = require("../auth/tenant.guard");
+const permissions_guard_1 = require("../auth/permissions.guard");
+const permissions_decorator_1 = require("../auth/permissions.decorator");
 const seating_dto_1 = require("./dto/seating.dto");
 let SeatingController = class SeatingController {
     seatingService;
@@ -36,6 +39,7 @@ let SeatingController = class SeatingController {
 exports.SeatingController = SeatingController;
 __decorate([
     (0, common_1.Post)(':examId/allocate'),
+    (0, permissions_decorator_1.Permissions)('seating:allocate'),
     __param(0, (0, common_1.Param)('examId')),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Req)()),
@@ -45,6 +49,7 @@ __decorate([
 ], SeatingController.prototype, "allocate", null);
 __decorate([
     (0, common_1.Get)(':examId/assignments'),
+    (0, permissions_decorator_1.Permissions)('seating:view'),
     __param(0, (0, common_1.Param)('examId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -52,7 +57,7 @@ __decorate([
 ], SeatingController.prototype, "listAssignments", null);
 exports.SeatingController = SeatingController = __decorate([
     (0, common_1.Controller)('seating'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, tenant_guard_1.TenantGuard, permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [seating_service_1.SeatingService])
 ], SeatingController);
 //# sourceMappingURL=seating.controller.js.map

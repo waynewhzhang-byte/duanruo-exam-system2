@@ -222,6 +222,46 @@ let AuthService = class AuthService {
             updatedAt: user.updatedAt.toISOString(),
         };
     }
+    async refreshToken(userId) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user)
+            throw new common_1.BadRequestException('User not found');
+        const tenantRoles = await this.prisma.userTenantRole.findMany({
+            where: { userId: user.id, active: true },
+        });
+        const roles = Array.from(new Set([
+            ...JSON.parse(user.roles),
+            ...tenantRoles.map((tr) => tr.role),
+        ]));
+        const permissions = this.getPermissionsForRoles(roles);
+        const payload = {
+            sub: user.id,
+            username: user.username,
+            email: user.email,
+            fullName: user.fullName,
+            status: user.status,
+            roles: roles,
+            permissions: permissions,
+        };
+        return {
+            token: this.jwtService.sign(payload),
+            tokenType: 'Bearer',
+            expiresIn: 86400,
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                fullName: user.fullName,
+                status: user.status,
+                roles: roles,
+                permissions: permissions,
+                emailVerified: user.emailVerified ?? false,
+                phoneVerified: user.phoneVerified ?? false,
+                createdAt: user.createdAt.toISOString(),
+                updatedAt: user.updatedAt.toISOString(),
+            },
+        };
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([

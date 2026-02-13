@@ -10,6 +10,7 @@ export declare class SeatingController {
         totalCandidates: number;
         totalAssigned: number;
         totalVenues: number;
+        ticketsUpdated: number;
     }>>;
     listAssignments(examId: string): Promise<ApiResult<import("./dto/seating.dto").SeatAssignmentDetail[]>>;
 }

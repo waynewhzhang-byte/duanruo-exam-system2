@@ -1,7 +1,10 @@
 import { PrismaService } from '../prisma/prisma.service';
+import { TenantBucketService } from './tenant-bucket.service';
 export declare class TenantService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly tenantBucketService;
+    private readonly logger;
+    constructor(prisma: PrismaService, tenantBucketService: TenantBucketService);
     createTenant(data: {
         id: string;
         name: string;
@@ -22,7 +25,9 @@ export declare class TenantService {
         activatedAt: Date | null;
         deactivatedAt: Date | null;
     }>;
+    private createTenantStorage;
     private initializeTenantSchema;
+    private verifySchemaInitialization;
     findAll(): Promise<{
         id: string;
         status: string;

@@ -8,14 +8,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var ApplicationService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ApplicationService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
-let ApplicationService = class ApplicationService {
+const auto_review_service_1 = require("../review/auto-review.service");
+let ApplicationService = ApplicationService_1 = class ApplicationService {
     prisma;
-    constructor(prisma) {
+    autoReviewService;
+    logger = new common_1.Logger(ApplicationService_1.name);
+    constructor(prisma, autoReviewService) {
         this.prisma = prisma;
+        this.autoReviewService = autoReviewService;
     }
     get client() {
         return this.prisma.client;
@@ -67,7 +72,21 @@ let ApplicationService = class ApplicationService {
                 });
             }
         }
+        this.triggerAutoReview(application.id).catch((error) => {
+            this.logger.error(`Auto-review failed for application ${application.id}: ${error.message}`);
+        });
         return this.mapToResponse(application);
+    }
+    async triggerAutoReview(applicationId) {
+        try {
+            this.logger.log(`Triggering auto-review for application: ${applicationId}`);
+            const result = await this.autoReviewService.executeAutoReview(applicationId);
+            await this.autoReviewService.applyAutoReviewResult(applicationId, result);
+            this.logger.log(`Auto-review completed for ${applicationId}: ${result.passed ? 'PASSED' : 'FAILED'}`);
+        }
+        catch (error) {
+            this.logger.error(`Auto-review error for ${applicationId}: ${error.message}`);
+        }
     }
     async saveDraft(candidateId, request) {
         const application = await this.client.application.upsert({
@@ -164,8 +183,9 @@ let ApplicationService = class ApplicationService {
     }
 };
 exports.ApplicationService = ApplicationService;
-exports.ApplicationService = ApplicationService = __decorate([
+exports.ApplicationService = ApplicationService = ApplicationService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        auto_review_service_1.AutoReviewService])
 ], ApplicationService);
 //# sourceMappingURL=application.service.js.map

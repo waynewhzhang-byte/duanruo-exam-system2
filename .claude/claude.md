@@ -1,177 +1,165 @@
-# 多租户在线招聘考试报名系统 - 项目规范
+# CLAUDE.md
 
-> **项目名称**: 招聘考试报名管理平台
-> **位置**: 项目根目录 `/claude.md`
-> **版本**: 1.0.0
-> **最后更新**: 2025-01-06
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
----
+## Project Overview
 
-## 📋 项目概述
+Multi-tenant online recruitment exam registration system (端若数智考盟). Manages the full lifecycle: exam publishing, candidate registration, document review, payment, admission ticket generation, and seating arrangement.
 
-### 业务定位
-面向企业（租户）的在线招聘考试报名管理系统，提供从考试发布、考生报名、资料审核、费用收取、准考证发放到考场安排的全流程管理。
+**Tech Stack**: NestJS 11 (backend) + Next.js 14 App Router (frontend) + Prisma 6 + PostgreSQL + MinIO + shadcn/ui
 
-### 核心价值
-- **企业侧（租户）**: 高效管理招聘考试流程，自动化审核，减少人工成本
-- **考生侧**: 一次注册，多次报考，资料复用，便捷支付
-- **平台侧**: 统一收款、消息推送、租户管理
+## Commands
 
-### 技术栈
-```json
-{
-  "backend": {
-    "runtime": "Node.js >=20.0.0",
-    "framework": "NestJS ^10.0.0",
-    "orm": "Prisma ^5.0.0",
-    "database": "PostgreSQL >=14.0"
-  },
-  "frontend": {
-    "framework": "Next.js ^14.0.0 (App Router)",
-    "ui": "React ^18.0.0 + Tailwind CSS + shadcn/ui",
-    "typescript": "^5.0.0"
-  },
-  "storage": {
-    "files": "MinIO >=RELEASE.2024-01-01",
- 
-  },
-  "payment": "待定（支付宝/微信支付）",
-  "notification": "阿里云/腾讯云 (SMS + Email)"
-}
+### Backend (`server/`)
+```bash
+cd server
+npm run dev              # Dev server with hot reload (port 8081)
+npm run build            # Compile TypeScript
+npm run start:prod       # Run compiled output
+npm run lint             # ESLint with auto-fix
+npm run format           # Prettier formatting
+npm run test             # Jest unit tests
+npm run test:watch       # Jest watch mode
+npm run test:cov         # Jest with coverage
+npm run test:e2e         # E2E tests (jest-e2e.json)
+npx prisma generate      # Regenerate Prisma client after schema changes
+npx prisma db push       # Push schema changes to database
 ```
 
----
-
-## 🏗️ 多租户架构设计
-
-### Schema 隔离策略
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  public schema (全局 - 平台级数据)                           │
-│  ├── tenants (租户/企业)                                      │
-│  ├── users (考生账户)                                         │
-│  ├── tenant_users (租户管理员关联)                            │
-│  ├── candidate_profiles (考生基本资料 - 跨租户复用)           │
-│  ├── exam_registrations (报名记录 - 跨租户)                   │
-│  ├── payments (支付记录 - 平台统一管理)                       │
-│  ├── notifications (消息通知记录)                             │
-│  └── system_configs (系统配置)                               │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│  tenant_{id} schema (租户业务数据)                           │
-│  ├── exams (招聘考试)                                         │
-│  ├── exam_positions (考试岗位)                                │
-│  ├── exam_fee_rules (收费规则)                                │
-│  ├── registration_forms (报名表单配置)                        │
-│  ├── registration_submissions (报名提交数据)                  │
-│  ├── review_workflows (审核流程配置)                          │
-│  ├── review_tasks (审核任务)                                  │
-│  ├── review_rules (自动审核规则)                              │
-│  ├── admission_tickets (准考证)                               │
-│  ├── exam_venues (考场)                                       │
-│  ├── seat_arrangements (座位安排)                             │
-│  ├── notification_templates (消息模板)                        │
-│  └── tenant_admins (租户管理员配置)                           │
-└─────────────────────────────────────────────────────────────┘
+### Frontend (`web/`)
+```bash
+cd web
+npm run dev              # Next.js dev server (port 3000)
+npm run build            # Production build
+npm run lint             # Next.js ESLint
+npm run type-check       # TypeScript type check (tsc --noEmit)
+npm run test:e2e         # Playwright E2E tests
+npm run test:e2e:ui      # Playwright UI mode
+npm run test:bdd         # Cucumber BDD tests
+npm run test:bdd:layer-N # Run specific BDD layer (0-7)
+npm run openapi:refresh  # Re-export OpenAPI spec from backend + regenerate client
 ```
 
-### 关键设计决策
+### Running Both
+Backend runs on `http://localhost:8081/api/v1`. Frontend on `http://localhost:3000` and proxies `/api/v1/*` to the backend via Next.js rewrites (configured in `next.config.js`, controlled by `BACKEND_ORIGIN` env var).
 
-#### 1. 数据隔离原则
-- **考生账户和基础资料**: 存储在 `public` schema，全平台共享
-- **报名记录**: 存储在 `public` schema，便于考生查看所有报考记录
-- **支付记录**: 存储在 `public` schema，平台统一管理财务
-- **考试业务数据**: 存储在租户 schema，完全隔离
+## Architecture
 
-#### 2. 跨租户数据访问规则
-- ✅ **允许**: 考生查看自己在所有租户的报名记录
-- ✅ **允许**: 平台管理员查看所有租户数据
-- ❌ **禁止**: 租户 A 访问租户 B 的考试配置和审核数据
-- ❌ **禁止**: 租户直接访问考生的完整资料（仅可见报名提交的数据）
-
-#### 3. 审核流程设计
+### Repository Structure
 ```
-考生提交报名
-    ↓
-自动审核引擎 (规则匹配)
-    ↓
-  通过? ──→ 是 ──→ 生成准考证
-    ↓ 否
-人工审核 (多级流程)
-    ↓
-L1 审核员审核
-    ↓
-  通过? ──→ 否 ──→ 驳回/要求补充材料
-    ↓ 是
-L2 审核员复审 (可选)
-    ↓
-最终通过 ──→ 生成准考证 + 通知考生
+server/          # NestJS backend (standalone npm project)
+web/             # Next.js frontend (standalone npm project)
+scripts/         # PowerShell/SQL utility scripts for DB migrations, tenant setup
+api-contracts/   # OpenAPI specifications (shared contract)
+docs/            # Architecture docs, test reports, fix summaries
+```
+Not a formal monorepo—each project has its own `package.json`. No shared TypeScript packages.
+
+### Multi-Tenancy (Schema-per-Tenant)
+
+The core architectural pattern. PostgreSQL schema isolation:
+- **`public` schema**: Platform-wide data (`users`, `tenants`, `user_tenant_roles`)
+- **`tenant_{code}` schema**: Per-tenant business data (`exams`, `applications`, `reviews`, `tickets`, `venues`, etc.)
+
+**Request flow**: `TenantMiddleware` → extract `X-Tenant-ID`/`X-Tenant-Slug` header → lookup `tenants.schema_name` → `AsyncLocalStorage` context → `PrismaService.client` executes `SET LOCAL search_path TO "tenant_xxx", public` per query.
+
+Key files:
+- `server/src/tenant/tenant.middleware.ts` — Extracts tenant from headers, sets ALS context
+- `server/src/prisma/prisma.service.ts` — `AsyncLocalStorage`-based schema switching via `$extends`
+- `server/src/tenant/tenant.service.ts` — Creates tenant record + PostgreSQL schema + MinIO bucket
+- `server/src/tenant/tenant-schema-template.sql` — SQL template for initializing a new tenant schema
+
+**Important**: `TenantMiddleware` is applied to all routes _except_ `/api/v1/auth/login` and `/api/v1/auth/register` (see `AppModule.configure`).
+
+### Prisma Schema
+
+Single schema file at `server/prisma/schema.prisma`. Models for both public and tenant tables are defined together. At runtime, the `search_path` determines which physical schema is queried. Uses `@prisma/adapter-pg` (raw `pg.Pool`) rather than Prisma's default driver.
+
+Cross-schema foreign keys (e.g., `Application.candidateId → users.id`) are managed by application logic, not Prisma relations.
+
+### Authentication & Authorization
+
+JWT-based with role + permission guards. Key files in `server/src/auth/`:
+
+- `jwt.strategy.ts` — Passport JWT extraction & validation
+- `jwt-auth.guard.ts` — `@UseGuards(JwtAuthGuard)` for protected routes
+- `tenant.guard.ts` — Validates `X-Tenant-ID` matches JWT's `tenantId`
+- `permissions.guard.ts` — Fine-grained permission checking
+- `permissions.decorator.ts` — `@Permissions(...)` decorator
+
+**JWT payload**: `{ sub, username, email, fullName, tenantId, roles[], permissions[], status }`
+
+**Roles**: `SUPER_ADMIN`, `PLATFORM_ADMIN`, `TENANT_OWNER`, `TENANT_ADMIN`, `PRIMARY_REVIEWER`, `SECONDARY_REVIEWER`, `OPERATOR`, `CANDIDATE`
+
+### Backend Module Structure
+
+All modules registered in `server/src/app.module.ts`. Global prefix: `api/v1`.
+
+| Module | Purpose |
+|--------|---------|
+| PrismaModule | Database ORM with tenant-aware `client` getter |
+| TenantModule | Tenant CRUD, schema creation, MinIO bucket setup |
+| AuthModule | JWT login/register, guards, strategy |
+| UserModule | User profile management |
+| ExamModule | Exam CRUD + published exam public listing |
+| ApplicationModule | Candidate application submission |
+| ReviewModule | Multi-stage review workflow (PRIMARY → SECONDARY) |
+| PaymentModule | Payment orders + mock gateway for development |
+| TicketModule | Admission ticket generation with configurable numbering |
+| SeatingModule | Venue/room management + seat allocation |
+| FileModule | File upload/download via MinIO (tenant-isolated buckets) |
+| StatisticsModule | Reporting and analytics |
+| SuperAdminModule | Platform-level administration |
+| SchedulerModule | Cron-based scheduled tasks |
+| CommonModule | Shared utilities (PII handling, security) |
+
+### Frontend Architecture
+
+Next.js 14 App Router. Routes organized by role:
+- `/login`, `/register` — Public auth pages
+- `/super-admin/` — Platform admin dashboard
+- `/[tenantSlug]/admin/` — Tenant admin dashboard
+- `/[tenantSlug]/reviewer/` — Review workflow
+- `/[tenantSlug]/candidate/` — Candidate portal
+- `/exams`, `/my-applications` — Cross-tenant candidate pages
+
+Key patterns:
+- `web/src/middleware.ts` — Role-based route protection, token from `auth-token` cookie, tenant slug from URL path
+- `web/src/lib/api.ts` — Axios-based API client; auto-injects `Authorization` and `X-Tenant-ID` headers
+- `web/src/lib/api-hooks.ts` — React Query hooks for all API endpoints
+- `web/src/contexts/AuthContext.tsx` — Client-side auth state, session persistence via `/api/session`
+- UI components: shadcn/ui in `src/components/ui/`, Radix primitives, Tailwind CSS
+- Forms: `react-hook-form` + `zod` validation
+- State: React Query for server state, React Context for auth
+
+### Data Flow: Registration Lifecycle
+```
+Candidate registers → submits Application (DRAFT→SUBMITTED)
+  → Auto-review or Manual review (PRIMARY→SECONDARY)
+  → Payment (if fee required)
+  → Ticket generation (configurable numbering rules)
+  → Seat allocation (venue/room assignment)
+```
+Application status transitions are tracked in `application_audit_logs`.
+
+## Environment Variables (Backend)
+
+Required in `server/.env`:
+```
+DATABASE_URL=postgresql://user:pass@localhost:5432/dbname?schema=public
+PORT=8081
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_USE_SSL=false
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
 ```
 
----
+## Conventions
 
-## 🔐 角色和权限矩阵
-
-### 角色定义
-
-| 角色 | 作用域 | 说明 |
-|-----|-------|------|
-| **SUPER_ADMIN** | 平台 | 平台超级管理员，可创建租户 |
-| **PLATFORM_ADMIN** | 平台 | 平台运营人员，查看统计数据 |
-| **TENANT_OWNER** | 租户 | 租户所有者，最高权限 |
-| **TENANT_ADMIN** | 租户 | 租户管理员，可配置考试 |
-| **REVIEWER_L1** | 租户 | 一级审核员 |
-| **REVIEWER_L2** | 租户 | 二级审核员 |
-| **OPERATOR** | 租户 | 操作员，查看数据 |
-| **CANDIDATE** | 平台 | 考生 |
-
-### 权限控制表
-
-#### 平台级权限
-
-| 功能 | SUPER_ADMIN | PLATFORM_ADMIN | CANDIDATE |
-|-----|-------------|----------------|-----------|
-| 创建租户 | ✅ | ❌ | ❌ |
-| 管理租户 | ✅ | ✅ | ❌ |
-| 查看统计 | ✅ | ✅ | ❌ |
-| 财务管理 | ✅ | ✅ | ❌ |
-| 注册账号 | ✅ | ✅ | ✅ |
-| 报名考试 | ❌ | ❌ | ✅ |
-| 查看报名记录 | ❌ | ❌ | ✅ |
-
-#### 租户级权限
-
-| 功能模块 | OWNER | ADMIN | REVIEWER_L1 | REVIEWER_L2 | OPERATOR |
-|---------|-------|-------|-------------|-------------|----------|
-| **考试管理** |
-| 创建考试 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| 编辑考试 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| 删除考试 | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 发布考试 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| 查看考试 | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **岗位管理** |
-| 管理岗位 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **报名审核** |
-| 查看报名 | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 一级审核 | ✅ | ✅ | ✅ | ❌ | ❌ |
-| 二级审核 | ✅ | ✅ | ❌ | ✅ | ❌ |
-| 驳回报名 | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **审核配置** |
-| 配置审核规则 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| 配置审核流程 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **准考证管理** |
-| 生成准考证 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| 发放准考证 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **考场管理** |
-| 管理考场 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| 安排座位 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **消息模板** |
-| 配置模板 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **人员管理** |
-| 添加管理员 | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 分配角色 | ✅ | ✅ | ❌ | ❌ | ❌ |
-
----
-
+- All API routes prefixed with `/api/v1`
+- Prisma model names use PascalCase; DB tables use snake_case (`@@map`)
+- Tenant-scoped queries must go through `prismaService.client` (not raw `this.prisma`), which sets `search_path`
+- Frontend uses path alias `@/*` → `./src/*`
+- OpenAPI contract in `api-contracts/` serves as the frontend-backend interface agreement
+- Backend test files: `*.spec.ts` co-located with source files

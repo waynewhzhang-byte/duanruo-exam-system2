@@ -72,6 +72,82 @@ let TicketService = TicketService_1 = class TicketService {
             qrCode: t.qrCode || undefined,
         }));
     }
+    async batchGenerateForExam(examId) {
+        this.logger.log(`Batch generating tickets for exam: ${examId}`);
+        const exam = await this.client.exam.findUnique({
+            where: { id: examId },
+            include: { positions: true },
+        });
+        if (!exam) {
+            throw new common_1.NotFoundException('Exam not found');
+        }
+        const eligibleStatus = exam.feeRequired ? ['PAID'] : ['APPROVED'];
+        const applications = await this.client.application.findMany({
+            where: {
+                examId,
+                status: { in: eligibleStatus },
+            },
+            include: {
+                exam: true,
+                position: true,
+            },
+        });
+        this.logger.log(`Found ${applications.length} eligible applications for ticket generation`);
+        let totalGenerated = 0;
+        let alreadyExisted = 0;
+        let failed = 0;
+        const ticketNos = [];
+        for (const app of applications) {
+            try {
+                const existing = await this.client.ticket.findFirst({
+                    where: { applicationId: app.id },
+                });
+                if (existing) {
+                    this.logger.log(`Ticket already exists for application: ${app.id}`);
+                    alreadyExisted++;
+                    ticketNos.push(existing.ticketNo);
+                    continue;
+                }
+                const ticketNo = `T-${Date.now()}-${app.id.substring(0, 8)}`;
+                const ticketNumber = `TN-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+                await this.client.ticket.create({
+                    data: {
+                        id: (0, uuid_1.v4)(),
+                        applicationId: app.id,
+                        examId: app.examId,
+                        positionId: app.positionId,
+                        candidateId: app.candidateId,
+                        ticketNo,
+                        ticketNumber,
+                        status: 'ACTIVE',
+                        examTitle: app.exam.title,
+                        positionTitle: app.position.title,
+                        examStartTime: app.exam.examStart,
+                        examEndTime: app.exam.examEnd,
+                        issuedAt: new Date(),
+                    },
+                });
+                await this.client.application.update({
+                    where: { id: app.id },
+                    data: { status: 'TICKET_ISSUED' },
+                });
+                totalGenerated++;
+                ticketNos.push(ticketNo);
+                this.logger.log(`Generated ticket: ${ticketNo} for application: ${app.id}`);
+            }
+            catch (error) {
+                this.logger.error(`Failed to generate ticket for application ${app.id}: ${error.message}`);
+                failed++;
+            }
+        }
+        this.logger.log(`Batch generation completed: ${totalGenerated} generated, ${alreadyExisted} existed, ${failed} failed`);
+        return {
+            totalGenerated,
+            alreadyExisted,
+            failed,
+            ticketNos,
+        };
+    }
 };
 exports.TicketService = TicketService;
 exports.TicketService = TicketService = TicketService_1 = __decorate([
