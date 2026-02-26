@@ -6,41 +6,20 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import DynamicForm from '@/components/forms/DynamicForm'
-import { transformFormDataForSubmission, debugFormDataTransformation } from '@/lib/form-data-transformer'
+import { transformFormDataForSubmission } from '@/lib/form-data-transformer'
 import { FORM_TEMPLATES, getTemplateById } from '@/data/form-templates'
 import { FormTemplate } from '@/types/form-template'
 import { ArrowLeft, FileText, Settings, Eye } from 'lucide-react'
-
-// Mock exam data
-const mockExams = [
-  {
-    id: '1',
-    title: '软件工程师 - 初级',
-    templateId: 'basic-template',
-    positionId: 'position-software-engineer',
-    description: '面向应届毕业生和初级开发者'
-  },
-  {
-    id: '2',
-    title: '数据分析师 - 中级',
-    templateId: 'comprehensive-template',
-    positionId: 'position-data-analyst',
-    description: '需要2-3年相关工作经验'
-  },
-  {
-    id: '3',
-    title: 'UI设计师认证',
-    templateId: 'skill-certification-template',
-    positionId: 'position-ui-designer',
-    description: '设计技能认证考试'
-  },
-]
+import { useOpenExams } from '@/lib/api-hooks'
+import { Spinner } from '@/components/ui/loading'
 
 function TemplateApplicationPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const examId = searchParams.get('examId')
   const templateId = searchParams.get('templateId')
+  
+  const { data: exams, isLoading } = useOpenExams()
   
   const [selectedExam, setSelectedExam] = useState(examId || '')
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(
@@ -50,25 +29,22 @@ function TemplateApplicationPageContent() {
   const [showPreview, setShowPreview] = useState(false)
 
   const handleExamSelect = (examId: string) => {
-    const exam = mockExams.find(e => e.id === examId)
+    const exam = exams?.find(e => e.id === examId)
     if (exam) {
       setSelectedExam(examId)
-      const template = getTemplateById(exam.templateId)
-      setSelectedTemplate(template || null)
+      setSelectedTemplate(null)
     }
   }
 
   const handleSubmit = async (data: Record<string, any>) => {
     setIsSubmitting(true)
     try {
-      // 获取选中的考试信息
-      const exam = mockExams.find(e => e.id === selectedExam)
+      const exam = exams?.find(e => e.id === selectedExam)
 
-      // 转换表单数据为后端API格式
       const submitData = transformFormDataForSubmission(
         data,
         selectedExam,
-        exam?.positionId || 'default-position',
+        selectedExam,
         1
       )
 
@@ -133,31 +109,35 @@ function TemplateApplicationPageContent() {
               <CardTitle>选择考试</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mockExams.map((exam) => {
-                  const template = getTemplateById(exam.templateId)
-                  return (
-                    <div
-                      key={exam.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:border-primary-500 cursor-pointer transition-colors"
-                      onClick={() => handleExamSelect(exam.id)}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <FileText className="h-6 w-6 text-primary-600" />
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                          {template?.category}
-                        </span>
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <Spinner size="lg" />
+                </div>
+              ) : exams && exams.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {exams.map((exam) => (
+                      <div
+                        key={exam.id}
+                        className="border border-gray-200 rounded-lg p-4 hover:border-primary-500 cursor-pointer transition-colors"
+                        onClick={() => handleExamSelect(exam.id)}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <FileText className="h-6 w-6 text-primary-600" />
+                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                            报名中
+                          </span>
+                        </div>
+                        <h3 className="font-medium text-gray-900 mb-2">{exam.title}</h3>
+                        <p className="text-sm text-gray-600 mb-3">{exam.description || ''}</p>
+                        <div className="text-xs text-gray-500">
+                          <p>考试ID: {exam.examId}</p>
+                        </div>
                       </div>
-                      <h3 className="font-medium text-gray-900 mb-2">{exam.title}</h3>
-                      <p className="text-sm text-gray-600 mb-3">{exam.description}</p>
-                      <div className="text-xs text-gray-500">
-                        <p>模板：{template?.name}</p>
-                        <p>字段数：{template?.sections.reduce((acc: number, section: any) => acc + section.fields.length, 0)}</p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-center text-gray-500 py-8">暂无可用考试</p>
+              )}
             </CardContent>
           </Card>
         )}

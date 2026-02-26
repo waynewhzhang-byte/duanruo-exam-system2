@@ -38,8 +38,8 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className={inter.className}>
         <ErrorBoundary>
-          <AuthProvider>
-            <QueryProvider>
+          <QueryProvider>
+            <AuthProvider>
               <div className="min-h-screen bg-background">
                 <NavigationWrapper />
                 <main className="conditional-main">
@@ -47,8 +47,8 @@ export default function RootLayout({
                 </main>
               </div>
               <Toaster position="top-right" richColors />
-            </QueryProvider>
-          </AuthProvider>
+            </AuthProvider>
+          </QueryProvider>
         </ErrorBoundary>
       </body>
     </html>

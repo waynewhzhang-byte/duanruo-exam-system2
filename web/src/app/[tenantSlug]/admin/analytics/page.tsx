@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { apiGet } from "@/lib/api-hooks"
+import { apiGetWithTenant } from "@/lib/api"
 import { TenantStatistics, RecentExam } from "@/types/statistics"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -18,11 +18,18 @@ import {
     Legend
 } from "recharts"
 import { Loader2, Users, FileText, CheckCircle, DollarSign } from "lucide-react"
+import { useTenant } from "@/hooks/useTenant"
 
 export default function AnalyticsPage() {
+    const { tenant } = useTenant()
+    
     const { data: stats, isLoading } = useQuery({
-        queryKey: ["tenant-statistics"],
-        queryFn: () => apiGet<TenantStatistics>("/statistics/tenant/me"),
+        queryKey: ["tenant-statistics", tenant?.id],
+        queryFn: () => {
+            if (!tenant?.id) throw new Error('No tenant')
+            return apiGetWithTenant<TenantStatistics>("/statistics/tenant/me", tenant.id)
+        },
+        enabled: !!tenant?.id,
     })
 
     if (isLoading) {

@@ -1,40 +1,28 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { LoginRequest } from '@/types/auth'
-import { apiPost, apiGet, API_BASE } from '@/lib/api'
-import { LogIn, AlertCircle } from 'lucide-react'
+import { LoginRequest, TenantRoleInfo } from '@/types/auth'
+import { apiPost, API_BASE } from '@/lib/api'
+import { LogIn, AlertCircle, GraduationCap, Shield, Users, FileCheck, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
-// Helper function to determine redirect path based on user roles
-// Note: Candidates always go to global /candidate portal (can view all tenant exams)
-// Admins and Reviewers go to tenant-specific portals
 function getRedirectPath(tenantSlug: string | null, roles: string[]): string {
-  // Priority: Admin > Reviewer > Candidate
-
-  // Admins need tenant context
   if (roles.includes('TENANT_ADMIN') || roles.includes('ADMIN') || roles.includes('EXAM_ADMIN')) {
     return tenantSlug ? `/${tenantSlug}/admin` : '/admin'
   }
-
-  // Reviewers need tenant context
   if (roles.includes('PRIMARY_REVIEWER') || roles.includes('SECONDARY_REVIEWER')) {
     return tenantSlug ? `/${tenantSlug}/reviewer` : '/reviewer'
   }
-
-  // Candidates always go to global portal (SSO design: can access all tenant exams)
   if (roles.includes('CANDIDATE')) {
     return '/candidate'
   }
-
-  // Default fallback
   return '/'
 }
 
@@ -50,6 +38,14 @@ function LoginForm() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      router.push('/')
+    }
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,16 +53,12 @@ function LoginForm() {
     setIsLoading(true)
 
     try {
-      // Validate form data
       const validatedData = LoginRequest.parse(formData)
-
-      // Normalize payload (trim to avoid accidental spaces)
       const payload = {
         username: validatedData.username.trim(),
         password: validatedData.password,
       }
 
-      // Call login API
       const response = await apiPost<any>('/auth/login', payload)
 
       if (!response.token || !response.user) {
@@ -75,99 +67,65 @@ function LoginForm() {
 
       let finalToken = response.token
       let finalUser = response.user
+      const tenantRoles = response.tenantRoles || []
 
-      // Default flow: Store session and route based on roles
-      await storeSession(finalToken, finalUser)
+      await storeSession(finalToken, finalUser, tenantRoles)
 
-      // Route users based on their roles (prioritize SUPER_ADMIN)
       const userRoles = finalUser.roles || []
 
-      // SUPER_ADMIN: Route to super admin portal immediately
       if (userRoles.includes('SUPER_ADMIN')) {
         router.push('/super-admin/tenants')
         return
       }
 
-      // CANDIDATE: Route to global candidate portal (SSO design)
-      // Candidates can access exams from all tenants, no need to select a specific tenant
       if (userRoles.includes('CANDIDATE')) {
         router.push('/candidate')
         return
       }
 
-      // For Admins and Reviewers: Need to select a tenant
-      try {
-        console.log('[Login] Fetching tenants for user...')
-        const tenants = await apiGet<any[]>('/tenants/me', { token: finalToken })
-        console.log('[Login] Tenants response:', tenants)
+      if (tenantRoles.length > 0) {
+        const firstTenantRole = tenantRoles[0]
 
-        if (tenants && tenants.length > 0) {
-          // If user has tenants, we need to select one
-          const tenant = tenants[0]
-          console.log('[Login] Selected tenant:', tenant)
-
-          try {
-            console.log('[Login] Calling select-tenant API...')
-            const selectResponse = await fetch(`${API_BASE}/auth/select-tenant`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${finalToken}`
-              },
-              body: JSON.stringify({ tenantId: tenant.id })
-            })
-
-            console.log('[Login] select-tenant response status:', selectResponse.status)
-
-            if (selectResponse.ok) {
-              const data = await selectResponse.json()
-              console.log('[Login] select-tenant data:', data)
-
-              if (data.token && data.user) {
-                finalToken = data.token
-                finalUser = data.user
-
-                // Update storage and context
-                await storeSession(finalToken, finalUser)
-
-                // Redirect based on user's roles in the selected tenant
-                const tenantUserRoles = finalUser.roles || []
-                const redirectPath = getRedirectPath(tenant.slug, tenantUserRoles)
-                console.log('[Login] Redirecting to:', redirectPath, 'with roles:', tenantUserRoles)
-                router.push(redirectPath)
-                return
-              } else {
-                console.error('[Login] Missing token or user in select-tenant response')
-              }
-            } else {
-              const errorText = await selectResponse.text()
-              console.error('[Login] select-tenant failed:', selectResponse.status, errorText)
-            }
-          } catch (e) {
-            console.error('[Login] Auto-select tenant error:', e)
-          }
-        } else {
-          console.log('[Login] No tenants found for user')
+        if (tenantRoles.length > 1) {
+          localStorage.setItem('pendingTenantSelection', 'true')
         }
-      } catch (e) {
-        console.warn('[Login] Failed to fetch user tenants:', e)
+
+        try {
+          const selectResponse = await fetch(`${API_BASE}/auth/select-tenant`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${finalToken}`
+            },
+            body: JSON.stringify({ tenantId: firstTenantRole.tenantId })
+          })
+
+          if (selectResponse.ok) {
+            const data = await selectResponse.json()
+            if (data.token && data.user) {
+              finalToken = data.token
+              finalUser = data.user
+              const selectTenantRoles = data.tenantRoles || tenantRoles
+              await storeSession(finalToken, finalUser, selectTenantRoles)
+              const redirectPath = getRedirectPath(firstTenantRole.tenantCode, finalUser.roles || [])
+              router.push(redirectPath)
+              return
+            }
+          }
+        } catch (e) {
+          console.error('[Login] Auto-select tenant error:', e)
+        }
+
+        const redirectPath = getRedirectPath(firstTenantRole.tenantCode, userRoles)
+        router.push(redirectPath)
+        return
       }
 
-      // Default routing based on roles (for users without tenants)
       if (userRoles.includes('TENANT_ADMIN')) {
-        // Tenant admin goes to admin portal (should have been handled above if tenant selected)
         router.push('/admin')
       } else if (userRoles.includes('PRIMARY_REVIEWER') || userRoles.includes('SECONDARY_REVIEWER')) {
-        // Reviewers go to reviewer portal
         router.push('/reviewer')
-      } else if (userRoles.includes('CANDIDATE')) {
-        // Candidates go to candidate portal
-        router.push('/candidate')
-      } else if (userRoles.includes('ADMIN')) {
-        // Generic admin
-        router.push('/admin')
       } else {
-        // Default fallback
         router.push('/')
       }
     } catch (error: any) {
@@ -187,18 +145,16 @@ function LoginForm() {
     }
   }
 
-  const storeSession = async (token: string, user: any) => {
-    // Update AuthContext state first (this ensures React state is updated before navigation)
-    await authLogin(token, user)
-
-    // Store token in Web Storage as well to bypass browser 4KB cookie size limit
+  const storeSession = async (token: string, user: any, tenantRoles: TenantRoleInfo[] = []) => {
+    await authLogin(token, user, tenantRoles)
     try {
       window.localStorage.setItem('token', token)
       window.sessionStorage.setItem('token', token)
     } catch { }
-
-    // Store user info in localStorage
     localStorage.setItem('user', JSON.stringify(user))
+    if (tenantRoles.length > 0) {
+      localStorage.setItem('tenantRoles', JSON.stringify(tenantRoles))
+    }
   }
 
   const handleInputChange = (field: keyof LoginRequest) => (
@@ -210,108 +166,222 @@ function LoginForm() {
     }
   }
 
-  const getRoleTitle = () => {
-    switch (role) {
-      case 'candidate': return '候选人登录'
-      case 'reviewer': return '审核员登录'
-      case 'admin': return '管理员登录'
-      default: return '用户登录'
+  const roleConfig = {
+    candidate: { 
+      title: '考生入口', 
+      description: '登录后可以报名考试、查看准考证和成绩',
+      icon: GraduationCap,
+      gradient: 'from-emerald-500 via-teal-500 to-cyan-500'
+    },
+    reviewer: { 
+      title: '审核员入口', 
+      description: '登录后可以处理报名审核任务',
+      icon: FileCheck,
+      gradient: 'from-amber-500 via-orange-500 to-red-500'
+    },
+    admin: { 
+      title: '管理员入口', 
+      description: '登录后可以管理考试和报名数据',
+      icon: Shield,
+      gradient: 'from-violet-500 via-purple-500 to-indigo-500'
+    },
+    default: { 
+      title: '欢迎登录', 
+      description: '智能招聘考试管理平台',
+      icon: Users,
+      gradient: 'from-slate-500 via-gray-500 to-zinc-500'
     }
   }
 
+  const config = role ? (roleConfig[role as keyof typeof roleConfig] || roleConfig.default) : roleConfig.default
+  const Icon = config.icon
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="max-w-md w-full">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center shadow-lg">
-              <span className="text-white text-2xl font-bold">端</span>
+    <div className="min-h-screen flex">
+      {/* Left Side - Branding */}
+      <div className={`hidden lg:flex lg:w-1/2 bg-gradient-to-br ${config.gradient} p-12 flex-col justify-between relative overflow-hidden`}>
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <GraduationCap className="w-7 h-7 text-white" />
+            </div>
+            <span className="text-2xl font-bold text-white tracking-wide">端若数智考盟</span>
+          </div>
+          
+          <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
+            智能招聘<br />考试管理平台
+          </h1>
+          
+          <p className="text-white/80 text-lg max-w-md leading-relaxed">
+            打造极致的在线考试报名体验，连接考生与理想岗位
+          </p>
+        </div>
+
+        <div className="relative z-10">
+          <div className="grid grid-cols-3 gap-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+              <div className="text-3xl font-bold text-white mb-1">10K+</div>
+              <div className="text-white/70 text-sm">考生</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+              <div className="text-3xl font-bold text-white mb-1">500+</div>
+              <div className="text-white/70 text-sm">企业</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+              <div className="text-3xl font-bold text-white mb-1">50K+</div>
+              <div className="text-white/70 text-sm">考试</div>
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold">{getRoleTitle()}</CardTitle>
-          <CardDescription>端若数智考盟 - 智能招聘考试平台</CardDescription>
-        </CardHeader>
+        </div>
+      </div>
 
-        <CardContent>
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            {errors.general && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{errors.general}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">用户名</Label>
-                <Input
-                  id="username"
-                  name="username"
-                  type="text"
-                  autoComplete="username"
-                  required
-                  placeholder="请输入用户名"
-                  value={formData.username}
-                  onChange={handleInputChange('username')}
-                  className={errors.username ? 'border-destructive' : ''}
-                />
-                {errors.username && (
-                  <p className="text-sm text-destructive">{errors.username}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">密码</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  placeholder="请输入密码"
-                  value={formData.password}
-                  onChange={handleInputChange('password')}
-                  className={errors.password ? 'border-destructive' : ''}
-                />
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password}</p>
-                )}
-              </div>
+      {/* Right Side - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-slate-50">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
+            <div className={`w-12 h-12 bg-gradient-to-br ${config.gradient} rounded-xl flex items-center justify-center shadow-lg`}>
+              <GraduationCap className="w-7 h-7 text-white" />
             </div>
+            <span className="text-xl font-bold text-slate-900">端若数智考盟</span>
+          </div>
 
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full"
-              size="lg"
-            >
-              <LogIn className="h-4 w-4 mr-2" />
-              {isLoading ? '登录中...' : '登录'}
-            </Button>
-
-            <div className="text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                还没有账号？{' '}
-                <Link href="/register" className="font-medium text-primary hover:underline">
-                  立即注册
-                </Link>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                <Link href="/" className="font-medium text-primary hover:underline">
-                  返回首页
-                </Link>
-              </p>
+          <div className="mb-8">
+            <div className={`w-16 h-16 bg-gradient-to-br ${config.gradient} rounded-2xl flex items-center justify-center shadow-lg mb-4 mx-auto`}>
+              <Icon className="w-8 h-8 text-white" />
             </div>
-          </form>
-        </CardContent>
-      </Card>
+            <h2 className="text-2xl font-bold text-center text-slate-900 mb-2">{config.title}</h2>
+            <p className="text-center text-slate-500">{config.description}</p>
+          </div>
+
+          <Card className="border-0 shadow-xl bg-white">
+            <CardContent className="p-8">
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                {errors.general && (
+                  <Alert variant="destructive" className="bg-red-50 border-red-200">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-red-700">{errors.general}</AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-slate-700 font-medium">用户名</Label>
+                  <Input
+                    id="username"
+                    name="username"
+                    type="text"
+                    autoComplete="username"
+                    required
+                    placeholder="请输入用户名"
+                    value={formData.username}
+                    onChange={handleInputChange('username')}
+                    className={`h-12 bg-slate-50 border-slate-200 focus:border-slate-400 focus:ring-slate-200 ${errors.username ? 'border-red-400' : ''}`}
+                  />
+                  {errors.username && (
+                    <p className="text-sm text-red-500">{errors.username}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-slate-700 font-medium">密码</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      required
+                      placeholder="请输入密码"
+                      value={formData.password}
+                      onChange={handleInputChange('password')}
+                      className={`h-12 bg-slate-50 border-slate-200 focus:border-slate-400 focus:ring-slate-200 pr-12 ${errors.password ? 'border-red-400' : ''}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-sm text-red-500">{errors.password}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <label className="flex items-center gap-2 text-slate-600 cursor-pointer">
+                    <input type="checkbox" className="rounded border-slate-300" />
+                    <span>记住登录</span>
+                  </label>
+                  <a href="#" className="text-slate-600 hover:text-slate-900">忘记密码？</a>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`w-full h-12 bg-gradient-to-r ${config.gradient} border-0 text-white font-medium rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50`}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      登录中...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <LogIn className="w-5 h-5" />
+                      登录
+                    </span>
+                  )}
+                </Button>
+              </form>
+
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                <div className="text-center space-y-3">
+                  <p className="text-slate-500 text-sm">
+                    还没有账号？{' '}
+                    <Link href="/register" className="font-medium text-slate-900 hover:underline">
+                      立即注册
+                    </Link>
+                  </p>
+                  
+                  <div className="flex justify-center gap-4 text-sm">
+                    <Link href="/login?role=candidate" className={`px-3 py-1.5 rounded-full transition-colors ${role === 'candidate' ? 'bg-emerald-100 text-emerald-700' : 'text-slate-500 hover:bg-slate-100'}`}>
+                      考生入口
+                    </Link>
+                    <Link href="/login?role=reviewer" className={`px-3 py-1.5 rounded-full transition-colors ${role === 'reviewer' ? 'bg-amber-100 text-amber-700' : 'text-slate-500 hover:bg-slate-100'}`}>
+                      审核员入口
+                    </Link>
+                    <Link href="/login?role=admin" className={`px-3 py-1.5 rounded-full transition-colors ${role === 'admin' ? 'bg-violet-100 text-violet-700' : 'text-slate-500 hover:bg-slate-100'}`}>
+                      管理员入口
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <p className="mt-8 text-center text-slate-400 text-sm">
+            © 2024 端若数智考盟 · 智能招聘考试平台
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div></div>}>
       <LoginForm />
     </Suspense>
   )

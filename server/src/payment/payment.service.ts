@@ -207,9 +207,6 @@ export class PaymentService {
   async queryOrder(orderId: string) {
     const order = await this.client.paymentOrder.findUnique({
       where: { id: orderId },
-      include: {
-        applicationId: true,
-      },
     });
 
     if (!order) throw new NotFoundException('Order not found');

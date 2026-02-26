@@ -1,15 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { ApplicationService } from './application.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { AutoReviewService } from '../review/auto-review.service';
 
 describe('ApplicationService', () => {
   let service: ApplicationService;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [ApplicationService],
-    }).compile();
+  beforeEach(() => {
+    const prisma = {
+      client: {
+        exam: { findUnique: jest.fn() },
+        application: { upsert: jest.fn(), findMany: jest.fn(), findUnique: jest.fn() },
+      },
+    } as unknown as PrismaService;
 
-    service = module.get<ApplicationService>(ApplicationService);
+    const autoReview = {} as AutoReviewService;
+
+    service = new ApplicationService(prisma, autoReview);
   });
 
   it('should be defined', () => {

@@ -39,7 +39,26 @@ export class FileService {
   }
 
   /**
-   * Ensure tenant bucket exists
+   * Replace internal MinIO endpoint with public endpoint in presigned URLs.
+   * Required when MinIO runs behind a Docker network or reverse proxy.
+   */
+  private replaceWithPublicEndpoint(url: string): string {
+    const publicEndpoint = this.configService.get<string>('MINIO_PUBLIC_ENDPOINT');
+    if (!publicEndpoint) return url;
+    try {
+      const parsed = new URL(url);
+      const pub = new URL(publicEndpoint);
+      parsed.protocol = pub.protocol;
+      parsed.hostname = pub.hostname;
+      parsed.port = pub.port;
+      return parsed.toString();
+    } catch {
+      return url;
+    }
+  }
+
+  /**
+   * Ensure tenant bucket exists and has lifecycle policies
    * Called before file operations
    */
   private async ensureTenantBucket(tenantCode: string): Promise<string> {
@@ -53,6 +72,9 @@ export class FileService {
         );
         await this.minioClient.makeBucket(bucketName, 'us-east-1');
         this.logger.log(`Created MinIO bucket: ${bucketName}`);
+        
+        // Set lifecycle policy for new bucket
+        await this.ensureBucketLifecycle(bucketName);
       }
       return bucketName;
     } catch (error: unknown) {
@@ -65,12 +87,39 @@ export class FileService {
     }
   }
 
+  /**
+   * Configure lifecycle rules for a bucket
+   * Auto-delete files in temp/ directory after 1 day
+   */
+  private async ensureBucketLifecycle(bucketName: string) {
+    try {
+      const lifecycleConfig = {
+        Rule: [
+          {
+            ID: 'CleanupTemporaryUploads',
+            Status: 'Enabled',
+            Filter: {
+              Prefix: 'uploads/temp/',
+            },
+            Expiration: {
+              Days: 1,
+            },
+          },
+        ],
+      };
+      await this.minioClient.setBucketLifecycle(bucketName, lifecycleConfig as any);
+      this.logger.log(`Set lifecycle policy for bucket: ${bucketName}`);
+    } catch (error) {
+      this.logger.error(`Failed to set lifecycle for ${bucketName}: ${error}`);
+    }
+  }
+
   async generateUploadUrl(
     tenantId: string,
     userId: string,
     req: FileUploadUrlRequest,
   ): Promise<FileUploadUrlResponse> {
-    const { fileName, contentType, fieldKey, applicationId } = req;
+    const { fileName, contentType, fieldKey, applicationId, fileSize } = req;
 
     // 1. Get tenant code from tenantId
     const tenant = await this.prisma.tenant.findUnique({
@@ -95,6 +144,12 @@ export class FileService {
     const typeValid = FileValidator.validateContentType(contentType, fileName);
     if (!typeValid.valid) throw new BadRequestException(typeValid.errorMessage);
 
+    // Validate fileSize at step 1 if provided
+    if (fileSize !== undefined) {
+      const sizeValid = FileValidator.validateFileSize(fileSize);
+      if (!sizeValid.valid) throw new BadRequestException(sizeValid.errorMessage);
+    }
+
     const fileId = uuidv4();
     const extension = fileName.split('.').pop();
     const storedName = `${fileId}${extension ? '.' + extension : ''}`;
@@ -104,7 +159,7 @@ export class FileService {
     const objectKey = `uploads/${userId}/${fieldKey || 'general'}/${storedName}`;
 
     // 4. Create DB record
-    await this.prisma.client.fileRecord.create({
+    await this.prisma.publicClient.fileRecord.create({
       data: {
         id: fileId,
         originalName: fileName,
@@ -130,7 +185,7 @@ export class FileService {
 
     return {
       fileId,
-      uploadUrl,
+      uploadUrl: this.replaceWithPublicEndpoint(uploadUrl),
       fileKey: objectKey,
       fileName,
       contentType,
@@ -139,8 +194,8 @@ export class FileService {
     };
   }
 
-  async confirmUpload(tenantId: string, fileId: string, fileSize: number) {
-    const file = await this.prisma.client.fileRecord.findUnique({
+  async confirmUpload(tenantId: string, fileId: string, fileSize?: number) {
+    const file = await this.prisma.publicClient.fileRecord.findUnique({
       where: { id: fileId },
     });
 
@@ -160,29 +215,35 @@ export class FileService {
 
     const bucketName = this.getTenantBucketName(tenant.code);
 
-    // Verify file exists in Minio
+    // Get file stats from MinIO (auto-detect size if not provided)
+    let stats;
     try {
-      await this.minioClient.statObject(bucketName, file.objectKey);
+      stats = await this.minioClient.statObject(bucketName, file.objectKey);
     } catch {
       throw new BadRequestException('File not found in storage');
     }
 
-    // Validation
-    const sizeValid = FileValidator.validateFileSize(fileSize);
-    if (!sizeValid.valid) {
-      await this.minioClient.removeObject(bucketName, file.objectKey);
-      await this.prisma.client.fileRecord.update({
-        where: { id: fileId },
-        data: { status: 'DELETED' },
-      });
-      throw new BadRequestException(sizeValid.errorMessage);
+    // Use provided fileSize or auto-detected size
+    const actualFileSize = fileSize ?? stats.size;
+
+    // Validate fileSize if provided
+    if (fileSize !== undefined) {
+      const sizeValid = FileValidator.validateFileSize(actualFileSize);
+      if (!sizeValid.valid) {
+        await this.minioClient.removeObject(bucketName, file.objectKey);
+        await this.prisma.publicClient.fileRecord.update({
+          where: { id: fileId },
+          data: { status: 'DELETED' },
+        });
+        throw new BadRequestException(sizeValid.errorMessage);
+      }
     }
 
     // Update DB
-    return await this.prisma.client.fileRecord.update({
+    return await this.prisma.publicClient.fileRecord.update({
       where: { id: fileId },
       data: {
-        fileSize: BigInt(fileSize),
+        fileSize: BigInt(actualFileSize),
         status: 'UPLOADED',
       },
     });
@@ -192,7 +253,7 @@ export class FileService {
     tenantId: string,
     fileId: string,
   ): Promise<PresignedUrlResponse> {
-    const file = await this.prisma.client.fileRecord.findUnique({
+    const file = await this.prisma.publicClient.fileRecord.findUnique({
       where: { id: fileId },
     });
 
@@ -220,7 +281,7 @@ export class FileService {
     );
 
     // Update access info
-    await this.prisma.client.fileRecord.update({
+    await this.prisma.publicClient.fileRecord.update({
       where: { id: fileId },
       data: {
         accessCount: { increment: 1 },
@@ -228,11 +289,11 @@ export class FileService {
       },
     });
 
-    return { url, expiresIn };
+    return { url: this.replaceWithPublicEndpoint(url), expiresIn };
   }
 
   async getBatchFileInfo(fileIds: string[]): Promise<FileBatchInfoResponse> {
-    const files = await this.prisma.client.fileRecord.findMany({
+    const files = await this.prisma.publicClient.fileRecord.findMany({
       where: { id: { in: fileIds } },
     });
 
@@ -254,7 +315,55 @@ export class FileService {
     };
   }
 
+  async getPreviewUrl(
+    tenantId: string,
+    fileId: string,
+  ): Promise<{ previewUrl: string; expiresIn: number }> {
+    const file = await this.prisma.publicClient.fileRecord.findUnique({
+      where: { id: fileId },
+    });
+
+    if (!file) throw new NotFoundException('File not found');
+    if (file.status === 'DELETED')
+      throw new BadRequestException('File has been deleted');
+
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { code: true },
+    });
+
+    if (!tenant) {
+      throw new BadRequestException('Tenant not found');
+    }
+
+    const bucketName = this.getTenantBucketName(tenant.code);
+
+    const expiresIn = 1800;
+    const url = await this.minioClient.presignedGetObject(
+      bucketName,
+      file.objectKey,
+      expiresIn,
+    );
+
+    return { previewUrl: this.replaceWithPublicEndpoint(url), expiresIn };
+  }
+
+  async deleteFile(tenantId: string, fileId: string): Promise<void> {
+    const file = await this.prisma.publicClient.fileRecord.findUnique({
+      where: { id: fileId },
+    });
+
+    if (!file) throw new NotFoundException('File not found');
+
+    await this.prisma.publicClient.fileRecord.update({
+      where: { id: fileId },
+      data: { status: 'DELETED' },
+    });
+
+    this.logger.log(`File deleted: ${fileId}`);
+  }
+
   async findById(id: string) {
-    return this.prisma.client.fileRecord.findUnique({ where: { id } });
+    return this.prisma.publicClient.fileRecord.findUnique({ where: { id } });
   }
 }

@@ -13,6 +13,8 @@ interface PermissionGateProps {
   roles?: Role[]
   /** Required permissions (user must have at least one) */
   permissions?: Permission[]
+  /** Single required permission (shorthand for permissions={[p]}) */
+  permission?: Permission
   /** Require all specified roles instead of any */
   requireAllRoles?: boolean
   /** Require all specified permissions instead of any */
@@ -25,19 +27,15 @@ interface PermissionGateProps {
  * Conditionally render children based on user's roles and permissions
  *
  * @example
- * <PermissionGate roles={['TENANT_ADMIN']}>
- *   <Button>Admin Only Button</Button>
- * </PermissionGate>
- *
- * @example
- * <PermissionGate permissions={['EXAM_CREATE', 'EXAM_UPDATE']} fallback={<p>No access</p>}>
- *   <ExamForm />
+ * <PermissionGate permission="exam:create">
+ *   <Button>Create Exam</Button>
  * </PermissionGate>
  */
 export function PermissionGate({
   children,
   roles,
-  permissions,
+  permissions = [],
+  permission,
   requireAllRoles = false,
   requireAllPermissions = false,
   fallback = null,
@@ -55,24 +53,28 @@ export function PermissionGate({
     return <>{fallback}</>
   }
 
-  // Check roles if specified
+  // Combine single permission into list
+  const allRequiredPermissions = permission ? [...permissions, permission] : permissions
+
+  // Check permissions first (most granular)
+  if (allRequiredPermissions.length > 0) {
+    const hasRequiredPermissions = requireAllPermissions
+      ? hasAllPermissions(allRequiredPermissions)
+      : hasAnyPermission(allRequiredPermissions)
+
+    // If permissions are checked and failed, return fallback immediately
+    if (!hasRequiredPermissions) {
+      return <>{fallback}</>
+    }
+  }
+
+  // Check roles if specified (legacy/fallback)
   if (roles && roles.length > 0) {
     const hasRequiredRoles = requireAllRoles
       ? hasAllRoles(roles)
       : hasAnyRole(roles)
 
     if (!hasRequiredRoles) {
-      return <>{fallback}</>
-    }
-  }
-
-  // Check permissions if specified
-  if (permissions && permissions.length > 0) {
-    const hasRequiredPermissions = requireAllPermissions
-      ? hasAllPermissions(permissions)
-      : hasAnyPermission(permissions)
-
-    if (!hasRequiredPermissions) {
       return <>{fallback}</>
     }
   }

@@ -42,7 +42,7 @@ export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSub
     queryKey: ['subjects', selectedPositionId, tenant?.id],
     queryFn: async () => {
       if (!selectedPositionId || !tenant?.id) return []
-      return await apiGetWithTenant(`/positions/${selectedPositionId}/subjects`, tenant.id)
+      return await apiGetWithTenant(`/exams/positions/${selectedPositionId}/subjects`, tenant.id)
     },
     enabled: !!selectedPositionId && !!tenant?.id
   })
@@ -324,6 +324,7 @@ export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSub
           open={editPositionDialogOpen}
           onOpenChange={setEditPositionDialogOpen}
           position={selectedPosition}
+          tenantId={tenant?.id || ''}
           onSuccess={() => {
             refetchPositions()
             setEditPositionDialogOpen(false)

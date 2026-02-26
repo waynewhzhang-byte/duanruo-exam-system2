@@ -14,11 +14,16 @@ export class FileUploadUrlRequest {
   @IsUUID()
   @IsOptional()
   applicationId?: string;
+
+  @IsNumber()
+  @IsOptional()
+  fileSize?: number;  // Optional - can be validated at step 1
 }
 
 export class FileConfimRequest {
   @IsNumber()
-  fileSize: number;
+  @IsOptional()
+  fileSize?: number;  // Optional - can be auto-detected if not provided
 }
 
 export class FileUploadUrlResponse {

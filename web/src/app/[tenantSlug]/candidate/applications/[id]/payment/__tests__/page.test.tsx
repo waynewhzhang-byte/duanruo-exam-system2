@@ -62,10 +62,10 @@ describe('PaymentPage', () => {
     render(<PaymentPage params={params} />)
 
     await waitFor(() => {
-      expect(screen.getByText('支付报名费用')).toBeInTheDocument()
-      expect(screen.getByText('2024年公务员考试')).toBeInTheDocument()
-      expect(screen.getByText('行政管理岗位')).toBeInTheDocument()
-      expect(screen.getByText('¥100.00')).toBeInTheDocument()
+      expect(screen.getByText('支付报名费用')).toBeDefined()
+      expect(screen.getByText('2024年公务员考试')).toBeDefined()
+      expect(screen.getByText('行政管理岗位')).toBeDefined()
+      expect(screen.getByText('¥100.00')).toBeDefined()
     })
   })
 
@@ -74,9 +74,9 @@ describe('PaymentPage', () => {
     render(<PaymentPage params={params} />)
 
     await waitFor(() => {
-      expect(screen.getByText('支付宝')).toBeInTheDocument()
-      expect(screen.getByText('微信支付')).toBeInTheDocument()
-      expect(screen.getByText('模拟支付')).toBeInTheDocument()
+      expect(screen.getByText('支付宝')).toBeDefined()
+      expect(screen.getByText('微信支付')).toBeDefined()
+      expect(screen.getByText('模拟支付')).toBeDefined()
     })
   })
 
@@ -148,7 +148,7 @@ describe('PaymentPage', () => {
     render(<PaymentPage params={params} />)
 
     // Should show skeleton loaders
-    expect(screen.queryByText('支付报名费用')).not.toBeInTheDocument()
+    expect(screen.queryByText('支付报名费用')).toBeNull()
   })
 
   it('should handle payment error', async () => {
@@ -178,7 +178,7 @@ describe('PaymentPage', () => {
     })
 
     // Should update selected method
-    expect(screen.getByLabelText(/支付宝/i)).toBeChecked()
+    expect((screen.getByLabelText(/支付宝/i) as HTMLInputElement).checked).toBeTruthy()
   })
 })
 

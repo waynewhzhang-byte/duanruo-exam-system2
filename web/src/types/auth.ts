@@ -1,25 +1,39 @@
 import { z } from 'zod'
 
-// User roles
 export const UserRole = z.enum(['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN', 'CANDIDATE', 'PRIMARY_REVIEWER', 'SECONDARY_REVIEWER', 'EXAMINER'])
 export type UserRole = z.infer<typeof UserRole>
 
-// Login request/response
+export const TenantRoleInfo = z.object({
+  tenantId: z.string().uuid(),
+  tenantName: z.string(),
+  tenantCode: z.string(),
+  role: UserRole,
+  active: z.boolean(),
+})
+export type TenantRoleInfo = z.infer<typeof TenantRoleInfo>
+
 export const LoginRequest = z.object({
   username: z.string().min(1, '用户名不能为空'),
   password: z.string().min(1, '密码不能为空'),
 })
 export type LoginRequest = z.infer<typeof LoginRequest>
 
+export const UserWithRoles = z.object({
+  id: z.string().uuid(),
+  username: z.string(),
+  email: z.string().email(),
+  fullName: z.string(),
+  roles: z.array(UserRole),
+  globalRoles: z.array(UserRole).optional(),
+  tenantRoles: z.array(TenantRoleInfo).optional(),
+  permissions: z.array(z.string()).optional(),
+})
+export type UserWithRoles = z.infer<typeof UserWithRoles>
+
 export const LoginResponse = z.object({
   token: z.string(),
-  user: z.object({
-    id: z.string().uuid(),
-    username: z.string(),
-    email: z.string().email(),
-    fullName: z.string(),
-    roles: z.array(UserRole),
-  }),
+  user: UserWithRoles,
+  tenantRoles: z.array(TenantRoleInfo).optional(),
 })
 export type LoginResponse = z.infer<typeof LoginResponse>
 
@@ -42,19 +56,25 @@ export const SelectTenantRequest = z.object({
 })
 export type SelectTenantRequest = z.infer<typeof SelectTenantRequest>
 
-export const UserResponse = z.object({
-  id: z.string().uuid(),
-  username: z.string(),
-  email: z.string(),
-  fullName: z.string(),
-  roles: z.array(UserRole),
-  createdAt: z.string(),
+export const UserResponse = UserWithRoles.extend({
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  emailVerified: z.boolean().optional(),
+  phoneVerified: z.boolean().optional(),
+  phoneNumber: z.string().optional(),
+  department: z.string().optional(),
 })
 export type UserResponse = z.infer<typeof UserResponse>
 
-// Session/Auth state
 export interface AuthState {
   isAuthenticated: boolean
   user: UserResponse | null
   token: string | null
+  tenantRoles: TenantRoleInfo[]
+}
+
+export interface AuthContextType extends AuthState {
+  login: (token: string, user: UserResponse, tenantRoles?: TenantRoleInfo[]) => void
+  logout: () => void
+  refreshSession: () => Promise<void>
 }

@@ -1,9 +1,13 @@
 export interface PaginatedResponse<T> {
   content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
+  pagination: {
+    totalItems: number;
+    totalPages: number;
+    page: number;
+    size: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  };
 }
 
 export class PaginationHelper {
@@ -13,12 +17,17 @@ export class PaginationHelper {
     page: number,
     size: number,
   ): PaginatedResponse<T> {
+    const totalPages = Math.ceil(total / size);
     return {
       content: items,
-      totalElements: total,
-      totalPages: Math.ceil(total / size),
-      size,
-      number: page,
+      pagination: {
+        totalItems: total,
+        totalPages,
+        page,
+        size,
+        hasNext: page < totalPages - 1,
+        hasPrevious: page > 0,
+      },
     };
   }
 }

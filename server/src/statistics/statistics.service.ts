@@ -36,6 +36,57 @@ export class StatisticsService {
   }
 
   /**
+   * Tenant-level statistics (current tenant)
+   */
+  async getTenantStatistics() {
+    const [totalExams, totalApplications, totalUsers, recentExams] = await Promise.all([
+      this.client.exam.count(),
+      this.client.application.count(),
+      this.client.user.count(),
+      this.client.exam.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          examStart: true,
+          _count: { select: { applications: true } },
+        },
+      }),
+    ]);
+
+    const approvedApplications = await this.client.application.count({
+      where: { status: 'APPROVED' },
+    });
+    const rejectedApplications = await this.client.application.count({
+      where: { status: 'REJECTED' },
+    });
+    const paidApplications = await this.client.application.count({
+      where: { status: { in: ['PAID', 'APPROVED', 'TICKET_ISSUED'] } },
+    });
+
+    return {
+      totalExams,
+      activeExams: totalExams,
+      completedExams: 0,
+      totalApplications,
+      approvedApplications,
+      rejectedApplications,
+      pendingApplications: totalApplications - approvedApplications - rejectedApplications,
+      paidApplications,
+      totalUsers,
+      activeUsers: totalUsers,
+      totalRevenue: 0,
+      recentExams: recentExams.map((exam) => ({
+        examId: exam.id,
+        examTitle: exam.title,
+        startDate: exam.examStart?.toISOString().split('T')[0] || '',
+        applications: exam._count.applications,
+      })),
+    };
+  }
+
+  /**
    * Platform-level statistics (public schema + aggregated tenant data)
    */
   async getPlatformStatistics(): Promise<PlatformStatistics> {
@@ -89,23 +140,23 @@ export class StatisticsService {
 
     const totalApplications = await this.client.application.count({ where });
 
-    const byStatus = await this.client.application.groupBy({
-      by: ['status'],
-      where,
-      _count: { status: true },
-    });
-
-    const byExam = await this.client.application.groupBy({
-      by: ['examId'],
-      where,
-      _count: { examId: true },
-    });
-
-    const byPosition = await this.client.application.groupBy({
-      by: ['positionId'],
-      where,
-      _count: { positionId: true },
-    });
+    const [byStatus, byExam, byPosition] = await Promise.all([
+      this.client.application.groupBy({
+        by: ['status'],
+        where,
+        _count: { status: true },
+      }),
+      this.client.application.groupBy({
+        by: ['examId'],
+        where,
+        _count: { examId: true },
+      }),
+      this.client.application.groupBy({
+        by: ['positionId'],
+        where,
+        _count: { positionId: true },
+      }),
+    ]);
 
     const recentApplications = await this.client.application.findMany({
       where,

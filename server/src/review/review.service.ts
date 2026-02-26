@@ -11,13 +11,39 @@ import {
   DecisionTaskRequest,
 } from './dto/review.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { NotificationService } from '../common/notification/notification.service';
+
+interface QueueTaskRaw {
+  id: string;
+  application_id: string;
+  stage: string;
+  status: string;
+  assigned_to: string | null;
+  locked_at: Date | null;
+  last_heartbeat_at: Date | null;
+  created_at: Date;
+}
+
+interface HistoryReviewRaw {
+  id: string;
+  application_id: string;
+  stage: string;
+  reviewer_id: string;
+  decision: string | null;
+  comment: string | null;
+  reviewed_at: Date | null;
+  created_at: Date;
+}
 
 @Injectable()
 export class ReviewService {
   private readonly logger = new Logger(ReviewService.name);
   private readonly LOCK_TTL_MINUTES = 10;
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+  ) { }
 
   private get client() {
     return this.prisma.client;
@@ -26,7 +52,6 @@ export class ReviewService {
   async pullNext(reviewerId: string, request: PullTaskRequest) {
     const { examId, stage } = request;
 
-    // 1) Check for existing unexpired task assigned to this reviewer
     const lockThreshold = new Date();
     lockThreshold.setMinutes(
       lockThreshold.getMinutes() - this.LOCK_TTL_MINUTES,
@@ -52,12 +77,10 @@ export class ReviewService {
       };
     }
 
-    // 2) Find candidates for review
     let targetStatus: string[];
     if (stage === ReviewStage.PRIMARY) {
       targetStatus = ['PENDING_PRIMARY_REVIEW', 'SUBMITTED'];
     } else {
-      // SECONDARY
       targetStatus = ['PENDING_SECONDARY_REVIEW', 'PRIMARY_PASSED'];
     }
 
@@ -67,26 +90,42 @@ export class ReviewService {
         status: { in: targetStatus },
       },
       orderBy: { createdAt: 'asc' },
+      select: { id: true },
     });
 
-    for (const app of applications) {
-      // Check if there's already an active task for this application and stage
-      const activeTask = await this.client.reviewTask.findFirst({
+    if (applications.length === 0) {
+      return null;
+    }
+
+    const applicationIds = applications.map(a => a.id);
+
+    // Atomic transaction to find and claim the next available application
+    const result = await this.client.$transaction(async (tx) => {
+      // 1. Double check for active tasks within the transaction
+      const activeTasks = await tx.reviewTask.findMany({
         where: {
-          applicationId: app.id,
+          applicationId: { in: applicationIds },
           stage: stage,
           status: 'ASSIGNED',
           lockedAt: { gt: lockThreshold },
         },
+        select: { applicationId: true },
       });
 
-      if (activeTask) continue;
+      const activeApplicationIds = new Set(activeTasks.map(t => t.applicationId));
+      
+      // 2. Find the first application that really doesn't have an active task
+      const availableApp = applications.find(app => !activeApplicationIds.has(app.id));
 
-      // Create a new task (or reuse an old expired one)
-      const task = await this.client.reviewTask.create({
+      if (!availableApp) {
+        return null;
+      }
+
+      // 3. Create and assign the task atomically
+      const task = await tx.reviewTask.create({
         data: {
           id: uuidv4(),
-          applicationId: app.id,
+          applicationId: availableApp.id,
           stage: stage,
           status: 'ASSIGNED',
           assignedTo: reviewerId,
@@ -103,9 +142,9 @@ export class ReviewService {
           (task.lockedAt as Date).getTime() + this.LOCK_TTL_MINUTES * 60000,
         ),
       };
-    }
+    });
 
-    return null; // No task available
+    return result;
   }
 
   async decide(reviewerId: string, request: DecisionTaskRequest) {
@@ -119,7 +158,6 @@ export class ReviewService {
       throw new BadRequestException('Task not found or not assigned to you');
     }
 
-    // Check lock expiration
     const lockThreshold = new Date();
     lockThreshold.setMinutes(
       lockThreshold.getMinutes() - this.LOCK_TTL_MINUTES,
@@ -143,15 +181,12 @@ export class ReviewService {
       toStatus = approve ? 'APPROVED' : 'SECONDARY_REJECTED';
     }
 
-    // Begin Transaction
     return await this.client.$transaction(async (tx) => {
-      // 1) Update Application
       await tx.application.update({
         where: { id: app.id },
         data: { status: toStatus, updatedAt: new Date() },
       });
 
-      // 2) Create Review record
       const reviewOutcome = approve ? 'APPROVED' : 'REJECTED';
       await tx.review.create({
         data: {
@@ -165,7 +200,6 @@ export class ReviewService {
         },
       });
 
-      // 3) Record Audit Log
       await tx.applicationAuditLog.create({
         data: {
           id: uuidv4(),
@@ -178,16 +212,12 @@ export class ReviewService {
         },
       });
 
-      // 4) Complete Task
       await tx.reviewTask.update({
         where: { id: taskId },
         data: { status: 'COMPLETED' },
       });
 
-      // 5) Special logic: if primary passed, automatically enter pending secondary
       if (toStatus === 'PRIMARY_PASSED') {
-        // This is often handled by another task or automatically
-        // Here we'll just update the status to PENDING_SECONDARY_REVIEW if that's the desired flow
         await tx.application.update({
           where: { id: app.id },
           data: { status: 'PENDING_SECONDARY_REVIEW' },
@@ -204,8 +234,36 @@ export class ReviewService {
         });
       }
 
+      // 异步发送通知 (Async notification)
+      this.sendReviewNotification(app.candidateId, app.examId, toStatus).catch(err => 
+        this.logger.error(`Failed to send review notification: ${err.message}`)
+      );
+
       return { applicationId: app.id, fromStatus, toStatus };
     });
+  }
+
+  /**
+   * Helper to fetch candidate info and send notification
+   */
+  private async sendReviewNotification(candidateId: string, examId: string, status: string) {
+    try {
+      const [user, exam] = await Promise.all([
+        this.prisma.user.findUnique({ where: { id: candidateId }, select: { email: true, fullName: true } }),
+        this.client.exam.findUnique({ where: { id: examId }, select: { title: true } })
+      ]);
+
+      if (user?.email) {
+        await this.notificationService.notifyReviewResult(
+          user.email,
+          user.fullName,
+          exam?.title || '考试',
+          status
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error in sendReviewNotification: ${error.message}`);
+    }
   }
 
   async getByApplicationId(applicationId: string) {
@@ -252,34 +310,164 @@ export class ReviewService {
     size: number;
   }) {
     const { examId, stage, status, page, size } = params;
-    const skip = page * size;
-    const where: any = { stage };
+    const offset = page * size;
 
-    if (status) {
-      where.status = status;
-    }
+    const statusClause = status ? `AND rt.status = $4` : '';
+    
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM review_tasks rt
+      JOIN applications a ON rt.application_id = a.id
+      WHERE a.exam_id = $1 
+        AND rt.stage = $2
+        ${statusClause}
+    `;
+    
+    const dataQuery = `
+      SELECT 
+        rt.id,
+        rt.application_id,
+        rt.stage,
+        rt.status,
+        rt.assigned_to,
+        rt.locked_at,
+        rt.last_heartbeat_at,
+        rt.created_at
+      FROM review_tasks rt
+      JOIN applications a ON rt.application_id = a.id
+      WHERE a.exam_id = $1 
+        AND rt.stage = $2
+        ${statusClause}
+      ORDER BY rt.created_at DESC
+      LIMIT $3 OFFSET $${status ? 5 : 4}
+    `;
 
-    // Since reviewTask doesn't have a direct relation to Exam in the schema (it's via Application),
-    // we need to filter by application's examId.
-    where.applicationId = {
-      in: (
-        await this.client.application.findMany({
-          where: { examId },
-          select: { id: true },
-        })
-      ).map((a: { id: string }) => a.id),
-    };
+    const countParams = status 
+      ? [examId, stage, status]
+      : [examId, stage];
+    const dataParams = status 
+      ? [examId, stage, size, offset, status]
+      : [examId, stage, size, offset];
 
-    const [tasks, total] = await Promise.all([
-      this.client.reviewTask.findMany({
-        where,
-        skip,
-        take: size,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.client.reviewTask.count({ where }),
+    const [countResult, tasks] = await Promise.all([
+      this.client.$queryRawUnsafe<{ total: bigint }[]>(countQuery, ...countParams),
+      this.client.$queryRawUnsafe<QueueTaskRaw[]>(dataQuery, ...dataParams),
     ]);
 
-    return { content: tasks, total };
+    const total = Number(countResult[0]?.total ?? 0);
+
+    return { 
+      content: tasks.map(t => ({
+        id: t.id,
+        applicationId: t.application_id,
+        stage: t.stage,
+        status: t.status,
+        assignedTo: t.assigned_to,
+        lockedAt: t.locked_at,
+        lastHeartbeatAt: t.last_heartbeat_at,
+        createdAt: t.created_at,
+      })), 
+      total 
+    };
+  }
+
+  async getHistory(params: {
+    examId?: string;
+    reviewerId?: string;
+    page: number;
+    size: number;
+  }) {
+    const { examId, reviewerId, page, size } = params;
+    const offset = page * size;
+
+    const conditions: string[] = [];
+    const queryParams: (string | number)[] = [];
+    let paramIndex = 1;
+
+    if (examId) {
+      conditions.push(`a.exam_id = $${paramIndex}`);
+      queryParams.push(examId);
+      paramIndex++;
+    }
+
+    if (reviewerId) {
+      conditions.push(`r.reviewer_id = $${paramIndex}`);
+      queryParams.push(reviewerId);
+      paramIndex++;
+    }
+
+    const whereClause = conditions.length > 0 
+      ? `WHERE ${conditions.join(' AND ')}` 
+      : '';
+
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM reviews r
+      JOIN applications a ON r.application_id = a.id
+      ${whereClause}
+    `;
+
+    const dataQuery = `
+      SELECT 
+        r.id,
+        r.application_id,
+        r.stage,
+        r.reviewer_id,
+        r.decision,
+        r.comment,
+        r.reviewed_at,
+        r.created_at
+      FROM reviews r
+      JOIN applications a ON r.application_id = a.id
+      ${whereClause}
+      ORDER BY r.reviewed_at DESC NULLS LAST, r.created_at DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+
+    const [countResult, reviews] = await Promise.all([
+      this.client.$queryRawUnsafe<{ total: bigint }[]>(countQuery, ...queryParams),
+      this.client.$queryRawUnsafe<HistoryReviewRaw[]>(dataQuery, ...queryParams, size, offset),
+    ]);
+
+    const total = Number(countResult[0]?.total ?? 0);
+
+    return { 
+      content: reviews.map(r => ({
+        id: r.id,
+        applicationId: r.application_id,
+        stage: r.stage,
+        reviewerId: r.reviewer_id,
+        decision: r.decision,
+        comment: r.comment,
+        reviewedAt: r.reviewed_at,
+        createdAt: r.created_at,
+      })), 
+      total 
+    };
+  }
+
+  async batchDecide(reviewerId: string, decisions: { id: string; decision: boolean; reason?: string }[]) {
+    const result = {
+      success: [] as string[],
+      failed: [] as { id: string; reason: string }[],
+    };
+
+    for (const { id, decision, reason } of decisions) {
+      try {
+        await this.decide(reviewerId, {
+          taskId: id,
+          approve: decision,
+          reason: reason || '',
+        });
+        result.success.push(id);
+      } catch (error) {
+        result.failed.push({
+          id,
+          reason: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    return result;
   }
 }

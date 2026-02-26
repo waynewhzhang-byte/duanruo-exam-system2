@@ -15,7 +15,13 @@ import { ArrowLeft, BarChart3, TrendingUp, Award, Users, Trophy, Download } from
 import { Spinner } from '@/components/ui/loading'
 import { toast } from 'sonner'
 import Papa from 'papaparse'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import dynamic from 'next/dynamic'
+
+// Dynamically import ChartsContainer to reduce initial bundle size and avoid Recharts hydration/type issues
+const ChartsContainer = dynamic(() => import('@/components/admin/exams/statistics/ChartsContainer'), { 
+  ssr: false,
+  loading: () => <div className="h-[600px] w-full flex items-center justify-center bg-gray-50 rounded-lg animate-pulse">正在加载图表...</div>
+})
 
 interface StatisticsPageProps {
   params: Promise<{
@@ -219,96 +225,7 @@ export default function StatisticsPage({ params }: StatisticsPageProps) {
             </Card>
           </div>
 
-          {/* Score Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>成绩分布</CardTitle>
-              <CardDescription>各分数段考生人数分布</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={statistics.scoreDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="range" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="count" fill="#8884d8" name="人数" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Subject Statistics */}
-          <Card>
-            <CardHeader>
-              <CardTitle>科目统计</CardTitle>
-              <CardDescription>各科目成绩统计</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={statistics.subjectStatistics}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="subjectName" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="averageScore" fill="#82ca9d" name="平均分" />
-                  <Bar dataKey="maxScore" fill="#8884d8" name="最高分" />
-                  <Bar dataKey="minScore" fill="#ffc658" name="最低分" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Position Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>岗位统计 - 平均分</CardTitle>
-                <CardDescription>各岗位平均分对比</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={statistics.positionStatistics} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="positionTitle" type="category" width={150} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="averageScore" fill="#8884d8" name="平均分" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>岗位统计 - 及格率</CardTitle>
-                <CardDescription>各岗位及格率对比</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={statistics.positionStatistics}
-                      dataKey="passRate"
-                      nameKey="positionTitle"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label={(entry) => `${entry.positionTitle}: ${(entry.passRate * 100).toFixed(1)}%`}
-                    >
-                      {statistics.positionStatistics.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number) => `${(value * 100).toFixed(1)}%`} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
+          <ChartsContainer statistics={statistics} />
 
           {/* Position Details Table */}
           <Card>

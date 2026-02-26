@@ -58,7 +58,7 @@ export default function FileUpload({
         f.id === uploadId ? { ...f, progress: 10 } : f
       ))
 
-      const uploadUrlResponse = await apiPostWithTenant<{ url: string; fileId: string }>(
+      const uploadUrlResponse = await apiPostWithTenant<{ uploadUrl: string; fileId: string }>(
         '/files/upload-url',
         effectiveTenantId,
         {
@@ -73,7 +73,7 @@ export default function FileUpload({
       ))
 
       // Step 2: Upload to MinIO
-      const uploadResponse = await fetch(uploadUrlResponse.url, {
+      const uploadResponse = await fetch(uploadUrlResponse.uploadUrl, {
         method: 'PUT',
         body: file,
         headers: {
@@ -90,7 +90,7 @@ export default function FileUpload({
       ))
 
       // Step 3: Confirm upload
-      await apiPostWithTenant(`/files/${uploadUrlResponse.fileId}/confirm`, effectiveTenantId, {})
+      await apiPostWithTenant(`/files/${uploadUrlResponse.fileId}/confirm`, effectiveTenantId, { fileSize: file.size })
 
       setUploadingFiles(prev => prev.map(f =>
         f.id === uploadId ? { ...f, progress: 100, status: 'success' } : f

@@ -7,6 +7,7 @@
     "assets": [
       "**/*.sql"
     ],
-    "watchAssets": true
+    "watchAssets": true,
+    "exclude": ["src/infrastructure/**/*"]
   }
 }

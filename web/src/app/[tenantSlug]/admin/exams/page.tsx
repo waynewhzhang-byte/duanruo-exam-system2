@@ -38,8 +38,14 @@ interface Exam {
   feeAmount?: number
 }
 
-// Backend returns an array directly, not a paginated response
-type ExamsResponse = Exam[]
+// Backend returns paginated response
+type ExamsResponse = {
+  content: Exam[]
+  totalElements: number
+  totalPages: number
+  size: number
+  number: number
+}
 
 export default function TenantAdminExamsPage() {
   const router = useRouter()
@@ -321,7 +327,7 @@ export default function TenantAdminExamsPage() {
           <CardTitle className="flex items-center justify-between">
             <span>考试列表</span>
             <div className="flex items-center gap-2 text-gray-600">
-              <span>共 {examsData?.length || 0} 个考试</span>
+              <span>共 {examsData?.content?.length || 0} 个考试</span>
             </div>
           </CardTitle>
         </CardHeader>
@@ -337,7 +343,7 @@ export default function TenantAdminExamsPage() {
               description={`无法加载考试列表: ${error instanceof Error ? error.message : '未知错误'}`}
               action={<Button onClick={() => window.location.reload()}>重试</Button>}
             />
-          ) : !examsData || examsData.length === 0 ? (
+          ) : !examsData || examsData.content?.length === 0 ? (
             <EmptyState
               icon={<FileText className="h-12 w-12" />}
               title="暂无考试"
@@ -372,7 +378,7 @@ export default function TenantAdminExamsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {(examsData || []).map((exam) => (
+                  {(examsData?.content || []).map((exam) => (
                     <tr key={exam.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="font-medium text-gray-900">{exam.title}</div>
@@ -510,7 +516,7 @@ export default function TenantAdminExamsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">总考试数</p>
-                <p className="text-2xl font-bold text-gray-900">{examsData?.length || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{examsData?.content?.length || 0}</p>
               </div>
               <FileText className="h-8 w-8 text-blue-500" />
             </div>
@@ -523,7 +529,7 @@ export default function TenantAdminExamsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">草稿</p>
                 <p className="text-2xl font-bold text-gray-600">
-                  {examsData?.filter(exam => exam.status === 'DRAFT').length || 0}
+                  {examsData?.content?.filter(exam => exam.status === 'DRAFT').length || 0}
                 </p>
               </div>
               <FileText className="h-8 w-8 text-gray-500" />
@@ -537,7 +543,7 @@ export default function TenantAdminExamsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">开放报名</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {examsData?.filter(exam => exam.status === 'OPEN').length || 0}
+                  {examsData?.content?.filter(exam => exam.status === 'OPEN').length || 0}
                 </p>
               </div>
               <Calendar className="h-8 w-8 text-green-500" />
@@ -551,7 +557,7 @@ export default function TenantAdminExamsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">报名关闭</p>
                 <p className="text-2xl font-bold text-orange-600">
-                  {examsData?.filter(exam => exam.status === 'CLOSED').length || 0}
+                  {examsData?.content?.filter(exam => exam.status === 'CLOSED').length || 0}
                 </p>
               </div>
               <StopCircle className="h-8 w-8 text-orange-500" />
@@ -565,7 +571,7 @@ export default function TenantAdminExamsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">考试中</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {examsData?.filter(exam => exam.status === 'IN_PROGRESS').length || 0}
+                  {examsData?.content?.filter(exam => exam.status === 'IN_PROGRESS').length || 0}
                 </p>
               </div>
               <PlayCircle className="h-8 w-8 text-blue-500" />
@@ -579,7 +585,7 @@ export default function TenantAdminExamsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">已完成</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {examsData?.filter(exam => exam.status === 'COMPLETED').length || 0}
+                  {examsData?.content?.filter(exam => exam.status === 'COMPLETED').length || 0}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-purple-500" />

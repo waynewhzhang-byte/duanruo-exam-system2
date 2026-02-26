@@ -156,9 +156,22 @@ model Application {
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 
+  // 成绩相关字段
+  totalWrittenScore   Decimal?  @map("total_written_score") @db.Decimal(6, 2)   // 笔试总分
+  writtenPassScore    Decimal?  @map("written_pass_score") @db.Decimal(5, 2)     // 笔试合格线
+  writtenPassStatus   String?   @map("written_pass_status")                     // PASS, FAIL, PENDING, EXEMPT
+  interviewEligibility String?  @map("interview_eligibility")                   // ELIGIBLE, INELIGIBLE, PENDING, EXEMPT
+  finalResult        String?   @map("final_result")                             // 待定, 进入面试, 面试通过, 面试未通过, 笔试未通过
+  
+  // 面试安排
+  interviewTime       DateTime? @map("interview_time")
+  interviewLocation   String?   @map("interview_location") @db.VarChar(255)
+  interviewRoom       String?   @map("interview_room") @db.VarChar(100)
+
   exam                 Exam      @relation(fields: [examId], references: [id])
   position             Position  @relation(fields: [positionId], references: [id])
   attachments          FileRecord[]
+  scores              ExamScore[]
 
   @@unique([examId, candidateId])
   @@map("applications")
@@ -389,4 +402,65 @@ model FileRecord {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("files")
+}
+
+// ===== 成绩模型 =====
+model ExamScore {
+  id                String    @id @default(uuid()) @db.Uuid
+  applicationId     String    @map("application_id") @db.Uuid
+  subjectId         String    @map("subject_id") @db.Uuid
+  candidateId       String    @map("candidate_id") @db.Uuid
+  examId           String    @map("exam_id") @db.Uuid
+  positionId        String    @map("position_id") @db.Uuid
+  
+  // 分数
+  score             Decimal?  @map("score") @db.Decimal(5, 2)
+  isAbsent          Boolean   @default(false) @map("is_absent")
+  remarks           String?   @map("remarks") @db.Text
+  
+  // 面试资格判定
+  interviewEligibility String?  @map("interview_eligibility")  // PASSED, FAILED, PENDING, EXEMPT
+  interviewScore       Decimal?  @map("interview_score") @db.Decimal(5, 2)
+  finalResult         String?   @map("final_result")  // 待定, 进入面试, 面试通过, 面试未通过
+  
+  // 元数据
+  recordedBy        String?   @map("recorded_by") @db.Uuid
+  recordedAt        DateTime  @default(now()) @map("recorded_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  
+  application       Application @relation(fields: [applicationId], references: [id])
+  
+  @@unique([applicationId, subjectId])
+  @@index([examId])
+  @@index([candidateId])
+  @@index([interviewEligibility])
+  @@map("exam_scores")
+}
+
+// ===== 通知记录模型 =====
+model Notification {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  tenantId      String?   @map("tenant_id") @db.Uuid
+  
+  // 通知内容
+  type          String    @map("type") @db.VarChar(50)  // SCORE_PUBLISHED, INTERVIEW_ELIGIBILITY, INTERVIEW_RESULT, TICKET_GENERATED 等
+  title         String    @map("title") @db.VarChar(255)
+  content       String    @map("content") @db.Text
+  channel       String    @map("channel") @db.VarChar(20)  // EMAIL, SMS, SYSTEM
+  
+  // 发送状态
+  status        String    @map("status") @default("PENDING") @db.VarChar(20)  // PENDING, SENT, FAILED
+  sentAt        DateTime? @map("sent_at")
+  readAt        DateTime? @map("read_at")
+  
+  // 关联
+  relatedId     String?   @map("related_id") @db.Uuid
+  relatedType   String?   @map("related_type")
+  
+  createdAt     DateTime  @default(now()) @map("created_at")
+  
+  @@index([userId, status])
+  @@index([createdAt])
+  @@map("notifications")
 }

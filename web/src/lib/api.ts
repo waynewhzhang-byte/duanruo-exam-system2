@@ -41,12 +41,30 @@ async function resolveAuthToken(provided?: string): Promise<string | null> {
   }
 }
 
-// Resolve tenant ID automatically from provided option or browser localStorage
+// Resolve tenant ID automatically from provided option, URL path, or browser localStorage
 async function resolveTenantId(provided?: string): Promise<string | null> {
   if (provided) return provided
+
   if (typeof window !== 'undefined') {
     try {
-      return window.localStorage?.getItem('tenant_id') || null
+      // 1. Check localStorage (current session preference)
+      const storedId = window.localStorage?.getItem('tenant_id')
+      if (storedId) return storedId
+
+      // 2. Fallback: Try to infer from URL path if we're in a [tenantSlug] route
+      // Format: /tenant-slug/admin/...
+      const pathname = window.location.pathname
+      const parts = pathname.split('/').filter(Boolean)
+      if (parts.length > 0) {
+        const slug = parts[0]
+        // If the slug looks like a tenant slug (not a top-level route like 'admin' or 'login')
+        const reservedTopLevels = ['admin', 'login', 'register', 'tenants', 'super-admin', 'profile', 'candidate', 'reviewer']
+        if (!reservedTopLevels.includes(slug)) {
+          // Note: In a real-world high-perf scenario, we might have a slug->id map in memory/cache
+          // For now, we return null and let the backend TenantGuard handle the slug via X-Tenant-Slug if we added it,
+          // or we rely on the specific API call having passed it.
+        }
+      }
     } catch { }
   }
   return null

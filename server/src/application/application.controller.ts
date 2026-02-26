@@ -6,6 +6,7 @@ import {
   Param,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ApplicationService } from './application.service';
 import { ReviewService } from '../review/review.service';
@@ -30,6 +31,31 @@ export class ApplicationController {
   async getMyApplications(@Req() req: AuthenticatedRequest) {
     const apps = await this.applicationService.listMyEnriched(req.user.userId);
     return ApiResult.ok(apps);
+  }
+
+  @Get()
+  @Permissions('application:view:all')
+  async listAll(
+    @Query('examId') examId?: string,
+    @Query('status') status?: string,
+    @Query('page') page = 0,
+    @Query('size') size = 10,
+  ) {
+    const { content, total } = await this.applicationService.listAll({
+      examId,
+      status,
+      page: Number(page),
+      size: Number(size),
+    });
+    return {
+      success: true,
+      data: {
+        content,
+        total,
+        page: Number(page),
+        size: Number(size),
+      },
+    };
   }
 
   @Get('drafts/my')

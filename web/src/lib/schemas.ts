@@ -58,9 +58,9 @@ export const TenantStatus = z.enum(['PENDING', 'ACTIVE', 'INACTIVE', 'DELETED'])
 export const Tenant = z.object({
   id: UUID,
   name: z.string(),
-  code: z.string().optional(), // Backend may not return code, only slug
+  code: z.string().optional(), // Backend returns code, not slug
+  slug: z.string().optional(), // Some endpoints may return slug
   schemaName: z.string().optional(),
-  slug: z.string(),
   status: TenantStatus,
   contactEmail: z.string(), // Relaxed email validation - backend validates on create/update
   contactPhone: z.string().nullable().optional(),

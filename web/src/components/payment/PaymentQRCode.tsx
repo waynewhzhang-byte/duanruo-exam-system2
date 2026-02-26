@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { QrCode, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import Image from 'next/image'
 
 interface PaymentQRCodeProps {
   qrCodeUrl: string
@@ -50,11 +51,14 @@ export function PaymentQRCode({
       <CardContent className="flex flex-col items-center space-y-4">
         <div className="bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
           {!imageError && qrCodeUrl ? (
-            <img
+            <Image
               src={qrCodeUrl}
               alt={`${methodName}支付二维码`}
+              width={256}
+              height={256}
               className="w-64 h-64"
               onError={() => setImageError(true)}
+              unoptimized
             />
           ) : (
             <div className="w-64 h-64 flex items-center justify-center bg-gray-100 rounded">

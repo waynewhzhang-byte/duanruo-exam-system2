@@ -1,23 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import FileUpload from '@/components/ui/fileupload'
 import { Button } from '@/components/ui/button'
 import { EmptyState, Spinner } from '@/components/ui/loading'
-import { FileText, Download, Trash2, Eye, Building } from 'lucide-react'
-import { apiGet } from '@/lib/api'
+import { FileText, Download, Trash2, Eye, Building, X } from 'lucide-react'
+import { useMyFiles, useDeleteFile } from '@/lib/api-hooks'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-
-interface UploadedFile {
-  id: string
-  fileName: string
-  fileSize: number
-  uploadedAt: string
-  fileType: string
-  category: string
-}
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { apiGet, apiDelete } from '@/lib/api'
+import { downloadFile } from '@/lib/helpers'
 
 interface Tenant {
   id: string
@@ -26,39 +19,73 @@ interface Tenant {
   slug?: string
 }
 
-// Mock data (will be replaced with real API data later)
-const mockFiles: UploadedFile[] = [
-  {
-    id: '1',
-    fileName: '身份证正面.jpg',
-    fileSize: 2048576, // 2MB
-    uploadedAt: '2024-01-15 14:30:00',
-    fileType: 'image/jpeg',
-    category: '身份证明',
-  },
-  {
-    id: '2',
-    fileName: '学历证书.pdf',
-    fileSize: 5242880, // 5MB
-    uploadedAt: '2024-01-15 14:32:00',
-    fileType: 'application/pdf',
-    category: '学历证明',
-  },
-  {
-    id: '3',
-    fileName: '工作证明.pdf',
-    fileSize: 1048576, // 1MB
-    uploadedAt: '2024-01-15 14:35:00',
-    fileType: 'application/pdf',
-    category: '工作经历',
-  },
-]
+interface PreviewModalProps {
+  fileId: string
+  fileName: string
+  fileType: string
+  onClose: () => void
+}
+
+function PreviewModal({ fileId, fileName, fileType, onClose }: PreviewModalProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchPreviewUrl = async () => {
+      try {
+        const response = await apiGet<{ previewUrl: string }>(`/files/${fileId}/preview-url`)
+        setPreviewUrl(response.previewUrl)
+      } catch (err) {
+        setError('无法加载预览')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchPreviewUrl()
+  }, [fileId])
+
+  const isImage = fileType.startsWith('image/')
+  const isPdf = fileType === 'application/pdf'
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-4 border-b">
+          <h3 className="font-semibold">{fileName}</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
+          {loading && <div className="flex justify-center py-8"><Spinner /></div>}
+          {error && <div className="text-center py-8 text-red-500">{error}</div>}
+          {!loading && !error && previewUrl && (
+            <>
+              {isImage && <img src={previewUrl} alt={fileName} className="max-w-full h-auto" />}
+              {isPdf && <iframe src={previewUrl} className="w-full h-[70vh]" />}
+              {!isImage && !isPdf && (
+                <div className="text-center py-8">
+                  <p className="mb-4">该文件类型不支持预览</p>
+                  <Button onClick={() => downloadFile(previewUrl, fileName)}>下载文件</Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function FilesPage() {
-  const [files, setFiles] = useState<UploadedFile[]>(mockFiles)
+  const queryClient = useQueryClient()
   const [selectedTenantId, setSelectedTenantId] = useState<string>('')
+  const [previewFile, setPreviewFile] = useState<{ id: string; name: string; type: string } | null>(null)
 
-  // 获取用户关联的租户列表
+  const { data: filesData, isLoading: filesLoading, refetch } = useMyFiles()
+  const files = filesData?.content || []
+
   const { data: tenants, isLoading: tenantsLoading } = useQuery<Tenant[]>({
     queryKey: ['my-tenants'],
     queryFn: async () => {
@@ -66,7 +93,8 @@ export default function FilesPage() {
     },
   })
 
-  // 自动选择第一个租户
+  const deleteFileMutation = useDeleteFile()
+
   useEffect(() => {
     if (tenants && tenants.length > 0 && !selectedTenantId) {
       setSelectedTenantId(tenants[0].id)
@@ -75,27 +103,37 @@ export default function FilesPage() {
 
   const handleUploadComplete = (fileId: string, fileName: string) => {
     console.log('Upload completed:', fileId, fileName)
-    // In real app, refresh the files list
+    refetch()
   }
 
   const handleUploadError = (error: string) => {
     console.error('Upload error:', error)
-    // Show error toast
   }
 
-  const handleDownload = (fileId: string) => {
-    console.log('Download file:', fileId)
-    // In real app, call download API
+  const handleDownload = async (fileId: string, fileName: string) => {
+    try {
+      const response = await apiGet<{ downloadUrl: string }>(`/files/${fileId}/download-url`)
+      downloadFile(response.downloadUrl, fileName)
+    } catch (error) {
+      console.error('Download failed:', error)
+      alert('下载失败，请重试')
+    }
   }
 
-  const handlePreview = (fileId: string) => {
-    console.log('Preview file:', fileId)
-    // In real app, open preview modal
+  const handlePreview = async (fileId: string, fileName: string, fileType: string) => {
+    setPreviewFile({ id: fileId, name: fileName, type: fileType })
   }
 
-  const handleDelete = (fileId: string) => {
+  const handleDelete = async (fileId: string) => {
     if (confirm('确定要删除这个文件吗？')) {
-      setFiles(prev => prev.filter(f => f.id !== fileId))
+      try {
+        await deleteFileMutation.mutateAsync(fileId)
+        alert('文件删除成功')
+        refetch()
+      } catch (error) {
+        console.error('Delete failed:', error)
+        alert('删除失败，请重试')
+      }
     }
   }
 
@@ -121,15 +159,17 @@ export default function FilesPage() {
   }
 
   const groupedFiles = files.reduce((acc, file) => {
-    if (!acc[file.category]) {
-      acc[file.category] = []
+    const category = file.fieldKey || '其他文件'
+    if (!acc[category]) {
+      acc[category] = []
     }
-    acc[file.category].push(file)
+    acc[category].push(file)
     return acc
-  }, {} as Record<string, UploadedFile[]>)
+  }, {} as Record<string, typeof files>)
 
-  // 如果正在加载租户信息
-  if (tenantsLoading) {
+  const isLoading = tenantsLoading || filesLoading
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Spinner size="lg" />
@@ -157,7 +197,8 @@ export default function FilesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -232,16 +273,16 @@ export default function FilesPage() {
                   <div className="space-y-3">
                     {categoryFiles.map((file) => (
                       <div
-                        key={file.id}
+                        key={file.fileId}
                         className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                       >
                         <div className="flex items-center space-x-3">
                           <div className="text-2xl">
-                            {getFileIcon(file.fileType)}
+                            {getFileIcon(file.contentType)}
                           </div>
                           <div>
                             <h3 className="font-medium text-gray-900">
-                              {file.fileName}
+                              {file.originalName}
                             </h3>
                             <p className="text-sm text-gray-500">
                               {formatFileSize(file.fileSize)} • 上传于 {file.uploadedAt}
@@ -253,21 +294,21 @@ export default function FilesPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handlePreview(file.id)}
+                            onClick={() => handlePreview(file.fileId, file.originalName, file.contentType)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDownload(file.id)}
+                            onClick={() => handleDownload(file.fileId, file.originalName)}
                           >
                             <Download className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDelete(file.id)}
+                            onClick={() => handleDelete(file.fileId)}
                             className="text-red-600 hover:text-red-700 hover:border-red-300"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -298,6 +339,16 @@ export default function FilesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {previewFile && (
+        <PreviewModal
+          fileId={previewFile.id}
+          fileName={previewFile.name}
+          fileType={previewFile.type}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
+    </div>
   )
 }
 

@@ -117,8 +117,8 @@ export default function ReviewerTasksPage() {
                         <>
                           <Button size="sm" onClick={async()=>{ await heartbeat.mutateAsync({ taskId: item.taskId }); }}>心跳</Button>
                           <Button size="sm" variant="outline" onClick={async()=>{ await release.mutateAsync({ taskId: item.taskId }); refetch() }}>释放</Button>
-                          <Button size="sm" onClick={async()=>{ await approve.mutateAsync({ taskId: item.taskId, decision: 'APPROVE' }); refetch() }}>通过</Button>
-                          <Button size="sm" variant="destructive" onClick={async()=>{ await reject.mutateAsync({ taskId: item.taskId, decision: 'REJECT' }); refetch() }}>驳回</Button>
+                          <Button size="sm" onClick={async()=>{ await approve.mutateAsync({ applicationId: item.applicationId, decision: 'APPROVE' }); refetch() }}>通过</Button>
+                          <Button size="sm" variant="destructive" onClick={async()=>{ await reject.mutateAsync({ applicationId: item.applicationId, decision: 'REJECT' }); refetch() }}>驳回</Button>
                         </>
                       )}
                     </div>

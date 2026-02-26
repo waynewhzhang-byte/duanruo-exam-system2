@@ -6,6 +6,7 @@ import { PermissionsGuard } from '../auth/permissions.guard';
 import { TenantGuard } from '../auth/tenant.guard';
 import { Permissions } from '../auth/permissions.decorator';
 import { PullTaskRequest, DecisionTaskRequest } from './dto/review.dto';
+import { BatchReviewDecisionRequest, BatchResult } from '../common/dto/batch.dto';
 import type { AuthenticatedRequest } from '../auth/interfaces/authenticated-request.interface';
 import {
   PaginatedResponse,
@@ -40,6 +41,16 @@ export class ReviewController {
     return ApiResult.ok(result, 'Review decision recorded');
   }
 
+  @Post('batch-decide')
+  @Permissions('review:perform')
+  async batchDecide(
+    @Req() req: AuthenticatedRequest,
+    @Body() request: BatchReviewDecisionRequest,
+  ) {
+    const result = await this.reviewService.batchDecide(req.user.userId, request.decisions);
+    return ApiResult.ok(result, 'Batch review decisions recorded');
+  }
+
   @Post('tasks/:id/heartbeat')
   @Permissions('review:perform')
   async heartbeat(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
@@ -67,6 +78,28 @@ export class ReviewController {
       examId,
       stage,
       status,
+      page: Number(page),
+      size: Number(size),
+    });
+    return PaginationHelper.createResponse(
+      content,
+      total,
+      Number(page),
+      Number(size),
+    );
+  }
+
+  @Get('history')
+  @Permissions('review:view')
+  async getHistory(
+    @Query('examId') examId?: string,
+    @Query('reviewerId') reviewerId?: string,
+    @Query('page') page = 0,
+    @Query('size') size = 10,
+  ): Promise<PaginatedResponse<any>> {
+    const { content, total } = await this.reviewService.getHistory({
+      examId,
+      reviewerId,
       page: Number(page),
       size: Number(size),
     });

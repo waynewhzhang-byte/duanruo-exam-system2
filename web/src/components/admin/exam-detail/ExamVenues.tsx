@@ -44,7 +44,7 @@ export default function ExamVenues({ examId }: ExamVenuesProps) {
     }
 
     try {
-      await deleteVenueMutation.mutateAsync({ venueId: venue.venueId, tenantId: tenant.id })
+      await deleteVenueMutation.mutateAsync({ venueId: venue.id, tenantId: tenant.id })
       toast.success('考场删除成功')
       refetch()
     } catch (error: any) {
@@ -79,7 +79,7 @@ export default function ExamVenues({ examId }: ExamVenuesProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {venues.map((venue: any) => (
               <div
-                key={venue.venueId}
+                key={venue.id}
                 className="p-4 border rounded-lg hover:border-primary/50 hover:bg-accent/50 transition-all"
               >
                 <div className="flex items-start justify-between mb-3">
@@ -160,7 +160,7 @@ export default function ExamVenues({ examId }: ExamVenuesProps) {
       {/* Room Management Dialog */}
       {roomManagementVenue && (
         <RoomManagement
-          venueId={roomManagementVenue.venueId}
+          venueId={roomManagementVenue.id}
           venueName={roomManagementVenue.name}
           onClose={() => setRoomManagementVenue(null)}
         />

@@ -1,15 +1,26 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { ApplicationController } from './application.controller';
+import { ApplicationService } from './application.service';
+import { ReviewService } from '../review/review.service';
 
 describe('ApplicationController', () => {
   let controller: ApplicationController;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [ApplicationController],
-    }).compile();
+  const mockApplicationService = {
+    create: jest.fn(),
+    findAll: jest.fn().mockResolvedValue({ data: [], total: 0 }),
+    findById: jest.fn(),
+    submit: jest.fn(),
+  };
 
-    controller = module.get<ApplicationController>(ApplicationController);
+  const mockReviewService = {
+    pullTask: jest.fn(),
+  };
+
+  beforeEach(() => {
+    controller = new ApplicationController(
+      mockApplicationService as any,
+      mockReviewService as any,
+    );
   });
 
   it('should be defined', () => {

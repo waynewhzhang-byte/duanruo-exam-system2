@@ -4,17 +4,25 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { AsyncLocalStorage } from 'async_hooks';
 
+type TenantExtendedClient = PrismaClient;
+
 @Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
   private static readonly als = new AsyncLocalStorage<{ schema: string }>();
+  private static readonly extendedClients = new Map<string, TenantExtendedClient>();
+  private static pool: Pool | null = null;
 
   constructor() {
     const url = process.env.DATABASE_URL || '';
-    const pool = new Pool({ connectionString: url });
-    const adapter = new PrismaPg(pool);
+    
+    if (!PrismaService.pool) {
+      PrismaService.pool = new Pool({ connectionString: url });
+    }
+    
+    const adapter = new PrismaPg(PrismaService.pool);
     super({
       adapter,
       log: ['query', 'info', 'warn', 'error'],
@@ -27,42 +35,34 @@ export class PrismaService
 
   async onModuleDestroy() {
     await this.$disconnect();
+    if (PrismaService.pool) {
+      await PrismaService.pool.end();
+      PrismaService.pool = null;
+    }
+    PrismaService.extendedClients.clear();
   }
 
-  /**
-   * Run a callback with a specific schema context.
-   */
   static runInTenantContext<T>(schema: string, callback: () => T): T {
     return this.als.run({ schema }, callback);
   }
 
-  /**
-   * Get the current schema from AsyncLocalStorage.
-   */
   static getTenantSchema(): string | undefined {
     return this.als.getStore()?.schema;
   }
 
-  /**
-   * Dynamic extension to set search_path before mỗi query.
-   */
-  get client() {
-    const schema = PrismaService.getTenantSchema() || 'public';
+  private createExtendedClient(_schema: string): TenantExtendedClient {
     const self = this;
-
     return this.$extends({
       query: {
         $allModels: {
           async $allOperations({ args, query }) {
+            const schema = PrismaService.getTenantSchema() || 'public';
             return await PrismaService.als.run({ schema }, async () => {
-              // We use a transaction to ensure SET LOCAL is applied correctly to the current connection
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
               return await self.$transaction(
-                async (tx: Prisma.TransactionClient) => {
+                async (tx) => {
                   await tx.$executeRawUnsafe(
                     `SET LOCAL search_path TO "${schema}", public`,
                   );
-
                   return query(args);
                 },
               );
@@ -70,6 +70,34 @@ export class PrismaService
           },
         },
       },
-    });
+    }) as TenantExtendedClient;
+  }
+
+  get client(): TenantExtendedClient {
+    const schema = PrismaService.getTenantSchema() || 'public';
+    
+    let extendedClient = PrismaService.extendedClients.get(schema);
+    if (!extendedClient) {
+      extendedClient = this.createExtendedClient(schema);
+      PrismaService.extendedClients.set(schema, extendedClient);
+    }
+    
+    return extendedClient;
+  }
+
+  get publicClient(): TenantExtendedClient {
+    const schema = 'public';
+    
+    let extendedClient = PrismaService.extendedClients.get('public');
+    if (!extendedClient) {
+      extendedClient = this.createExtendedClient(schema);
+      PrismaService.extendedClients.set('public', extendedClient);
+    }
+    
+    return extendedClient;
+  }
+
+  get baseClient(): PrismaClient {
+    return this;
   }
 }

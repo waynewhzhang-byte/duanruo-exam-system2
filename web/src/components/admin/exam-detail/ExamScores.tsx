@@ -168,7 +168,7 @@ export default function ExamScores({ examId }: ExamScoresProps) {
       for (const position of positions) {
         try {
           const positionSubjects = await apiGetWithTenant<Subject[]>(
-            `/positions/${position.id}/subjects`,
+            `/exams/positions/${position.id}/subjects`,
             tenant.id
           )
           

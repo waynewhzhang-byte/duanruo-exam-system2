@@ -27,7 +27,6 @@ export class AuthService {
   }
 
   async login(user: User) {
-    // Check for tenant roles
     const tenantRoles = await this.prisma.userTenantRole.findMany({
       where: {
         userId: user.id,
@@ -36,16 +35,17 @@ export class AuthService {
       include: { tenant: true },
     });
 
-    let roles = JSON.parse(user.roles) as string[];
-    let tenantId: string | null = null;
+    const globalRoles = JSON.parse(user.roles) as string[];
+    let currentTenantId: string | null = null;
+    let currentRoles = [...globalRoles];
 
     if (tenantRoles.length > 0) {
       const primaryTenantRole = tenantRoles[0];
-      tenantId = primaryTenantRole.tenantId;
-      roles = Array.from(new Set([...roles, primaryTenantRole.role]));
+      currentTenantId = primaryTenantRole.tenantId;
+      currentRoles = [...globalRoles, primaryTenantRole.role];
     }
 
-    const permissions = this.getPermissionsForRoles(roles);
+    const permissions = this.getPermissionsForRoles(currentRoles);
 
     const payload = {
       sub: user.id,
@@ -53,8 +53,8 @@ export class AuthService {
       email: user.email,
       fullName: user.fullName,
       status: user.status,
-      roles: roles,
-      tenantId: tenantId,
+      roles: currentRoles,
+      tenantId: currentTenantId,
       permissions: permissions,
     };
 
@@ -64,7 +64,7 @@ export class AuthService {
       email: user.email,
       fullName: user.fullName,
       status: user.status,
-      roles: roles,
+      roles: currentRoles,
       permissions: permissions,
       emailVerified: user.emailVerified ?? false,
       phoneVerified: user.phoneVerified ?? false,
@@ -77,13 +77,19 @@ export class AuthService {
       tokenType: 'Bearer',
       expiresIn: 86400,
       user: resultUser,
+      tenantRoles: tenantRoles.map((tr) => ({
+        tenantId: tr.tenantId,
+        tenantName: tr.tenant.name,
+        tenantCode: tr.tenant.code,
+        role: tr.role,
+        active: tr.active,
+      })),
     };
   }
 
   private getPermissionsForRoles(roles: string[]): string[] {
     const permissions = new Set<string>();
 
-    // Basic permissions
     permissions.add('application:view:own');
     permissions.add('application:create');
     permissions.add('file:upload');
@@ -91,16 +97,64 @@ export class AuthService {
     permissions.add('ticket:view:own');
     permissions.add('payment:initiate');
 
+    if (roles.includes('CANDIDATE')) {
+      permissions.add('exam:view:public');
+      permissions.add('application:view:own');
+      permissions.add('application:update:own');
+      permissions.add('ticket:view:own');
+    }
+
     if (roles.includes('SUPER_ADMIN')) {
       permissions.add('tenant:view:all');
       permissions.add('tenant:create');
+      permissions.add('tenant:update');
+      permissions.add('tenant:delete');
       permissions.add('user:manage');
+      permissions.add('user:view');
+      permissions.add('user:create');
+      permissions.add('user:update');
+      permissions.add('user:delete');
       permissions.add('statistics:system:view');
+      permissions.add('exam:view');
+      permissions.add('exam:view:all');
+      permissions.add('exam:create');
+      permissions.add('exam:edit');
+      permissions.add('exam:delete');
+      permissions.add('exam:publish');
+      permissions.add('exam:open');
+      permissions.add('exam:close');
+      permissions.add('application:view');
+      permissions.add('application:view:all');
+      permissions.add('application:update');
+      permissions.add('application:delete');
+      permissions.add('review:view');
+      permissions.add('review:view:all');
+      permissions.add('review:perform');
+      permissions.add('review:primary');
+      permissions.add('review:secondary');
+      permissions.add('ticket:view');
+      permissions.add('ticket:view:all');
+      permissions.add('ticket:generate');
+      permissions.add('ticket:batch-generate');
+      permissions.add('seating:view');
+      permissions.add('seating:view:all');
+      permissions.add('seating:create');
+      permissions.add('seating:edit');
+      permissions.add('seating:delete');
+      permissions.add('seating:allocate');
+      permissions.add('file:view');
+      permissions.add('file:view:all');
+      permissions.add('file:delete');
+      permissions.add('position:view');
+      permissions.add('position:create');
+      permissions.add('position:edit');
+      permissions.add('position:delete');
     }
 
     if (roles.includes('TENANT_ADMIN')) {
       permissions.add('exam:create');
       permissions.add('exam:view');
+      permissions.add('exam:view:all');
       permissions.add('exam:edit');
       permissions.add('exam:delete');
       permissions.add('exam:publish');
@@ -108,20 +162,46 @@ export class AuthService {
       permissions.add('exam:close');
       permissions.add('position:create');
       permissions.add('position:view');
+      permissions.add('position:view:all');
+      permissions.add('position:edit');
       permissions.add('position:delete');
+      permissions.add('application:view');
+      permissions.add('application:view:all');
+      permissions.add('application:update');
+      permissions.add('application:export');
+      permissions.add('review:view');
+      permissions.add('review:view:all');
+      permissions.add('review:assign');
+      permissions.add('ticket:view');
+      permissions.add('ticket:view:all');
+      permissions.add('ticket:generate');
+      permissions.add('ticket:batch-generate');
+      permissions.add('seating:view');
+      permissions.add('seating:view:all');
+      permissions.add('seating:create');
+      permissions.add('seating:allocate');
+      permissions.add('file:view');
+      permissions.add('file:view:all');
+      permissions.add('file:delete');
       permissions.add('statistics:tenant:view');
+      permissions.add('user:view');
+      permissions.add('user:create');
     }
 
     if (roles.includes('PRIMARY_REVIEWER')) {
       permissions.add('review:primary');
       permissions.add('review:view');
+      permissions.add('review:view:assigned');
       permissions.add('review:perform');
+      permissions.add('application:view:assigned');
     }
 
     if (roles.includes('SECONDARY_REVIEWER')) {
       permissions.add('review:secondary');
       permissions.add('review:view');
+      permissions.add('review:view:assigned');
       permissions.add('review:perform');
+      permissions.add('application:view:assigned');
     }
 
     return Array.from(permissions);
@@ -131,31 +211,35 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new BadRequestException('User not found');
 
-    const isSuperAdmin = (JSON.parse(user.roles) as string[]).includes(
-      'SUPER_ADMIN',
-    );
+    const globalRoles = JSON.parse(user.roles) as string[];
+    const isSuperAdmin = globalRoles.includes('SUPER_ADMIN');
 
-    // Check access
     const tenantRole = await this.prisma.userTenantRole.findFirst({
       where: {
         userId,
         tenantId,
         active: true,
       },
+      include: { tenant: true },
     });
 
     if (!isSuperAdmin && !tenantRole) {
       throw new UnauthorizedException('No access to this tenant');
     }
 
-    const roles = Array.from(
+    const allTenantRoles = await this.prisma.userTenantRole.findMany({
+      where: { userId: user.id, active: true },
+      include: { tenant: true },
+    });
+
+    const currentRoles = Array.from(
       new Set([
-        ...(JSON.parse(user.roles) as string[]),
+        ...globalRoles,
         ...(tenantRole ? [tenantRole.role] : []),
       ]),
     );
 
-    const permissions = this.getPermissionsForRoles(roles);
+    const permissions = this.getPermissionsForRoles(currentRoles);
 
     const payload = {
       sub: user.id,
@@ -163,7 +247,7 @@ export class AuthService {
       email: user.email,
       fullName: user.fullName,
       tenantId: tenantId,
-      roles: roles,
+      roles: currentRoles,
       permissions: permissions,
       status: user.status,
     };
@@ -177,7 +261,15 @@ export class AuthService {
         email: user.email,
         fullName: user.fullName,
         status: user.status,
-        roles: roles,
+        roles: currentRoles,
+        globalRoles: globalRoles,
+        tenantRoles: allTenantRoles.map((tr) => ({
+          tenantId: tr.tenantId,
+          tenantName: tr.tenant.name,
+          tenantCode: tr.tenant.code,
+          role: tr.role,
+          active: tr.active,
+        })),
         permissions: permissions,
         emailVerified: user.emailVerified ?? false,
         phoneVerified: user.phoneVerified ?? false,
@@ -193,16 +285,18 @@ export class AuthService {
 
     const tenantRoles = await this.prisma.userTenantRole.findMany({
       where: { userId: user.id, active: true },
+      include: { tenant: true },
     });
 
-    const roles = Array.from(
+    const globalRoles = JSON.parse(user.roles) as string[];
+    const mergedRoles = Array.from(
       new Set([
-        ...(JSON.parse(user.roles) as string[]),
+        ...globalRoles,
         ...tenantRoles.map((tr) => tr.role),
       ]),
     );
 
-    const permissions = this.getPermissionsForRoles(roles);
+    const permissions = this.getPermissionsForRoles(mergedRoles);
 
     return {
       id: user.id,
@@ -210,7 +304,15 @@ export class AuthService {
       email: user.email,
       fullName: user.fullName,
       status: user.status,
-      roles: roles,
+      roles: mergedRoles,
+      globalRoles: globalRoles,
+      tenantRoles: tenantRoles.map((tr) => ({
+        tenantId: tr.tenantId,
+        tenantName: tr.tenant.name,
+        tenantCode: tr.tenant.code,
+        role: tr.role,
+        active: tr.active,
+      })),
       permissions: permissions,
       emailVerified: user.emailVerified ?? false,
       phoneVerified: user.phoneVerified ?? false,
@@ -225,16 +327,20 @@ export class AuthService {
 
     const tenantRoles = await this.prisma.userTenantRole.findMany({
       where: { userId: user.id, active: true },
+      include: { tenant: true },
     });
 
-    const roles = Array.from(
+    const globalRoles = JSON.parse(user.roles) as string[];
+    const mergedRoles = Array.from(
       new Set([
-        ...(JSON.parse(user.roles) as string[]),
+        ...globalRoles,
         ...tenantRoles.map((tr) => tr.role),
       ]),
     );
 
-    const permissions = this.getPermissionsForRoles(roles);
+    const permissions = this.getPermissionsForRoles(mergedRoles);
+
+    const currentTenantId = tenantRoles.length > 0 ? tenantRoles[0].tenantId : null;
 
     const payload = {
       sub: user.id,
@@ -242,7 +348,8 @@ export class AuthService {
       email: user.email,
       fullName: user.fullName,
       status: user.status,
-      roles: roles,
+      roles: mergedRoles,
+      tenantId: currentTenantId,
       permissions: permissions,
     };
 
@@ -256,7 +363,15 @@ export class AuthService {
         email: user.email,
         fullName: user.fullName,
         status: user.status,
-        roles: roles,
+        roles: mergedRoles,
+        globalRoles: globalRoles,
+        tenantRoles: tenantRoles.map((tr) => ({
+          tenantId: tr.tenantId,
+          tenantName: tr.tenant.name,
+          tenantCode: tr.tenant.code,
+          role: tr.role,
+          active: tr.active,
+        })),
         permissions: permissions,
         emailVerified: user.emailVerified ?? false,
         phoneVerified: user.phoneVerified ?? false,

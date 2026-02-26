@@ -5,7 +5,9 @@ import {
   Inject,
 } from '@nestjs/common';
 import * as Minio from 'minio';
-import { MINIO_CLIENT } from '../file/file.service';
+import { ConfigService } from '@nestjs/config';
+
+const MINIO_CLIENT = 'MINIO_CLIENT';
 
 /**
  * Tenant Bucket Management Service
@@ -17,6 +19,7 @@ export class TenantBucketService {
 
   constructor(
     @Inject(MINIO_CLIENT) private readonly minioClient: Minio.Client,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -54,6 +57,9 @@ export class TenantBucketService {
       await this.minioClient.makeBucket(bucketName, 'us-east-1');
       this.logger.log(`Created MinIO bucket: ${bucketName}`);
 
+      // Set CORS policy so browsers can upload directly via presigned URLs
+      await this.setBucketCorsPolicy(bucketName);
+
       // Set bucket lifecycle policy (optional: auto-delete expired files)
       await this.setBucketLifecyclePolicy(bucketName);
 
@@ -70,6 +76,36 @@ export class TenantBucketService {
       );
       throw new InternalServerErrorException(
         `Failed to create storage bucket for tenant: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Set CORS policy on a bucket so browsers can directly upload/download
+   * files via presigned URLs without CORS errors.
+   */
+  private async setBucketCorsPolicy(bucketName: string): Promise<void> {
+    try {
+      const corsOrigins = this.configService.get<string>(
+        'MINIO_CORS_ORIGINS',
+        '*',
+      );
+      // @types/minio v7 doesn't declare setBucketCors, but minio v8 supports it
+      await (this.minioClient as any).setBucketCors(bucketName, {
+        CORSRules: [
+          {
+            AllowedHeaders: ['*'],
+            AllowedMethods: ['GET', 'PUT', 'POST', 'DELETE', 'HEAD'],
+            AllowedOrigins: corsOrigins.split(',').map((o) => o.trim()),
+            ExposeHeaders: ['ETag'],
+            MaxAgeSeconds: 3600,
+          },
+        ],
+      });
+      this.logger.log(`Set CORS policy for bucket: ${bucketName}`);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to set CORS policy for ${bucketName}: ${error.message}`,
       );
     }
   }

@@ -88,7 +88,14 @@ export default function ExamSeating({ examId }: ExamSeatingProps) {
       if (!tenant?.id) {
         throw new Error('Tenant ID is required')
       }
-      return apiGetWithTenant<{ items: Venue[], total: number }>(`/exams/${examId}/venues`, tenant.id)
+      return apiGetWithTenant<any[]>(`/seating/venues?examId=${examId}`, tenant.id).then(response => ({
+        items: Array.isArray(response) ? response.map((v: any) => ({
+          venueId: v.id,
+          name: v.name,
+          capacity: v.capacity,
+        })) : [],
+        total: Array.isArray(response) ? response.length : 0,
+      }))
     },
     enabled: !!examId && !!tenant?.id,
   })
@@ -103,7 +110,7 @@ export default function ExamSeating({ examId }: ExamSeatingProps) {
       if (!tenant?.id) {
         throw new Error('Tenant ID is required')
       }
-      return apiGetWithTenant<SeatAssignment[]>(`/exams/${examId}/seat-assignments`, tenant.id)
+      return apiGetWithTenant<SeatAssignment[]>(`/seating/${examId}/assignments`, tenant.id)
     },
     enabled: !!examId && !!tenant?.id,
   })
@@ -116,7 +123,7 @@ export default function ExamSeating({ examId }: ExamSeatingProps) {
       }
       // 后端使用 @RequestParam，需要通过 URL 查询参数传递 strategy
       return apiPostWithTenant<AllocationResult>(
-        `/exams/${examId}/allocate-seats-with-strategy?strategy=${encodeURIComponent(strategy)}`,
+        `/seating/${examId}/allocate?strategy=${encodeURIComponent(strategy)}`,
         tenant.id
       )
     },

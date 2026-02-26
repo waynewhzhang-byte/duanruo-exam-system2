@@ -4,7 +4,9 @@ import { z } from 'zod'
 export const Tenant = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  slug: z.string(),
+  code: z.string().optional(),
+  slug: z.string().optional(),
+  schemaName: z.string().optional(),
   description: z.string().nullable().optional(),
   status: z.enum(['PENDING', 'ACTIVE', 'INACTIVE', 'DELETED']),
   contactEmail: z.string().optional(),

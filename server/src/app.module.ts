@@ -4,7 +4,9 @@ import {
   MiddlewareConsumer,
   RequestMethod,
 } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-yet';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -23,11 +25,24 @@ import { ApplicationModule } from './application/application.module';
 import { FileModule } from './file/file.module';
 import { TenantMiddleware } from './tenant/tenant.middleware';
 import { SuperAdminModule } from './super-admin/super-admin.module';
+import { NotificationModule } from './common/notification/notification.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        store: await redisStore({
+          url: configService.get('REDIS_URL') || 'redis://localhost:6379',
+          ttl: 3600, // 1 hour default TTL
+        }),
+      }),
+      inject: [ConfigService],
+    }),
     PrismaModule,
+    FileModule,
     TenantModule,
     AuthModule,
     UserModule,
@@ -40,8 +55,8 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
     SeatingModule,
     CommonModule,
     SchedulerModule,
-    FileModule,
     SuperAdminModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

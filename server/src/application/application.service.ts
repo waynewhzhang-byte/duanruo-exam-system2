@@ -6,12 +6,16 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AutoReviewService } from '../review/auto-review.service';
-import { Application, FileRecord } from '@prisma/client';
+import { Application, FileRecord, Prisma } from '@prisma/client';
 import {
   ApplicationSubmitRequest,
   ApplicationResponse,
   ApplicationListItemResponse,
 } from './dto/application.dto';
+
+function toJsonValue(val: Record<string, unknown>): Prisma.InputJsonValue {
+  return val as Prisma.InputJsonValue;
+}
 
 @Injectable()
 export class ApplicationService {
@@ -53,7 +57,7 @@ export class ApplicationService {
       },
       update: {
         positionId: request.positionId,
-        payload: request.payload,
+        payload: toJsonValue(request.payload),
         status: 'SUBMITTED',
         submittedAt: new Date(),
       },
@@ -61,7 +65,7 @@ export class ApplicationService {
         candidateId: candidateId,
         examId: request.examId,
         positionId: request.positionId,
-        payload: request.payload,
+        payload: toJsonValue(request.payload),
         status: 'SUBMITTED',
         submittedAt: new Date(),
       },
@@ -129,14 +133,14 @@ export class ApplicationService {
       },
       update: {
         positionId: request.positionId,
-        payload: request.payload,
+        payload: toJsonValue(request.payload),
         status: 'DRAFT',
       },
       create: {
         candidateId: candidateId,
         examId: request.examId,
         positionId: request.positionId,
-        payload: request.payload,
+        payload: toJsonValue(request.payload),
         status: 'DRAFT',
       },
     });
@@ -198,6 +202,53 @@ export class ApplicationService {
       feeRequired: app.exam.feeRequired,
       feeAmount: app.exam.feeAmount ? Number(app.exam.feeAmount) : 0,
     }));
+  }
+
+  async listAll(params: {
+    examId?: string;
+    status?: string;
+    page: number;
+    size: number;
+  }) {
+    const { examId, status, page, size } = params;
+    const skip = page * size;
+    const where: any = {};
+
+    if (examId) {
+      where.examId = examId;
+    }
+    if (status) {
+      where.status = status;
+    }
+
+    const [apps, total] = await Promise.all([
+      this.client.application.findMany({
+        where,
+        skip,
+        take: size,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          exam: { select: { id: true, title: true } },
+          position: { select: { id: true, title: true } },
+        },
+      }),
+      this.client.application.count({ where }),
+    ]);
+
+    return {
+      content: apps.map((app) => ({
+        id: app.id,
+        examId: app.examId,
+        positionId: app.positionId,
+        candidateId: app.candidateId,
+        status: app.status,
+        submittedAt: app.submittedAt,
+        createdAt: app.createdAt,
+        examTitle: app.exam.title,
+        positionTitle: app.position.title,
+      })),
+      total,
+    };
   }
 
   async findById(id: string): Promise<ApplicationResponse> {

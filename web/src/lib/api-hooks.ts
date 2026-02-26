@@ -244,6 +244,16 @@ export function useFileInfo(fileId: string) {
   })
 }
 
+export function useDeleteFile() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (fileId: string) => apiDelete(`/files/${fileId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.files.my() })
+    },
+  })
+}
+
 export function useBatchFileInfo(fileIds: string[]) {
   return useQuery({
     queryKey: ['files', 'batch', [...fileIds].sort((a, b) => a.localeCompare(b)).join(',')],
@@ -302,17 +312,6 @@ export function useUploadFile() {
 
       return confirmResponse
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.files.all })
-    },
-  })
-}
-
-export function useDeleteFile() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (fileId: string) => apiDelete(`/files/${fileId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.files.all })
     },
@@ -965,7 +964,7 @@ export function useCreatePosition() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to create a position')
       }
-      return await apiPostWithTenant('/positions', tenantId, positionData)
+      return await apiPostWithTenant('/exams/positions', tenantId, positionData)
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.exams.positionsByExam(variables.examId) })
@@ -981,7 +980,7 @@ export function useUpdatePosition() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to update a position')
       }
-      return await apiPutWithTenant(`/positions/${id}`, tenantId, data)
+      return await apiPutWithTenant(`/exams/positions/${id}`, tenantId, data)
     },
     onSuccess: (data: any) => {
       if (data?.examId) {
@@ -1000,7 +999,7 @@ export function useDeletePosition() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to delete a position')
       }
-      return await apiDeleteWithTenant(`/positions/${id}`, tenantId)
+      return await apiDeleteWithTenant(`/exams/positions/${id}`, tenantId)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.exams.all })
@@ -1017,8 +1016,12 @@ export function useExamVenues(examId: string, tenantId?: string) {
       if (!tenantId) {
         throw new Error('Tenant ID is required to fetch exam venues')
       }
-      const response = await apiGetWithTenant(`/exams/${examId}/venues`, tenantId)
-      return VenueListResponse.parse(response)
+      const response = await apiGetWithTenant<any[]>(`/seating/venues?examId=${examId}`, tenantId)
+      const items = Array.isArray(response) ? response : []
+      return {
+        items,
+        total: items.length,
+      }
     },
     enabled: !!examId && !!tenantId,
   })
@@ -1032,7 +1035,7 @@ export function useCreateVenue() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to create a venue')
       }
-      return await apiPostWithTenant(`/exams/${examId}/venues`, tenantId, data)
+      return await apiPostWithTenant(`/seating/venues`, tenantId, { ...data, examId })
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['venues', variables.examId] })
@@ -1048,7 +1051,7 @@ export function useUpdateVenue() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to update a venue')
       }
-      return await apiPutWithTenant(`/venues/${venueId}`, tenantId, data)
+      return await apiPutWithTenant(`/seating/venues/${venueId}`, tenantId, data)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] })
@@ -1064,7 +1067,7 @@ export function useDeleteVenue() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to delete a venue')
       }
-      return await apiDeleteWithTenant(`/venues/${venueId}`, tenantId)
+      return await apiDeleteWithTenant(`/seating/venues/${venueId}`, tenantId)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] })
@@ -1135,7 +1138,7 @@ export function useCreateSubject() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to create a subject')
       }
-      return await apiPostWithTenant(`/positions/${positionId}/subjects`, tenantId, data)
+      return await apiPostWithTenant(`/exams/positions/${positionId}/subjects`, tenantId, data)
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['subjects', variables.positionId] })
@@ -1152,7 +1155,7 @@ export function useUpdateSubject() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to update a subject')
       }
-      return await apiPutWithTenant(`/subjects/${subjectId}`, tenantId, data)
+      return await apiPutWithTenant(`/exams/subjects/${subjectId}`, tenantId, data)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] })
@@ -1169,7 +1172,7 @@ export function useDeleteSubject() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to delete a subject')
       }
-      return await apiDeleteWithTenant(`/subjects/${subjectId}`, tenantId)
+      return await apiDeleteWithTenant(`/exams/subjects/${subjectId}`, tenantId)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] })
@@ -1356,7 +1359,7 @@ export function useAllocateSeats() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to allocate seats')
       }
-      return await apiPostWithTenant(`/exams/${data.examId}/allocate-seats`, tenantId, requestData)
+      return await apiPostWithTenant(`/seating/${data.examId}/allocate`, tenantId, requestData)
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['seat-assignments', variables.examId] })
@@ -1373,7 +1376,7 @@ export function useClearSeatAssignments() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to clear seat assignments')
       }
-      return await apiDeleteWithTenant(`/exams/${examId}/seat-assignments`, tenantId)
+      return await apiDeleteWithTenant(`/seating/${examId}/assignments`, tenantId)
     },
     onSuccess: (_, examId) => {
       queryClient.invalidateQueries({ queryKey: ['seat-assignments', examId] })
@@ -1483,14 +1486,17 @@ export function usePositionApplications(positionId: string, params?: { page?: nu
 /**
  * Get auto-review rules for an exam
  */
-export function useExamAutoReviewRules(examId: string) {
+export function useExamAutoReviewRules(examId: string, tenantId?: string) {
   return useQuery({
-    queryKey: ['exam-auto-review-rules', examId],
+    queryKey: ['exam-auto-review-rules', examId, tenantId],
     queryFn: async () => {
-      const response = await apiGet(`/exams/${examId}/rules`)
+      if (!tenantId) {
+        throw new Error('Tenant ID is required to fetch exam auto-review rules')
+      }
+      const response = await apiGetWithTenant(`/exams/${examId}/rules`, tenantId)
       return response as { rules?: any[] }
     },
-    enabled: !!examId,
+    enabled: !!examId && !!tenantId,
   })
 }
 
@@ -1546,7 +1552,7 @@ export function usePositionAutoReviewRules(positionId: string, tenantId?: string
       if (!tenantId) {
         throw new Error('Tenant ID is required to get position auto-review rules')
       }
-      const response = await apiGetWithTenant(`/positions/${positionId}/rules`, tenantId)
+      const response = await apiGetWithTenant(`/exams/positions/${positionId}/rules`, tenantId)
       return response as { positionId: string; rulesConfig?: string }
     },
     enabled: !!positionId && !!tenantId,
@@ -1564,7 +1570,7 @@ export function useUpdatePositionAutoReviewRules() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to update position auto-review rules')
       }
-      return await apiPutWithTenant(`/positions/${positionId}/rules`, tenantId, { rulesConfig })
+      return await apiPutWithTenant(`/exams/positions/${positionId}/rules`, tenantId, { rulesConfig })
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['position-auto-review-rules', variables.positionId] })
@@ -1912,7 +1918,7 @@ export const FormTemplateSchema = z.object({
   version: z.number(),
   status: z.nativeEnum(FormTemplateStatus), // Backend returns string like "DRAFT", "PUBLISHED"
   fields: z.array(FormFieldSchema),
-  createdBy: z.string(),
+  createdBy: z.string().optional().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -1923,10 +1929,12 @@ export type FormTemplate = z.infer<typeof FormTemplateSchema>
  * Create form template request
  * Note: Only templateName and description are accepted by the backend.
  * Fields are added separately via the addField endpoint.
+ * examId is optional but if provided, the template is saved directly to the exam.
  */
 export const CreateFormTemplateRequestSchema = z.object({
   templateName: z.string().min(1, '模板名称不能为空'),
   description: z.string().optional(),
+  examId: z.string().optional(),
 })
 
 export type CreateFormTemplateRequest = z.infer<typeof CreateFormTemplateRequestSchema>
@@ -1994,7 +2002,15 @@ export function useExamFormTemplate(examId: string | undefined, tenantId: string
     queryFn: async () => {
       if (!examId || !tenantId) throw new Error('Exam ID and Tenant ID are required')
       const response = await apiGetWithTenant(`/exams/${examId}/form-template`, tenantId)
-      return FormTemplateSchema.parse(response)
+      if (!response) {
+        return null
+      }
+      try {
+        return FormTemplateSchema.parse(response)
+      } catch (parseError: any) {
+        console.error('Failed to parse form template:', parseError, response)
+        return null
+      }
     },
     enabled: !!examId && !!tenantId,
   })
@@ -2008,14 +2024,20 @@ export function useCreateFormTemplate() {
 
   return useMutation({
     mutationFn: async (data: CreateFormTemplateRequest & { tenantId?: string }) => {
-      const { tenantId, ...requestData } = data
+      const { tenantId, examId, ...requestData } = data
       if (!tenantId) throw new Error('Tenant ID is required')
-      const response = await apiPostWithTenant('/form-templates', tenantId, requestData)
+      const url = examId 
+        ? `/form-templates?examId=${encodeURIComponent(examId)}`
+        : '/form-templates'
+      const response = await apiPostWithTenant(url, tenantId, requestData)
       return FormTemplateSchema.parse(response)
     },
     onSuccess: (_, variables) => {
       if (variables.tenantId) {
         queryClient.invalidateQueries({ queryKey: formTemplateQueryKeys.list(variables.tenantId) })
+        if (variables.examId) {
+          queryClient.invalidateQueries({ queryKey: formTemplateQueryKeys.examTemplate(variables.examId, variables.tenantId) })
+        }
       }
     },
   })
@@ -2077,6 +2099,7 @@ export interface BatchUpdateFormTemplateRequest {
   templateName?: string
   description?: string
   fields: BatchFieldRequest[]
+  examId?: string
 }
 
 /**
@@ -2088,9 +2111,13 @@ export function useBatchUpdateFormTemplate() {
 
   return useMutation({
     mutationFn: async (data: BatchUpdateFormTemplateRequest & { templateId: string; tenantId?: string }) => {
-      const { templateId, tenantId, ...requestData } = data
+      const { templateId, tenantId, examId, ...requestData } = data
       if (!tenantId) throw new Error('Tenant ID is required')
-      const response = await apiPutWithTenant(`/form-templates/${templateId}/batch`, tenantId, requestData)
+      // Pass examId as query param so backend knows which exam to update
+      const url = examId 
+        ? `/form-templates/${templateId}/batch?examId=${encodeURIComponent(examId)}`
+        : `/form-templates/${templateId}/batch`
+      const response = await apiPutWithTenant(url, tenantId, requestData)
       return FormTemplateSchema.parse(response)
     },
     onSuccess: (data, variables) => {
@@ -2109,16 +2136,20 @@ export function usePublishFormTemplate() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (data: { templateId: string; tenantId?: string }) => {
-      const { templateId, tenantId } = data
+    mutationFn: async (data: { templateId: string; tenantId?: string; examId?: string }) => {
+      const { templateId, tenantId, examId } = data
       if (!tenantId) throw new Error('Tenant ID is required')
-      const response = await apiPostWithTenant(`/form-templates/${templateId}/publish`, tenantId, {})
+      const url = examId 
+        ? `/form-templates/${templateId}/publish?examId=${encodeURIComponent(examId)}`
+        : `/form-templates/${templateId}/publish`
+      const response = await apiPostWithTenant(url, tenantId, {})
       return FormTemplateSchema.parse(response)
     },
     onSuccess: (data, variables) => {
       if (variables.tenantId) {
         queryClient.invalidateQueries({ queryKey: formTemplateQueryKeys.detail(variables.templateId, variables.tenantId) })
         queryClient.invalidateQueries({ queryKey: formTemplateQueryKeys.list(variables.tenantId) })
+        queryClient.invalidateQueries({ queryKey: formTemplateQueryKeys.examTemplate(variables.examId || '', variables.tenantId) })
       }
     },
   })

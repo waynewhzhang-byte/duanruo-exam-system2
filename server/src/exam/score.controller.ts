@@ -1,0 +1,107 @@
+import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Request, ParseUUIDPipe } from '@nestjs/common';
+import { ApiResult } from '../common/dto/api-result.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { TenantGuard } from '../auth/tenant.guard';
+import { Permissions } from '../auth/permissions.decorator';
+import { ScoreService } from './score.service';
+import { RecordScoreDto, BatchImportDto, UpdateInterviewResultDto } from './dto/score.dto';
+
+interface AuthenticatedRequest {
+  user: {
+    userId: string;
+    tenantId?: string;
+    roles?: string[];
+  };
+}
+
+@Controller('scores')
+@UseGuards(JwtAuthGuard, TenantGuard, PermissionsGuard)
+export class ScoreController {
+  constructor(private readonly scoreService: ScoreService) {}
+
+  @Get('application/:applicationId')
+  @Permissions('exam:view')
+  async getScoresByApplication(
+    @Param('applicationId', ParseUUIDPipe) applicationId: string,
+  ) {
+    const scores = await this.scoreService.getScoresByApplication(applicationId);
+    return ApiResult.ok(scores);
+  }
+
+  @Post('record')
+  @Permissions('exam:edit')
+  async recordScore(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: RecordScoreDto,
+  ) {
+    const score = await this.scoreService.recordScore(req.user.userId, dto);
+    return ApiResult.ok(score, '成绩录入成功');
+  }
+
+  @Post('batch-import')
+  @Permissions('exam:edit')
+  async batchImport(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: BatchImportDto,
+  ) {
+    const result = await this.scoreService.batchImportScores(
+      req.user.userId,
+      dto.examId,
+      dto.scores,
+    );
+    return ApiResult.ok(result, '成绩导入完成');
+  }
+
+  @Post('calculate-eligibility/:examId')
+  @Permissions('exam:edit')
+  async calculateEligibility(
+    @Param('examId', ParseUUIDPipe) examId: string,
+    @Query('passScore') passScore?: string,
+  ) {
+    const result = await this.scoreService.batchCalculateEligibility(
+      examId,
+      passScore ? parseFloat(passScore) : undefined,
+    );
+    return ApiResult.ok(result, '面试资格计算完成');
+  }
+
+  @Post('interview-result')
+  @Permissions('exam:edit')
+  async updateInterviewResult(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: UpdateInterviewResultDto,
+  ) {
+    const result = await this.scoreService.updateInterviewResult(req.user.userId, dto);
+    return ApiResult.ok(result, '面试结果更新成功');
+  }
+
+  @Get('statistics/:examId')
+  @Permissions('exam:view')
+  async getStatistics(
+    @Param('examId', ParseUUIDPipe) examId: string,
+  ) {
+    const stats = await this.scoreService.getStatistics(examId);
+    return ApiResult.ok(stats);
+  }
+
+  @Get('export/:examId')
+  @Permissions('exam:view')
+  async exportScores(
+    @Param('examId', ParseUUIDPipe) examId: string,
+  ) {
+    const data = await this.scoreService.exportScores(examId);
+    return ApiResult.ok(data);
+  }
+
+  @Delete(':scoreId')
+  @Permissions('exam:edit')
+  async deleteScore(
+    @Param('scoreId', ParseUUIDPipe) scoreId: string,
+  ) {
+    await this.scoreService['prisma'].examScore.delete({
+      where: { id: scoreId },
+    });
+    return ApiResult.ok(null, '成绩删除成功');
+  }
+}

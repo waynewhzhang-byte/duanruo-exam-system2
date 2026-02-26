@@ -2,14 +2,14 @@ export class ApiResult<T> {
   success: boolean;
   message: string;
   data?: T;
-  errorCode?: string;
+  code?: string;
   timestamp: string;
 
-  constructor(success: boolean, message: string, data?: T, errorCode?: string) {
+  constructor(success: boolean, message: string, data?: T, code?: string) {
     this.success = success;
     this.message = message;
     this.data = data;
-    this.errorCode = errorCode;
+    this.code = code;
     this.timestamp = new Date().toISOString();
   }
 
@@ -17,7 +17,7 @@ export class ApiResult<T> {
     return new ApiResult(true, message, data);
   }
 
-  static fail<T = never>(message: string, errorCode?: string): ApiResult<T> {
-    return new ApiResult<T>(false, message, undefined, errorCode);
+  static fail<T = never>(message: string, code?: string): ApiResult<T> {
+    return new ApiResult<T>(false, message, undefined, code);
   }
 }

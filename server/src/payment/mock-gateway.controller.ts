@@ -8,7 +8,7 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { MockGatewayService } from './mock-gateway.service';
 import { ConfigService } from '@nestjs/config';
 

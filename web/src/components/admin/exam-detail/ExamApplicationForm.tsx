@@ -71,13 +71,7 @@ export default function ExamApplicationForm({ examId }: Readonly<ExamApplication
       const newTemplate = await createFormTemplate.mutateAsync({
         templateName,
         description: '报名表单模板',
-        tenantId: tenant.id,
-      })
-
-      // Assign to exam
-      await assignFormTemplate.mutateAsync({
-        examId,
-        templateId: newTemplate.id,
+        examId, // Pass examId so backend saves directly to exam
         tenantId: tenant.id,
       })
 
@@ -156,6 +150,7 @@ export default function ExamApplicationForm({ examId }: Readonly<ExamApplication
         templateName: template.name,
         description: template.description,
         fields,
+        examId, // Pass examId so backend knows which exam to update
         tenantId: tenant.id,
       })
 
@@ -175,6 +170,7 @@ export default function ExamApplicationForm({ examId }: Readonly<ExamApplication
     try {
       await publishFormTemplate.mutateAsync({
         templateId: formTemplate.id,
+        examId, // Pass examId so backend knows which exam to update
         tenantId: tenant.id,
       })
 

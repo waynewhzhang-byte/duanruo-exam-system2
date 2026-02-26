@@ -52,7 +52,7 @@ export default function RoomManagement({ venueId, venueName, onClose }: RoomMana
     queryFn: async () => {
       if (!tenant?.id) throw new Error('Tenant ID is required')
       return apiGetWithTenant<{ items: Room[], total: number, totalCapacity: number }>(
-        `/venues/${venueId}/rooms`,
+        `/seating/venues/${venueId}/rooms`,
         tenant.id
       )
     },
@@ -66,7 +66,7 @@ export default function RoomManagement({ venueId, venueName, onClose }: RoomMana
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       if (!tenant?.id) throw new Error('Tenant ID is required')
-      return apiPostWithTenant(`/venues/${venueId}/rooms`, tenant.id, data)
+      return apiPostWithTenant(`/seating/venues/${venueId}/rooms`, tenant.id, data)
     },
     onSuccess: () => {
       toast.success('教室创建成功')

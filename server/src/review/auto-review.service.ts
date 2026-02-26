@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -79,7 +80,7 @@ export class AutoReviewService {
   private readonly logger = new Logger(AutoReviewService.name);
 
   // 学历等级映射
-  private readonly EDUCATION_LEVELS = {
+  private readonly EDUCATION_LEVELS: Record<string, number> = {
     小学: 1,
     初中: 2,
     高中: 3,
@@ -215,7 +216,7 @@ export class AutoReviewService {
           metadata: {
             autoReviewResult: result,
             timestamp: new Date().toISOString(),
-          },
+          } as unknown as Prisma.InputJsonValue,
         },
       });
 

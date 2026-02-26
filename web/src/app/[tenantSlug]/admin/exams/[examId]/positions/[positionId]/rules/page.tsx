@@ -47,7 +47,7 @@ import {
 
 export default function PositionRulesPage() {
   return (
-    <RouteGuard roles={['TENANT_ADMIN', 'EXAM_ADMIN']} permissions={[PermissionCodes.EXAM_FORM_CONFIG]}>
+    <RouteGuard roles={['TENANT_ADMIN', 'EXAM_ADMIN']} permissions={[PermissionCodes.EXAM_EDIT]}>
       <PositionRulesContent />
     </RouteGuard>
   )
@@ -236,7 +236,13 @@ function PositionRulesEditor({
   onUpdateRule,
   onDeleteRule,
 }: PositionRulesEditorProps) {
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false)
   const selectedRule = selectedRuleIndex !== null ? rules[selectedRuleIndex] : null
+
+  const handleAddRule = (template?: Partial<Rule>) => {
+    onAddRule(template)
+    setIsTemplateDialogOpen(false)
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -246,7 +252,7 @@ function PositionRulesEditor({
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">规则列表</CardTitle>
-              <Dialog>
+              <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm">
                     <Plus className="h-4 w-4 mr-1" />
@@ -265,7 +271,7 @@ function PositionRulesEditor({
                       <Button
                         variant="outline"
                         className="w-full justify-start h-auto p-4"
-                        onClick={() => onAddRule()}
+                        onClick={() => handleAddRule()}
                       >
                         <div className="text-left">
                           <div className="font-medium">空白规则</div>
@@ -280,7 +286,7 @@ function PositionRulesEditor({
                           key={key}
                           variant="outline"
                           className="w-full justify-start h-auto p-4"
-                          onClick={() => onAddRule(template)}
+                          onClick={() => handleAddRule(template)}
                         >
                           <div className="text-left">
                             <div className="font-medium">{template.name}</div>

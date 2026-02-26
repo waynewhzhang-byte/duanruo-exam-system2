@@ -45,8 +45,14 @@ interface Exam {
 interface Subject {
   id: string
   name: string
-  code: string
-  totalScore: number
+  type: string
+  maxScore: number
+  passingScore: number
+  durationMinutes?: number
+  weight?: number
+  ordering?: number
+  positionId?: string
+  positionTitle?: string
 }
 
 interface Application {
@@ -523,7 +529,7 @@ export default function ScoresPage({ params }: ScoresPageProps) {
                     <SelectContent>
                       {subjects?.map((subject) => (
                         <SelectItem key={subject.id} value={subject.id}>
-                          {subject.name} (总分: {subject.totalScore})
+                          {subject.name} (总分: {subject.maxScore})
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -1,21 +1,12 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useContext } from 'react'
 import { UseFormReturn, FieldPath, FieldValues } from 'react-hook-form'
 import { Upload, X, File, CheckCircle, AlertCircle, Eye, Download } from 'lucide-react'
-import { apiPostWithTenant } from '@/lib/api'
+import { apiPostWithTenant, apiGetWithTenant } from '@/lib/api'
 import { FormField, FormItem, FormLabel, FormMessage } from './form'
-
-// Safe useTenant hook that doesn't throw if outside TenantProvider
-function useTenantSafe() {
-  try {
-    // Dynamic import to avoid throwing when TenantContext is not available
-    const { useTenant } = require('@/contexts/TenantContext')
-    return useTenant()
-  } catch {
-    return { tenant: null }
-  }
-}
+import { TenantContext } from '@/contexts/TenantContext'
+import Image from 'next/image'
 
 interface FileInfo {
   id: string
@@ -63,10 +54,12 @@ export default function FormFileUpload<T extends FieldValues>({
 }: FormFileUploadProps<T>) {
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewFileName, setPreviewFileName] = useState<string>('')
 
   // Try to get tenant from context, fallback to prop
-  const { tenant } = useTenantSafe()
-  const effectiveTenantId = propTenantId || tenant?.id
+  const tenantContext = useContext(TenantContext)
+  const effectiveTenantId = propTenantId || tenantContext?.tenant?.id
 
   const uploadFile = useCallback(async (file: File, uploadId: string) => {
     try {
@@ -229,17 +222,35 @@ export default function FormFileUpload<T extends FieldValues>({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  const handlePreview = (fileId: string) => {
-    console.log('Preview file:', fileId)
-    // TODO: Implement file preview
+  const handlePreview = async (fileId: string, fileName: string) => {
+    if (!effectiveTenantId) return
+    try {
+      const resp = await apiGetWithTenant<{ url: string }>(
+        `/files/${fileId}/download-url`,
+        effectiveTenantId,
+      )
+      setPreviewFileName(fileName)
+      setPreviewUrl(resp.url)
+    } catch {
+      // ignore
+    }
   }
 
-  const handleDownload = (fileId: string) => {
-    console.log('Download file:', fileId)
-    // TODO: Implement file download
+  const handleDownload = async (fileId: string) => {
+    if (!effectiveTenantId) return
+    try {
+      const resp = await apiGetWithTenant<{ url: string }>(
+        `/files/${fileId}/download-url`,
+        effectiveTenantId,
+      )
+      window.open(resp.url, '_blank')
+    } catch {
+      // ignore
+    }
   }
 
   return (
+    <>
     <FormField
       control={form.control}
       name={name}
@@ -316,7 +327,7 @@ export default function FormFileUpload<T extends FieldValues>({
                       <div className="flex items-center space-x-1">
                         <button
                           type="button"
-                          onClick={() => handlePreview(file.id)}
+                          onClick={() => handlePreview(file.id, file.fileName)}
                           className="p-1 text-gray-400 hover:text-gray-600"
                           title="预览"
                         >
@@ -404,5 +415,50 @@ export default function FormFileUpload<T extends FieldValues>({
         )
       }}
     />
+
+    {/* File preview modal */}
+    {previewUrl && (
+      <div
+        className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center"
+        onClick={() => setPreviewUrl(null)}
+      >
+        <div
+          className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 flex flex-col"
+          style={{ height: '90vh' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
+            <span className="font-medium text-gray-900 truncate max-w-xs">{previewFileName}</span>
+            <button
+              type="button"
+              onClick={() => setPreviewUrl(null)}
+              className="text-gray-400 hover:text-gray-600 ml-4"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          {/\.(png|jpg|jpeg|gif|bmp|webp)$/i.test(previewFileName) ? (
+            <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
+              <div className="relative w-full h-full flex items-center justify-center">
+                <Image
+                  src={previewUrl ?? ''}
+                  alt={previewFileName}
+                  className="max-w-full max-h-full object-contain"
+                  fill
+                  unoptimized
+                />
+              </div>
+            </div>
+          ) : (
+            <iframe
+              src={previewUrl ?? ''}
+              className="flex-1 w-full border-0"
+              title={previewFileName}
+            />
+          )}
+        </div>
+      </div>
+    )}
+  </>
   )
 }

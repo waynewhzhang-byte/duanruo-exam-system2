@@ -227,4 +227,289 @@ export class SeatingService {
       assignedAt: a.createdAt,
     }));
   }
+
+  /**
+   * List all venues
+   */
+  async listVenues(examId?: string) {
+    const where = examId ? { examId } : {};
+    const venues = await this.client.venue.findMany({
+      where,
+      include: {
+        rooms: {
+          orderBy: { code: 'asc' },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    return venues.map((v) => ({
+      id: v.id,
+      name: v.name,
+      capacity: v.capacity,
+      examId: v.examId,
+      rooms: v.rooms.map((r) => ({
+        id: r.id,
+        name: r.name,
+        code: r.code,
+        capacity: r.capacity,
+        floor: r.floor,
+      })),
+    }));
+  }
+
+  /**
+   * Get a single venue by ID
+   */
+  async getVenue(id: string) {
+    const venue = await this.client.venue.findUnique({
+      where: { id },
+      include: {
+        rooms: {
+          orderBy: { code: 'asc' },
+        },
+      },
+    });
+
+    if (!venue) {
+      throw new NotFoundException(`Venue not found: ${id}`);
+    }
+
+    return {
+      id: venue.id,
+      name: venue.name,
+      capacity: venue.capacity,
+      examId: venue.examId,
+      seatMapJson: venue.seatMapJson,
+      rooms: venue.rooms.map((r) => ({
+        id: r.id,
+        name: r.name,
+        code: r.code,
+        capacity: r.capacity,
+        floor: r.floor,
+      })),
+    };
+  }
+
+  /**
+   * Create a new venue
+   */
+  async createVenue(data: {
+    name: string;
+    code?: string;
+    capacity: number;
+    examId: string;
+    rooms?: Array<{
+      name: string;
+      code: string;
+      capacity: number;
+      floor?: number;
+    }>;
+  }) {
+    const { name, capacity, examId, rooms } = data;
+
+    // Verify exam exists
+    const exam = await this.client.exam.findUnique({
+      where: { id: examId },
+    });
+
+    if (!exam) {
+      throw new NotFoundException(`Exam not found: ${examId}`);
+    }
+
+    // Create venue with rooms
+    const venue = await this.client.venue.create({
+      data: {
+        name,
+        capacity,
+        examId,
+        rooms: rooms
+          ? {
+              create: rooms.map((r) => ({
+                name: r.name,
+                code: r.code,
+                capacity: r.capacity,
+                floor: r.floor,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        rooms: true,
+      },
+    });
+
+    return {
+      id: venue.id,
+      name: venue.name,
+      capacity: venue.capacity,
+      examId: venue.examId,
+      rooms: venue.rooms.map((r) => ({
+        id: r.id,
+        name: r.name,
+        code: r.code,
+        capacity: r.capacity,
+        floor: r.floor,
+      })),
+    };
+  }
+
+  /**
+   * Manually assign a seat to an application
+   */
+  async assignSeat(
+    applicationId: string,
+    venueId: string,
+    seatNo: number,
+    roomId?: string,
+  ) {
+    const application = await this.client.application.findUnique({
+      where: { id: applicationId },
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    const venue = await this.client.venue.findUnique({
+      where: { id: venueId },
+      include: { rooms: true },
+    });
+
+    if (!venue) {
+      throw new NotFoundException('Venue not found');
+    }
+
+    const actualRoomId = roomId || venue.rooms[0]?.id;
+    if (!actualRoomId) {
+      throw new BadRequestException('No room available in this venue');
+    }
+
+    const seatLabel = `${venue.name}--${actualRoomId}--${seatNo}`;
+
+    const assignment = await this.client.seatAssignment.upsert({
+      where: { applicationId },
+      create: {
+        id: uuidv4(),
+        examId: application.examId,
+        positionId: application.positionId,
+        applicationId,
+        venueId,
+        roomId: actualRoomId,
+        seatNo,
+        seatLabel,
+      },
+      update: {
+        venueId,
+        roomId: actualRoomId,
+        seatNo,
+        seatLabel,
+      },
+    });
+
+    return assignment;
+  }
+
+  /**
+   * List rooms for a venue
+   */
+  async listRooms(venueId: string) {
+    const rooms = await this.client.room.findMany({
+      where: { venueId },
+      orderBy: { code: 'asc' },
+    });
+
+    return rooms.map((r) => ({
+      roomId: r.id,
+      venueId: r.venueId,
+      name: r.name,
+      code: r.code,
+      capacity: r.capacity,
+      floor: r.floor,
+      description: null,
+    }));
+  }
+
+  /**
+   * Create a room
+   */
+  async createRoom(venueId: string, data: { name: string; code: string; capacity: number; floor?: number; description?: string }) {
+    const venue = await this.client.venue.findUnique({
+      where: { id: venueId },
+    });
+
+    if (!venue) {
+      throw new NotFoundException(`Venue not found: ${venueId}`);
+    }
+
+    const room = await this.client.room.create({
+      data: {
+        venueId,
+        name: data.name,
+        code: data.code,
+        capacity: data.capacity,
+        floor: data.floor,
+      },
+    });
+
+    return {
+      roomId: room.id,
+      venueId: room.venueId,
+      name: room.name,
+      code: room.code,
+      capacity: room.capacity,
+      floor: room.floor,
+      description: null,
+    };
+  }
+
+  /**
+   * Update a room
+   */
+  async updateRoom(roomId: string, data: { name?: string; code?: string; capacity?: number; floor?: number; description?: string }) {
+    const room = await this.client.room.findUnique({
+      where: { id: roomId },
+    });
+
+    if (!room) {
+      throw new NotFoundException(`Room not found: ${roomId}`);
+    }
+
+    const updated = await this.client.room.update({
+      where: { id: roomId },
+      data: {
+        name: data.name,
+        code: data.code,
+        capacity: data.capacity,
+        floor: data.floor,
+      },
+    });
+
+    return {
+      roomId: updated.id,
+      venueId: updated.venueId,
+      name: updated.name,
+      code: updated.code,
+      capacity: updated.capacity,
+      floor: updated.floor,
+      description: null,
+    };
+  }
+
+  /**
+   * Delete a room
+   */
+  async deleteRoom(roomId: string) {
+    const room = await this.client.room.findUnique({
+      where: { id: roomId },
+    });
+
+    if (!room) {
+      throw new NotFoundException(`Room not found: ${roomId}`);
+    }
+
+    await this.client.room.delete({
+      where: { id: roomId },
+    });
+  }
 }

@@ -17,10 +17,11 @@ interface EditPositionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   position: any
+  tenantId: string
   onSuccess: () => void
 }
 
-export default function EditPositionDialog({ open, onOpenChange, position, onSuccess }: EditPositionDialogProps) {
+export default function EditPositionDialog({ open, onOpenChange, position, tenantId, onSuccess }: EditPositionDialogProps) {
   const updateMutation = useUpdatePosition()
 
   const {
@@ -50,7 +51,7 @@ export default function EditPositionDialog({ open, onOpenChange, position, onSuc
 
   const onSubmit = async (data: UpdatePositionRequestType) => {
     try {
-      await updateMutation.mutateAsync({ id: position.id, data })
+      await updateMutation.mutateAsync({ id: position.id, data, tenantId })
       toast.success('岗位更新成功')
       onSuccess()
     } catch (error: any) {

@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -114,5 +115,29 @@ export class FileController {
     };
 
     return ApiResult.ok(response);
+  }
+
+  @Get(':id/preview-url')
+  @Permissions('file:view')
+  async getPreviewUrl(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const tenantId =
+      req.user.tenantId || (req.headers['x-tenant-id'] as string);
+    const result = await this.fileService.getPreviewUrl(tenantId, id);
+    return ApiResult.ok(result);
+  }
+
+  @Delete(':id')
+  @Permissions('file:delete')
+  async deleteFile(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const tenantId =
+      req.user.tenantId || (req.headers['x-tenant-id'] as string);
+    await this.fileService.deleteFile(tenantId, id);
+    return ApiResult.ok(null, '文件删除成功');
   }
 }

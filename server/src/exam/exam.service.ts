@@ -149,6 +149,27 @@ export class ExamService {
     return this.mapToResponse(updated);
   }
 
+  async updateFormTemplate(examId: string, templateId: string): Promise<void> {
+    const exam = await this.client.exam.findUnique({ where: { id: examId } });
+    if (!exam) throw new NotFoundException('Exam not found');
+    
+    const currentFormTemplate = (exam as any).formTemplate as Record<string, any> || {};
+    await this.client.exam.update({
+      where: { id: examId },
+      data: { formTemplate: { ...currentFormTemplate, templateId } } as any,
+    });
+  }
+
+  async updateFormTemplateData(examId: string, formTemplateData: Record<string, any>): Promise<void> {
+    const exam = await this.client.exam.findUnique({ where: { id: examId } });
+    if (!exam) throw new NotFoundException('Exam not found');
+    
+    await this.client.exam.update({
+      where: { id: examId },
+      data: { formTemplate: formTemplateData } as any,
+    });
+  }
+
   private mapToResponse(exam: Exam): ExamResponse {
     return {
       id: exam.id,

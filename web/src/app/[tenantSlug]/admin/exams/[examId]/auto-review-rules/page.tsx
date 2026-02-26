@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/loading'
 import { ArrowLeft, Save, Plus, Trash2, Play, AlertCircle, Check } from 'lucide-react'
 import { useExamAutoReviewRules, useUpdateExamAutoReviewRules } from '@/lib/api-hooks'
+import { useTenant } from '@/hooks/useTenant'
 import { toast } from 'sonner'
 import { PermissionCodes } from '@/lib/permissions-unified'
 import {
@@ -40,7 +41,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 
 export default function AutoReviewRulesPage() {
   return (
-    <RouteGuard roles={['TENANT_ADMIN', 'EXAM_ADMIN']} permissions={[PermissionCodes.EXAM_FORM_CONFIG]}>
+    <RouteGuard roles={['TENANT_ADMIN', 'EXAM_ADMIN']} permissions={[PermissionCodes.EXAM_EDIT]}>
       <AutoReviewRulesContent />
     </RouteGuard>
   )
@@ -51,12 +52,14 @@ function AutoReviewRulesContent() {
   const params = useParams()
   const examId = params.examId as string
   const tenantSlug = params.tenantSlug as string
+  const { tenant } = useTenant()
 
-  const { data: rulesData, isLoading } = useExamAutoReviewRules(examId)
+  const { data: rulesData, isLoading } = useExamAutoReviewRules(examId, tenant?.id)
   const updateRules = useUpdateExamAutoReviewRules()
 
   const [rules, setRules] = useState<Rule[]>([])
   const [selectedRuleIndex, setSelectedRuleIndex] = useState<number | null>(null)
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false)
 
   // Initialize rules from API
   useEffect(() => {
@@ -85,6 +88,7 @@ function AutoReviewRulesContent() {
 
     setRules([...rules, newRule])
     setSelectedRuleIndex(rules.length)
+    setIsTemplateDialogOpen(false)
   }
 
   const handleUpdateRule = (index: number, updatedRule: Partial<Rule>) => {
@@ -101,10 +105,15 @@ function AutoReviewRulesContent() {
   }
 
   const handleSave = async () => {
+    if (!tenant?.id) {
+      toast.error('租户信息不可用')
+      return
+    }
     try {
       await updateRules.mutateAsync({
         examId,
         rules: { rules },
+        tenantId: tenant.id,
       })
       toast.success('规则保存成功')
     } catch (error: any) {
@@ -154,7 +163,7 @@ function AutoReviewRulesContent() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">规则列表</CardTitle>
-                <Dialog>
+                <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm">
                       <Plus className="h-4 w-4 mr-1" />

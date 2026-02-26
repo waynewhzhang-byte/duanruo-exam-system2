@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, CheckCircle, XCircle, FileText, Download } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, FileText, Download, Eye, Check, X } from 'lucide-react'
 import { apiGet, apiPost } from '@/lib/api'
+import { downloadFile } from '@/lib/helpers'
 
 interface Application {
   id: string
@@ -25,6 +26,7 @@ interface Application {
   formData: Record<string, any>
   attachments: Attachment[]
   reviewHistory: ReviewRecord[]
+  fieldReviews?: Record<string, { status: 'APPROVED' | 'REJECTED' | 'PENDING'; comment?: string }>
 }
 
 interface Attachment {
@@ -45,6 +47,60 @@ interface ReviewRecord {
   reviewedAt: string
 }
 
+function AttachmentPreviewModal({ 
+  attachment, 
+  onClose 
+}: { 
+  attachment: Attachment
+  onClose: () => void 
+}) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchPreview = async () => {
+      try {
+        const res = await apiGet<{ previewUrl: string }>(`/files/${attachment.id}/preview-url`)
+        setPreviewUrl(res.previewUrl)
+      } catch (e) {
+        console.error('Preview failed:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchPreview()
+  }, [attachment.id])
+
+  const isImage = attachment.fileType.startsWith('image/')
+  const isPdf = attachment.fileType === 'application/pdf'
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-4 border-b">
+          <h3 className="font-semibold">{attachment.fileName}</h3>
+          <Button variant="ghost" size="sm" onClick={onClose}>✕</Button>
+        </div>
+        <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
+          {loading && <div className="flex justify-center py-8"><Skeleton className="h-64 w-full" /></div>}
+          {!loading && previewUrl && (
+            <>
+              {isImage && <img src={previewUrl} alt={attachment.fileName} className="max-w-full h-auto" />}
+              {isPdf && <iframe src={previewUrl} className="w-full h-[70vh]" />}
+              {!isImage && !isPdf && (
+                <div className="text-center py-8">
+                  <p className="mb-4">该文件类型不支持预览</p>
+                  <Button onClick={() => downloadFile(previewUrl, attachment.fileName)}>下载文件</Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ReviewDetailPage() {
   const router = useRouter()
   const params = useParams()
@@ -56,6 +112,7 @@ export default function ReviewDetailPage() {
   const [showApproveDialog, setShowApproveDialog] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(null)
 
   useEffect(() => {
     fetchApplicationDetail()
@@ -71,6 +128,16 @@ export default function ReviewDetailPage() {
       alert('获取报名详情失败，请重试')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleDownload = async (attachment: Attachment) => {
+    try {
+      const res = await apiGet<{ downloadUrl: string }>(`/files/${attachment.id}/download-url`)
+      downloadFile(res.downloadUrl, attachment.fileName)
+    } catch (error) {
+      console.error('Download failed:', error)
+      alert('下载失败，请重试')
     }
   }
 
@@ -238,7 +305,7 @@ export default function ReviewDetailPage() {
       {/* Attachments */}
       <Card>
         <CardHeader>
-          <CardTitle>附件材料</CardTitle>
+          <CardTitle>附件材料 ({application.attachments.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -256,10 +323,16 @@ export default function ReviewDetailPage() {
                     </p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  下载
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setPreviewAttachment(attachment)}>
+                    <Eye className="h-4 w-4 mr-1" />
+                    预览
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDownload(attachment)}>
+                    <Download className="h-4 w-4 mr-1" />
+                    下载
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -361,6 +434,14 @@ export default function ReviewDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Attachment Preview Modal */}
+      {previewAttachment && (
+        <AttachmentPreviewModal
+          attachment={previewAttachment}
+          onClose={() => setPreviewAttachment(null)}
+        />
+      )}
     </div>
   )
 }

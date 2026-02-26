@@ -19,6 +19,14 @@ export class StatisticsController {
     return ApiResult.ok(data);
   }
 
+  @Get('tenant/me')
+  @UseGuards(TenantGuard)
+  @Permissions('statistics:tenant:view')
+  async getCurrentTenantStatistics() {
+    const data = await this.statisticsService.getTenantStatistics();
+    return ApiResult.ok(data);
+  }
+
   @Get('applications')
   @UseGuards(TenantGuard)
   @Permissions('statistics:tenant:view')

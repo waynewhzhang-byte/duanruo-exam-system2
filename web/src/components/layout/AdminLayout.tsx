@@ -19,7 +19,9 @@ import {
   FileText,
   Plus,
   ShieldAlert,
-  ClipboardList
+  ClipboardList,
+  Bell,
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,6 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/loading';
 
@@ -191,10 +194,10 @@ export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps &
   // 显示加载状态
   if (isLoading || isAuthorized === null) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="flex items-center justify-center min-h-screen bg-slate-100">
         <div className="text-center">
           <Spinner size="lg" />
-          <p className="mt-4 text-gray-600">正在验证权限...</p>
+          <p className="mt-4 text-slate-600">正在验证权限...</p>
         </div>
       </div>
     );
@@ -203,11 +206,11 @@ export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps &
   // 显示未授权状态（在重定向发生前短暂显示）
   if (!isAuthorized) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="flex items-center justify-center min-h-screen bg-slate-100">
         <div className="text-center">
           <ShieldAlert className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-semibold text-gray-800 mb-2">访问被拒绝</h1>
-          <p className="text-gray-600">您没有权限访问管理后台，正在跳转...</p>
+          <h1 className="text-xl font-semibold text-slate-800 mb-2">访问被拒绝</h1>
+          <p className="text-slate-600">您没有权限访问管理后台，正在跳转...</p>
         </div>
       </div>
     );
@@ -249,9 +252,11 @@ export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps &
           <button
             onClick={() => toggleExpanded(item.label)}
             className={cn(
-              "w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors",
-              level === 0 ? "text-gray-700 hover:bg-gray-100" : "text-gray-600 hover:bg-gray-50",
-              isExpanded && "bg-gray-50"
+              "w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+              level === 0 
+                ? "text-slate-300 hover:bg-slate-700/50 hover:text-white" 
+                : "text-slate-400 hover:bg-slate-700/30 hover:text-slate-200",
+              isExpanded && "bg-slate-700/30"
             )}
           >
             <div className="flex items-center gap-3">
@@ -276,11 +281,11 @@ export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps &
         key={item.href}
         href={item.href!}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors mb-1",
+          "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 mb-1",
           active
-            ? "bg-primary text-primary-foreground"
-            : "text-gray-700 hover:bg-gray-100",
-          !sidebarOpen && "justify-center"
+            ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/25"
+            : "text-slate-300 hover:bg-slate-700/50 hover:text-white",
+          !sidebarOpen && "justify-center px-2"
         )}
       >
         <Icon className="h-5 w-5 flex-shrink-0" />
@@ -290,76 +295,118 @@ export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps &
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-slate-100">
       {/* Sidebar */}
       <aside
         className={cn(
-          "bg-white border-r transition-all duration-300 flex flex-col",
-          sidebarOpen ? "w-64" : "w-16"
+          "bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700 transition-all duration-300 flex flex-col",
+          sidebarOpen ? "w-64" : "w-20"
         )}
       >
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-700">
           {sidebarOpen && (
-            <h2 className="text-lg font-semibold text-gray-900">管理后台</h2>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center shadow-lg">
+                <Building className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-white tracking-wide">管理后台</span>
+                <span className="text-[10px] text-slate-400">企业版</span>
+              </div>
+            </div>
+          )}
+          {!sidebarOpen && (
+            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center shadow-lg mx-auto">
+              <Building className="w-5 h-5 text-white" />
+            </div>
           )}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="ml-auto"
+            className={cn(
+              "text-slate-400 hover:text-white hover:bg-slate-700",
+              !sidebarOpen && "mx-auto"
+            )}
           >
-            <Menu className="h-5 w-5" />
+            {sidebarOpen ? <ChevronRight className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-4">
+        <nav className="flex-1 overflow-y-auto p-3">
           {navigationItems.map(item => renderNavItem(item))}
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t">
+        <div className="p-4 border-t border-slate-700">
           {sidebarOpen ? (
-            <div className="text-xs text-gray-500 text-center">
-              考试报名管理系统 v1.0
+            <div className="text-center">
+              <div className="text-xs text-slate-500">端若数智考盟</div>
+              <div className="text-[10px] text-slate-600">v2.0 企业版</div>
             </div>
           ) : (
-            <div className="h-2"></div>
+            <div className="h-8"></div>
           )}
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto flex flex-col">
+      <main className="flex-1 overflow-hidden flex flex-col">
         {/* Top Header */}
-        <header className="bg-white border-b h-16 flex items-center justify-between px-6">
+        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold text-gray-900">
-              {pathname === '/admin' ? '管理首页' : ''}
-            </h1>
+            <h1 className="text-lg font-semibold text-slate-800">系统管理</h1>
+          </div>
+
+          {/* Search */}
+          <div className="hidden md:flex items-center">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input 
+                placeholder="搜索功能..." 
+                className="w-64 h-9 bg-slate-50 border-slate-200 pl-10 focus:border-blue-400 focus:ring-blue-100"
+              />
+            </div>
           </div>
 
           {/* User Menu */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Notifications */}
+            <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-700">
+              <Bell className="h-5 w-5" />
+            </Button>
+
             {currentUser && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    <span className="text-sm font-medium">{currentUser.username}</span>
-                    <ChevronDown className="h-4 w-4" />
+                  <Button variant="ghost" className="flex items-center gap-2 px-2 hover:bg-slate-50">
+                    <div className="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="text-sm font-medium text-slate-700 hidden md:inline">{currentUser.username}</span>
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium">{currentUser.username}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-slate-500">
                         {currentUser.roles?.join(', ') || '未知角色'}
                       </p>
                     </div>
                   </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>个人设置</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>系统设置</span>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
@@ -372,7 +419,7 @@ export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps &
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-auto bg-slate-100">
           <div className="container mx-auto p-6">
             {children}
           </div>
@@ -381,4 +428,3 @@ export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps &
     </div>
   );
 }
-
