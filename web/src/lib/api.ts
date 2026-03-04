@@ -141,11 +141,19 @@ export async function api<T>(
         )
       } else {
         // Backend error format: { success: false, error: { code, message }, ... }
-        const backendMessage = isJson
-          ? (data?.error?.message || data?.message || '')
-          : text
+        // NestJS validation pipe returns message as string[] for 400 errors
+        const extractMessage = (d: any): string => {
+          if (!d) return ''
+          // NestJS validation pipe returns message as string[]
+          if (Array.isArray(d.message)) return d.message.join('; ')
+          if (typeof d.message === 'string') return d.message
+          // Nested error object format
+          if (d.error?.message) return d.error.message
+          return ''
+        }
+        const backendMessage = isJson ? extractMessage(data) : text
         throw new APIError(
-          isJson ? (data?.error?.code || 'HTTP_ERROR') : 'HTTP_ERROR',
+          isJson ? (data?.error?.code || data?.error || 'HTTP_ERROR') : 'HTTP_ERROR',
           backendMessage || `HTTP ${response.status}: ${response.statusText}`,
           response.status
         )
