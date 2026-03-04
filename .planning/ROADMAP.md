@@ -28,7 +28,11 @@
   3. 提交含错误数据的表单时，页面显示后端返回的具体字段校验错误信息
   4. 在令牌过期后操作任意页面，浏览器自动跳转到登录页而非停留在报错状态
   5. 权限不足时（403），页面显示明确的"无权限"提示而非崩溃
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Fix X-Tenant-ID resolution (URL slug fallback) and 400 validation error message formatting
+- [ ] 01-02-PLAN.md — Add global 401 redirect + 403 toast to QueryProvider; verify response unwrapping
 
 ### Phase 2: Admin Backend
 **Goal**: 租户管理员可以在后台正常完成考试管理、审核列表查看、统计查看和场地管理的全部日常操作
@@ -82,7 +86,7 @@ Note: Phase 3 and Phase 5 both depend only on Phase 1, so they can be executed i
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. API Foundation | 0/TBD | Not started | - |
+| 1. API Foundation | 0/2 | In planning | - |
 | 2. Admin Backend | 0/TBD | Not started | - |
 | 3. Candidate Portal | 0/TBD | Not started | - |
 | 4. Reviewer Workflow | 0/TBD | Not started | - |
