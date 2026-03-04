@@ -19,10 +19,10 @@ interface Exam {
   code: string
   title: string
   description: string
-  registrationStartTime: string
-  registrationEndTime: string
-  examStartTime: string
-  examEndTime: string
+  registrationStart?: string
+  registrationEnd?: string
+  examStart?: string
+  examEnd?: string
   announcement: string
   status: string
 }
@@ -31,10 +31,10 @@ interface ExamFormData {
   code: string
   title: string
   description: string
-  registrationStartTime: string
-  registrationEndTime: string
-  examStartTime: string
-  examEndTime: string
+  registrationStart: string
+  registrationEnd: string
+  examStart: string
+  examEnd: string
   announcement: string
 }
 
@@ -49,10 +49,10 @@ export default function EditExamPage() {
     code: '',
     title: '',
     description: '',
-    registrationStartTime: '',
-    registrationEndTime: '',
-    examStartTime: '',
-    examEndTime: '',
+    registrationStart: '',
+    registrationEnd: '',
+    examStart: '',
+    examEnd: '',
     announcement: '',
   })
 
@@ -75,10 +75,10 @@ export default function EditExamPage() {
         code: exam.code,
         title: exam.title,
         description: exam.description || '',
-        registrationStartTime: exam.registrationStartTime?.replace(' ', 'T').substring(0, 16) || '',
-        registrationEndTime: exam.registrationEndTime?.replace(' ', 'T').substring(0, 16) || '',
-        examStartTime: exam.examStartTime?.replace(' ', 'T').substring(0, 16) || '',
-        examEndTime: exam.examEndTime?.replace(' ', 'T').substring(0, 16) || '',
+        registrationStart: exam.registrationStart?.replace(' ', 'T').substring(0, 16) || '',
+        registrationEnd: exam.registrationEnd?.replace(' ', 'T').substring(0, 16) || '',
+        examStart: exam.examStart?.replace(' ', 'T').substring(0, 16) || '',
+        examEnd: exam.examEnd?.replace(' ', 'T').substring(0, 16) || '',
         announcement: exam.announcement || '',
       })
     }
@@ -105,10 +105,10 @@ export default function EditExamPage() {
     const newErrors: Record<string, string> = {}
     if (!formData.code) newErrors.code = '考试代码不能为空'
     if (!formData.title) newErrors.title = '考试名称不能为空'
-    if (!formData.registrationStartTime) newErrors.registrationStartTime = '报名开始时间不能为空'
-    if (!formData.registrationEndTime) newErrors.registrationEndTime = '报名结束时间不能为空'
-    if (!formData.examStartTime) newErrors.examStartTime = '考试开始时间不能为空'
-    if (!formData.examEndTime) newErrors.examEndTime = '考试结束时间不能为空'
+    if (!formData.registrationStart) newErrors.registrationStart = '报名开始时间不能为空'
+    if (!formData.registrationEnd) newErrors.registrationEnd = '报名结束时间不能为空'
+    if (!formData.examStart) newErrors.examStart = '考试开始时间不能为空'
+    if (!formData.examEnd) newErrors.examEnd = '考试结束时间不能为空'
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
@@ -205,61 +205,61 @@ export default function EditExamPage() {
 
               {/* 报名开始时间 */}
               <div className="space-y-2">
-                <Label htmlFor="registrationStartTime">报名开始时间 *</Label>
+                <Label htmlFor="registrationStart">报名开始时间 *</Label>
                 <Input
-                  id="registrationStartTime"
+                  id="registrationStart"
                   type="datetime-local"
-                  value={formData.registrationStartTime}
-                  onChange={handleChange('registrationStartTime')}
-                  className={errors.registrationStartTime ? 'border-red-500' : ''}
+                  value={formData.registrationStart}
+                  onChange={handleChange('registrationStart')}
+                  className={errors.registrationStart ? 'border-red-500' : ''}
                 />
-                {errors.registrationStartTime && (
-                  <p className="text-sm text-red-500">{errors.registrationStartTime}</p>
+                {errors.registrationStart && (
+                  <p className="text-sm text-red-500">{errors.registrationStart}</p>
                 )}
               </div>
 
               {/* 报名结束时间 */}
               <div className="space-y-2">
-                <Label htmlFor="registrationEndTime">报名结束时间 *</Label>
+                <Label htmlFor="registrationEnd">报名结束时间 *</Label>
                 <Input
-                  id="registrationEndTime"
+                  id="registrationEnd"
                   type="datetime-local"
-                  value={formData.registrationEndTime}
-                  onChange={handleChange('registrationEndTime')}
-                  className={errors.registrationEndTime ? 'border-red-500' : ''}
+                  value={formData.registrationEnd}
+                  onChange={handleChange('registrationEnd')}
+                  className={errors.registrationEnd ? 'border-red-500' : ''}
                 />
-                {errors.registrationEndTime && (
-                  <p className="text-sm text-red-500">{errors.registrationEndTime}</p>
+                {errors.registrationEnd && (
+                  <p className="text-sm text-red-500">{errors.registrationEnd}</p>
                 )}
               </div>
 
               {/* 考试开始时间 */}
               <div className="space-y-2">
-                <Label htmlFor="examStartTime">考试开始时间 *</Label>
+                <Label htmlFor="examStart">考试开始时间 *</Label>
                 <Input
-                  id="examStartTime"
+                  id="examStart"
                   type="datetime-local"
-                  value={formData.examStartTime}
-                  onChange={handleChange('examStartTime')}
-                  className={errors.examStartTime ? 'border-red-500' : ''}
+                  value={formData.examStart}
+                  onChange={handleChange('examStart')}
+                  className={errors.examStart ? 'border-red-500' : ''}
                 />
-                {errors.examStartTime && (
-                  <p className="text-sm text-red-500">{errors.examStartTime}</p>
+                {errors.examStart && (
+                  <p className="text-sm text-red-500">{errors.examStart}</p>
                 )}
               </div>
 
               {/* 考试结束时间 */}
               <div className="space-y-2">
-                <Label htmlFor="examEndTime">考试结束时间 *</Label>
+                <Label htmlFor="examEnd">考试结束时间 *</Label>
                 <Input
-                  id="examEndTime"
+                  id="examEnd"
                   type="datetime-local"
-                  value={formData.examEndTime}
-                  onChange={handleChange('examEndTime')}
-                  className={errors.examEndTime ? 'border-red-500' : ''}
+                  value={formData.examEnd}
+                  onChange={handleChange('examEnd')}
+                  className={errors.examEnd ? 'border-red-500' : ''}
                 />
-                {errors.examEndTime && (
-                  <p className="text-sm text-red-500">{errors.examEndTime}</p>
+                {errors.examEnd && (
+                  <p className="text-sm text-red-500">{errors.examEnd}</p>
                 )}
               </div>
             </div>

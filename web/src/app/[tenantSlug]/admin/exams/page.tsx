@@ -43,8 +43,8 @@ type ExamsResponse = {
   content: Exam[]
   totalElements: number
   totalPages: number
-  size: number
-  number: number
+  pageSize: number
+  currentPage: number
 }
 
 export default function TenantAdminExamsPage() {
@@ -327,7 +327,7 @@ export default function TenantAdminExamsPage() {
           <CardTitle className="flex items-center justify-between">
             <span>考试列表</span>
             <div className="flex items-center gap-2 text-gray-600">
-              <span>共 {examsData?.content?.length || 0} 个考试</span>
+              <span>共 {examsData?.totalElements || 0} 个考试</span>
             </div>
           </CardTitle>
         </CardHeader>
@@ -516,7 +516,7 @@ export default function TenantAdminExamsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">总考试数</p>
-                <p className="text-2xl font-bold text-gray-900">{examsData?.content?.length || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{examsData?.totalElements || 0}</p>
               </div>
               <FileText className="h-8 w-8 text-blue-500" />
             </div>

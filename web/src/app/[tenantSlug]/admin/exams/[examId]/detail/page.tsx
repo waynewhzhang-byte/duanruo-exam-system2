@@ -31,10 +31,10 @@ interface Exam {
   title: string
   description: string
   status: string
-  registrationStartTime: string
-  registrationEndTime: string
-  examStartTime: string
-  examEndTime: string
+  registrationStart?: string
+  registrationEnd?: string
+  examStart?: string
+  examEnd?: string
 }
 
 export default function TenantExamDetailPage() {

@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { useUpdateExam, useUpdateExamAnnouncement, useOpenExam, useCloseExam } from '@/lib/api-hooks'
 import { useTenant } from '@/hooks/useTenant'
-import { CheckCircle, XCircle, Save } from 'lucide-react'
+import { CheckCircle, XCircle, Save, Wallet, Edit } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
 
 interface ExamBasicInfoProps {
   exam: any
@@ -23,7 +24,7 @@ export default function ExamBasicInfo({ exam, examId }: ExamBasicInfoProps) {
     title: exam.title || '',
     description: exam.description || '',
     code: exam.code || '',
-    urlSuffix: exam.urlSuffix || '',
+    urlSuffix: exam.slug || '',
     registrationStart: exam.registrationStart || '',
     registrationEnd: exam.registrationEnd || '',
     feeRequired: exam.feeRequired || false,
@@ -47,9 +48,9 @@ export default function ExamBasicInfo({ exam, examId }: ExamBasicInfoProps) {
       const requestData: Record<string, any> = {
         title: formData.title || undefined,
         description: formData.description || undefined,
-        slug: formData.urlSuffix || undefined, // 前端urlSuffix -> 后端slug
+        slug: formData.urlSuffix || undefined,
         feeRequired: formData.feeRequired,
-        feeAmount: formData.feeAmount || undefined,
+        feeAmount: formData.feeRequired ? (formData.feeAmount || 0) : 0,
       }
 
       // 只在有有效值时添加日期字段
@@ -180,61 +181,44 @@ export default function ExamBasicInfo({ exam, examId }: ExamBasicInfoProps) {
         </CardContent>
       </Card>
 
-      {/* 基本信息 */}
-      <Card>
+      <Card shadow-sm>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>基本信息</CardTitle>
-              <CardDescription>考试的基本信息和配置</CardDescription>
+              <CardDescription>考试的基本信息和报名收费配置</CardDescription>
             </div>
             {!isEditing && (
               <Button variant="outline" onClick={() => setIsEditing(true)}>
-                编辑
+                <Edit className="h-4 w-4 mr-2" />
+                编辑配置
               </Button>
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
               <Label htmlFor="title">考试标题 *</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 disabled={!isEditing}
+                placeholder="请输入考试名称"
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="code">考试代码 *</Label>
               <Input
                 id="code"
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                 disabled={!isEditing}
+                placeholder="例如: TECH-2026-01"
               />
             </div>
-            <div>
-              <Label htmlFor="urlSuffix">URL后缀</Label>
-              <Input
-                id="urlSuffix"
-                value={formData.urlSuffix}
-                onChange={(e) => setFormData({ ...formData, urlSuffix: e.target.value })}
-                disabled={!isEditing}
-              />
-            </div>
-            <div>
-              <Label htmlFor="feeAmount">报名费用（元）</Label>
-              <Input
-                id="feeAmount"
-                type="number"
-                value={formData.feeAmount}
-                onChange={(e) => setFormData({ ...formData, feeAmount: parseFloat(e.target.value) })}
-                disabled={!isEditing}
-              />
-            </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="registrationStart">报名开始时间</Label>
               <Input
                 id="registrationStart"
@@ -244,7 +228,7 @@ export default function ExamBasicInfo({ exam, examId }: ExamBasicInfoProps) {
                 disabled={!isEditing}
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="registrationEnd">报名结束时间</Label>
               <Input
                 id="registrationEnd"
@@ -255,21 +239,62 @@ export default function ExamBasicInfo({ exam, examId }: ExamBasicInfoProps) {
               />
             </div>
           </div>
-          <div>
+
+          <div className="pt-4 border-t">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-blue-600" />
+                <div className="space-y-0.5">
+                  <Label className="text-base">报名费设置</Label>
+                  <p className="text-sm text-muted-foreground">开启后，考生通过审核后需完成支付方可生成准考证</p>
+                </div>
+              </div>
+              <Switch 
+                checked={formData.feeRequired}
+                onCheckedChange={(checked) => setFormData({ ...formData, feeRequired: checked })}
+                disabled={!isEditing}
+              />
+            </div>
+            
+            {formData.feeRequired && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2">
+                <div className="space-y-2">
+                  <Label htmlFor="feeAmount">收费金额（人民币元）</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-muted-foreground">¥</span>
+                    <Input
+                      id="feeAmount"
+                      type="number"
+                      className="pl-7"
+                      value={formData.feeAmount}
+                      onChange={(e) => setFormData({ ...formData, feeAmount: parseFloat(e.target.value) || 0 })}
+                      disabled={!isEditing}
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2 pt-4 border-t">
             <Label htmlFor="description">考试描述</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               disabled={!isEditing}
-              rows={4}
+              rows={3}
+              placeholder="请输入考试的详细描述信息"
             />
           </div>
+
           {isEditing && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-4">
               <Button onClick={handleSaveBasicInfo} disabled={updateExamMutation.isPending}>
                 <Save className="h-4 w-4 mr-2" />
-                保存
+                保存基础信息
               </Button>
               <Button variant="outline" onClick={() => setIsEditing(false)}>
                 取消
