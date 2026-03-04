@@ -33,7 +33,8 @@ interface Exam {
   status: string
   registrationStart?: string
   registrationEnd?: string
-  examDate?: string
+  examStart?: string
+  examEnd?: string
   feeRequired: boolean
   feeAmount?: number
 }
@@ -391,7 +392,7 @@ export default function TenantAdminExamsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div>报名: {exam.registrationStart || '未设置'} ~ {exam.registrationEnd || '未设置'}</div>
-                        <div>考试: {exam.examDate || '未设置'}</div>
+                        <div>考试: {exam.examStart || '未设置'} ~ {exam.examEnd || '未设置'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {exam.feeRequired ? (
