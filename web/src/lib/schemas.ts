@@ -351,6 +351,8 @@ export const ExamResponse = z.object({
   announcement: z.string().nullable().optional(),
   registrationStart: DateTimeString.nullable().optional(),
   registrationEnd: DateTimeString.nullable().optional(),
+  examStart: DateTimeString.nullable().optional(),
+  examEnd: DateTimeString.nullable().optional(),
   feeRequired: z.boolean(),
   feeAmount: z.coerce.number().nullable().optional(),
   status: ExamStatus,
@@ -408,6 +410,8 @@ export const ExamUpdateRequest = z.object({
   announcement: z.string().optional(),
   registrationStart: DateTimeString.optional(),
   registrationEnd: DateTimeString.optional(),
+  examStart: DateTimeString.optional(),
+  examEnd: DateTimeString.optional(),
   feeRequired: z.boolean().optional(),
   feeAmount: z.number().optional(),
 })
