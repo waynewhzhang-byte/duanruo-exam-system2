@@ -13,7 +13,7 @@
 - [x] **ADMIN-04**: 初审/复审申请列表正确加载
 - [x] **ADMIN-05**: 审核操作（通过/拒绝）可正常执行并更新状态
 - [x] **ADMIN-06**: 统计报表页面数据正确展示
-- [ ] **ADMIN-07**: 场地/座位管理页面功能可用
+- [x] **ADMIN-07**: 场地/座位管理页面功能可用
 
 ### 候选人端（CAND）
 
@@ -75,7 +75,7 @@
 | ADMIN-04 | Phase 2 | Complete |
 | ADMIN-05 | Phase 2 | Complete |
 | ADMIN-06 | Phase 2 | Complete |
-| ADMIN-07 | Phase 2 | Pending |
+| ADMIN-07 | Phase 2 | Complete |
 | CAND-01 | Phase 3 | Pending |
 | CAND-02 | Phase 3 | Pending |
 | CAND-03 | Phase 3 | Pending |

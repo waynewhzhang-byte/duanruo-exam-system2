@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-05T17:55:09Z"
+last_updated: "2026-03-05T18:00:00Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** 候选人能完整完成报名→审核→缴费→准考证全流程，管理员能正常操作后台各功能模块
-**Current focus:** Phase 1 - API Foundation
+**Current focus:** Phase 2 - Admin Backend (Complete)
 
 ## Current Position
 
 Phase: 2 of 5 (Admin Backend)
 Plan: 4 of 4 in current phase
-Status: In progress
-Last activity: 2026-03-05 — Completed 02-01 (exam field name mismatches, pagination type fix, ExamBasicInfo slug fix)
+Status: Complete
+Last activity: 2026-03-05 — Completed 02-04 (venue page status badge fix, ExamStatus IN_PROGRESS added to Zod enum)
 
-Progress: [████░░░░░░] 40%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02-admin-backend P03 | 1 | 1 tasks | 1 files |
 | Phase 02-admin-backend P02 | 3 | 1 tasks | 1 files |
 | Phase 02-admin-backend P01 | 4 min | 2 tasks | 5 files |
+| Phase 02-admin-backend P04 | 3 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,7 @@ From 01-01 execution:
 - [Phase 02-admin-backend]: Batch review decisions use taskIds (QueueTask.id) not applicationIds; endpoint is /reviews/batch-decide
 - [Phase 02-admin-backend P01]: Backend consistently uses examStart/examEnd (not examStartTime/examEndTime); frontend field names aligned to backend
 - [Phase 02-admin-backend P01]: ExamsResponse type uses pageSize/currentPage matching backend PaginatedResponse; totalElements for accurate cross-page count
+- [Phase 02-admin-backend P04]: ExamStatus Zod enum must include IN_PROGRESS — backend uses DRAFT/OPEN/CLOSED/IN_PROGRESS/COMPLETED as actual status values
 
 ### Pending Todos
 
@@ -84,5 +86,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 02-01-PLAN.md (exam field name mismatches — examStart/examEnd schema, pagination type, ExamBasicInfo slug fix)
+Stopped at: Completed 02-04-PLAN.md (venue page status badge fix, ExamStatus IN_PROGRESS added to Zod enum)
 Resume file: None

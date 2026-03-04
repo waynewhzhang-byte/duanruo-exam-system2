@@ -11,7 +11,7 @@
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [ ] **Phase 1: API Foundation** - 修复前后端接口对接的横切问题，使所有 API 调用可靠工作
-- [ ] **Phase 2: Admin Backend** - 修复租户管理员后台全部核心功能模块
+- [x] **Phase 2: Admin Backend** - 修复租户管理员后台全部核心功能模块 (completed 2026-03-04)
 - [ ] **Phase 3: Candidate Portal** - 修复候选人完整报名流程（报名→缴费→准考证）
 - [ ] **Phase 4: Reviewer Workflow** - 修复审核员端审核操作和详情展示
 - [ ] **Phase 5: Super Admin** - 修复超级管理员平台管理功能
@@ -93,7 +93,7 @@ Note: Phase 3 and Phase 5 both depend only on Phase 1, so they can be executed i
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. API Foundation | 1/2 | In progress | - |
-| 2. Admin Backend | 3/4 | In Progress|  |
+| 2. Admin Backend | 4/4 | Complete   | 2026-03-04 |
 | 3. Candidate Portal | 0/TBD | Not started | - |
 | 4. Reviewer Workflow | 0/TBD | Not started | - |
 | 5. Super Admin | 0/TBD | Not started | - |
