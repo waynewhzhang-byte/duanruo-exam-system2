@@ -51,18 +51,25 @@ async function resolveTenantId(provided?: string): Promise<string | null> {
       const storedId = window.localStorage?.getItem('tenant_id')
       if (storedId) return storedId
 
-      // 2. Fallback: Try to infer from URL path if we're in a [tenantSlug] route
-      // Format: /tenant-slug/admin/...
+      // 2. Fallback: Extract slug from URL and look up ID in stored tenantRoles
       const pathname = window.location.pathname
       const parts = pathname.split('/').filter(Boolean)
       if (parts.length > 0) {
         const slug = parts[0]
-        // If the slug looks like a tenant slug (not a top-level route like 'admin' or 'login')
-        const reservedTopLevels = ['admin', 'login', 'register', 'tenants', 'super-admin', 'profile', 'candidate', 'reviewer']
+        const reservedTopLevels = ['admin', 'login', 'register', 'tenants', 'super-admin', 'profile', 'candidate', 'reviewer', 'exams', 'my-applications']
         if (!reservedTopLevels.includes(slug)) {
-          // Note: In a real-world high-perf scenario, we might have a slug->id map in memory/cache
-          // For now, we return null and let the backend TenantGuard handle the slug via X-Tenant-Slug if we added it,
-          // or we rely on the specific API call having passed it.
+          try {
+            const tenantRolesStr = window.localStorage?.getItem('tenantRoles')
+            if (tenantRolesStr) {
+              const tenantRoles: Array<{ tenantId: string; tenantCode: string }> = JSON.parse(tenantRolesStr)
+              const matched = tenantRoles.find(r => r.tenantCode === slug)
+              if (matched?.tenantId) {
+                // Update the primary tenant_id so next call is instant
+                window.localStorage.setItem('tenant_id', matched.tenantId)
+                return matched.tenantId
+              }
+            }
+          } catch { }
         }
       }
     } catch { }
@@ -133,9 +140,13 @@ export async function api<T>(
           errorResult.data.traceId
         )
       } else {
+        // Backend error format: { success: false, error: { code, message }, ... }
+        const backendMessage = isJson
+          ? (data?.error?.message || data?.message || '')
+          : text
         throw new APIError(
-          'HTTP_ERROR',
-          (isJson ? (data?.message || '') : text) || `HTTP ${response.status}: ${response.statusText}`,
+          isJson ? (data?.error?.code || 'HTTP_ERROR') : 'HTTP_ERROR',
+          backendMessage || `HTTP ${response.status}: ${response.statusText}`,
           response.status
         )
       }
