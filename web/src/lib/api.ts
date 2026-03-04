@@ -160,6 +160,12 @@ export async function api<T>(
       }
     }
 
+    // Backend response unwrapping:
+    // TransformInterceptor wraps all responses as { success: true, data: T, timestamp: string }.
+    // We detect this wrapper by checking for both 'success' and 'data' keys.
+    // If the wrapper is present, we unwrap data.data before returning or parsing.
+    // Endpoints that bypass TransformInterceptor (e.g., file streams) return raw data.
+
     if (schema) {
       // Handle NestJS ApiResult wrapper if present
       const targetData = (isJson && data && typeof data === 'object' && 'success' in data && 'data' in data)
