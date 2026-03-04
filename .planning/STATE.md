@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-04T09:24:35.707Z"
+last_updated: "2026-03-04T17:58:12.998Z"
 progress:
-  total_phases: 1
+  total_phases: 2
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 6
+  completed_plans: 4
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 
 ## Current Position
 
-Phase: 1 of 5 (API Foundation)
-Plan: 2 of TBD in current phase
+Phase: 2 of 5 (Admin Backend)
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-03-04 — Completed 01-02 (global 401/403 error handling in QueryProvider)
+Last activity: 2026-03-05 — Completed 02-03 (score statistics page tenant context fix)
 
-Progress: [██░░░░░░░░] 20%
+Progress: [███░░░░░░░] 30%
 
 ## Performance Metrics
 
@@ -48,6 +48,8 @@ Progress: [██░░░░░░░░] 20%
 
 *Updated after each plan completion*
 | Phase 01-api-foundation P02 | 2 min | 2 tasks | 2 files |
+| Phase 02-admin-backend P03 | 1 | 1 tasks | 1 files |
+| Phase 02-admin-backend P02 | 3 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -63,6 +65,10 @@ From 01-01 execution:
 - extractMessage() helper normalizes NestJS string[] and string validation error formats with '; ' join separator
 - [Phase 01-api-foundation]: React Query global error handler attaches to cache config.onError (not QueryClient constructor) for React Query v5 compatibility
 - [Phase 01-api-foundation]: Use window.location.href for 401 redirects (not Next.js router) since handler runs outside React component lifecycle
+- [Phase 02-admin-backend]: Use apiGetWithTenant instead of api() for all tenant-scoped admin pages to ensure X-Tenant-ID header is present
+- [Phase 02-admin-backend]: Add enabled: !!tenant?.id guard to all React Query queries for tenant-scoped data to prevent premature requests
+- [Phase 02-admin-backend]: Review list scoped by examId — exam selector required before queue loads
+- [Phase 02-admin-backend]: Batch review decisions use taskIds (QueueTask.id) not applicationIds; endpoint is /reviews/batch-decide
 
 ### Pending Todos
 
@@ -74,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-04
-Stopped at: Completed 01-02-PLAN.md (global 401/403 error handling — QueryProvider handleGlobalError + api.ts unwrapping contract)
+Last session: 2026-03-05
+Stopped at: Completed 02-03-PLAN.md (score statistics page tenant context fix — apiGetWithTenant + useTenant for all four statistics API calls)
 Resume file: None

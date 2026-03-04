@@ -10,9 +10,9 @@
 - [ ] **ADMIN-01**: 租户管理员后台首次加载无 JS 运行时错误
 - [ ] **ADMIN-02**: 考试列表正确获取并展示数据
 - [ ] **ADMIN-03**: 考试创建/编辑表单提交成功（DTO 字段与后端对齐）
-- [ ] **ADMIN-04**: 初审/复审申请列表正确加载
-- [ ] **ADMIN-05**: 审核操作（通过/拒绝）可正常执行并更新状态
-- [ ] **ADMIN-06**: 统计报表页面数据正确展示
+- [x] **ADMIN-04**: 初审/复审申请列表正确加载
+- [x] **ADMIN-05**: 审核操作（通过/拒绝）可正常执行并更新状态
+- [x] **ADMIN-06**: 统计报表页面数据正确展示
 - [ ] **ADMIN-07**: 场地/座位管理页面功能可用
 
 ### 候选人端（CAND）
@@ -72,9 +72,9 @@
 | ADMIN-01 | Phase 2 | Pending |
 | ADMIN-02 | Phase 2 | Pending |
 | ADMIN-03 | Phase 2 | Pending |
-| ADMIN-04 | Phase 2 | Pending |
-| ADMIN-05 | Phase 2 | Pending |
-| ADMIN-06 | Phase 2 | Pending |
+| ADMIN-04 | Phase 2 | Complete |
+| ADMIN-05 | Phase 2 | Complete |
+| ADMIN-06 | Phase 2 | Complete |
 | ADMIN-07 | Phase 2 | Pending |
 | CAND-01 | Phase 3 | Pending |
 | CAND-02 | Phase 3 | Pending |
