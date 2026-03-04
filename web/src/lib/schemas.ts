@@ -338,7 +338,7 @@ export const ExamStatus = z.preprocess(
     // Original planned states
     'DRAFT', 'PUBLISHED', 'REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'COMPLETED', 'CANCELLED',
     // Backend current states (compat)
-    'OPEN', 'CLOSED'
+    'OPEN', 'CLOSED', 'IN_PROGRESS'
   ])
 )
 

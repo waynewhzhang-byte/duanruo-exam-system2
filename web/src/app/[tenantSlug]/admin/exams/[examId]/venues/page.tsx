@@ -66,11 +66,13 @@ export default function VenuesPage({ params }: VenuesPageProps) {
             {exam.title}
           </p>
         </div>
-        <Badge variant={exam.status === 'PUBLISHED' ? 'default' : 'secondary'}>
+        <Badge variant={exam.status === 'OPEN' || exam.status === 'IN_PROGRESS' ? 'default' : 'secondary'}>
           {exam.status === 'DRAFT' && '草稿'}
-          {exam.status === 'PUBLISHED' && '已发布'}
-          {exam.status === 'CLOSED' && '已关闭'}
-          {exam.status === 'CANCELLED' && '已取消'}
+          {exam.status === 'OPEN' && '开放报名'}
+          {exam.status === 'CLOSED' && '报名关闭'}
+          {exam.status === 'IN_PROGRESS' && '考试中'}
+          {exam.status === 'COMPLETED' && '已完成'}
+          {!['DRAFT','OPEN','CLOSED','IN_PROGRESS','COMPLETED'].includes(exam.status) && exam.status}
         </Badge>
       </div>
 
@@ -84,12 +86,14 @@ export default function VenuesPage({ params }: VenuesPageProps) {
           <CardContent>
             <div className="text-2xl font-bold">
               {exam.status === 'DRAFT' && '草稿'}
-              {exam.status === 'PUBLISHED' && '已发布'}
-              {exam.status === 'CLOSED' && '已关闭'}
-              {exam.status === 'CANCELLED' && '已取消'}
+              {exam.status === 'OPEN' && '开放报名'}
+              {exam.status === 'CLOSED' && '报名关闭'}
+              {exam.status === 'IN_PROGRESS' && '考试中'}
+              {exam.status === 'COMPLETED' && '已完成'}
+              {!['DRAFT','OPEN','CLOSED','IN_PROGRESS','COMPLETED'].includes(exam.status) && exam.status}
             </div>
             <p className="text-xs text-muted-foreground">
-              {exam.status === 'CLOSED' ? '可以进行座位分配' : '报名进行中'}
+              {exam.status === 'CLOSED' || exam.status === 'COMPLETED' ? '可以进行座位分配' : '报名进行中'}
             </p>
           </CardContent>
         </Card>
@@ -116,10 +120,10 @@ export default function VenuesPage({ params }: VenuesPageProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {(exam as any).startDate ? new Date((exam as any).startDate).toLocaleDateString('zh-CN') : '-'}
+              {exam.examStart ? new Date(exam.examStart).toLocaleDateString('zh-CN') : '-'}
             </div>
             <p className="text-xs text-muted-foreground">
-              至 {(exam as any).endDate ? new Date((exam as any).endDate).toLocaleDateString('zh-CN') : '-'}
+              至 {exam.examEnd ? new Date(exam.examEnd).toLocaleDateString('zh-CN') : '-'}
             </p>
           </CardContent>
         </Card>
