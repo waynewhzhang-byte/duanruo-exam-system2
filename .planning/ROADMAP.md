@@ -44,7 +44,13 @@ Plans:
   3. 初审和复审申请列表各自正确加载申请数据，并可对申请执行通过/拒绝操作且状态更新
   4. 统计报表页面显示正确的数字和图表数据，不为空白或加载失败
   5. 场地和座位管理页面可以查看、添加和操作场地/座位数据
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Fix ExamResponse schema (add examStart/examEnd), fix exam list pagination field names, fix exam detail/edit page field name mismatches
+- [ ] 02-02-PLAN.md — Rewrite ReviewsPageClient to use correct review queue and batch-decide API endpoints with tenant context
+- [ ] 02-03-PLAN.md — Fix score-statistics page to use apiGetWithTenant for all API calls
+- [ ] 02-04-PLAN.md — Fix venue page exam status badge labels; confirm backend mapToResponse completeness
 
 ### Phase 3: Candidate Portal
 **Goal**: 候选人可以完整完成"找到考试 → 提交报名 → 缴费 → 下载准考证"的端到端流程
@@ -87,7 +93,7 @@ Note: Phase 3 and Phase 5 both depend only on Phase 1, so they can be executed i
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. API Foundation | 1/2 | In progress | - |
-| 2. Admin Backend | 0/TBD | Not started | - |
+| 2. Admin Backend | 0/4 | Not started | - |
 | 3. Candidate Portal | 0/TBD | Not started | - |
 | 4. Reviewer Workflow | 0/TBD | Not started | - |
 | 5. Super Admin | 0/TBD | Not started | - |
