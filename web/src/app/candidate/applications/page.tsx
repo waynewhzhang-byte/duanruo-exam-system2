@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Plus, FileText, Eye, Edit, Ticket, Building } from 'lucide-react'
 import { useExam, usePosition } from '@/lib/api-hooks'
 import { apiGet, apiGetWithTenant } from '@/lib/api'
+import { useTenant } from '@/hooks/useTenant'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface Tenant {
@@ -56,34 +57,19 @@ function PositionTitle({ positionId }: Readonly<{ positionId: string }>) {
 
 export default function ApplicationsPage() {
   const router = useRouter()
+  const { tenant } = useTenant()
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [statusFilter, setStatusFilter] = useState('')
   const [examIdFilter, setExamIdFilter] = useState('')
   const [positionIdFilter, setPositionIdFilter] = useState('')
   const [sortOrder, setSortOrder] = useState<'submittedAt,desc' | 'submittedAt,asc'>('submittedAt,desc')
-  const [selectedTenantId, setSelectedTenantId] = useState<string>('')
-
-  // 获取用户关联的租户列表
-  const { data: tenants, isLoading: tenantsLoading } = useQuery<Tenant[]>({
-    queryKey: ['my-tenants'],
-    queryFn: async () => {
-      return apiGet<Tenant[]>('/tenants/me')
-    },
-  })
-
-  // 自动选择第一个租户
-  useEffect(() => {
-    if (tenants && tenants.length > 0 && !selectedTenantId) {
-      setSelectedTenantId(tenants[0].id)
-    }
-  }, [tenants, selectedTenantId])
 
   // 使用带租户 ID 的 API 调用获取报名列表
   const { data, isLoading: applicationsLoading } = useQuery<ApplicationListResponse>({
-    queryKey: ['applications', 'my', selectedTenantId, currentPage, pageSize, statusFilter, examIdFilter, positionIdFilter, sortOrder],
+    queryKey: ['applications', 'my', tenant?.id, currentPage, pageSize, statusFilter, examIdFilter, positionIdFilter, sortOrder],
     queryFn: async () => {
-      if (!selectedTenantId) throw new Error('No tenant selected')
+      if (!tenant?.id) throw new Error('Tenant not loaded')
       const sp = new URLSearchParams()
       sp.set('page', String(currentPage - 1))
       sp.set('size', String(pageSize))
@@ -91,12 +77,12 @@ export default function ApplicationsPage() {
       if (examIdFilter) sp.set('examId', examIdFilter)
       if (positionIdFilter) sp.set('positionId', positionIdFilter)
       if (sortOrder) sp.set('sort', sortOrder)
-      return apiGetWithTenant<ApplicationListResponse>(`/applications/my?${sp}`, selectedTenantId)
+      return apiGetWithTenant<ApplicationListResponse>(`/applications/my?${sp}`, tenant.id)
     },
-    enabled: !!selectedTenantId,
+    enabled: !!tenant?.id,
   })
 
-  const isLoading = tenantsLoading || applicationsLoading
+  const isLoading = applicationsLoading
 
   const pagination = data ? {
     currentPage: data.currentPage + 1,
@@ -193,7 +179,7 @@ export default function ApplicationsPage() {
   }
 
   // 如果没有租户，显示提示
-  if (!tenantsLoading && (!tenants || tenants.length === 0)) {
+  if (!tenant) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -221,33 +207,11 @@ export default function ApplicationsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">我的报名</h1>
-          <p className="text-muted-foreground mt-2">管理您的考试报名申请</p>
-        </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">我的报名</h1>
+            <p className="text-muted-foreground mt-2">管理您的考试报名申请</p>
+          </div>
           <div className="flex items-center space-x-3">
-            {/* 租户选择器 */}
-            {tenants && tenants.length > 1 && (
-              <Select value={selectedTenantId} onValueChange={(value) => { setSelectedTenantId(value); setCurrentPage(1); }}>
-                <SelectTrigger className="w-48">
-                  <Building className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="选择考试机构" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tenants.map((tenant) => (
-                    <SelectItem key={tenant.id} value={tenant.id}>
-                      {tenant.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            {tenants && tenants.length === 1 && (
-              <div className="flex items-center text-sm text-muted-foreground px-2 py-1 bg-muted rounded-md">
-                <Building className="h-4 w-4 mr-2" />
-                {tenants[0].name}
-              </div>
-            )}
             <input
               className="border border-gray-300 rounded-md px-2 py-1 text-sm w-56"
               placeholder="按考试ID过滤（可选）"
