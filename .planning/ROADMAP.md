@@ -31,7 +31,7 @@
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Fix X-Tenant-ID resolution (URL slug fallback) and 400 validation error message formatting
+- [x] 01-01-PLAN.md — Fix X-Tenant-ID resolution (URL slug fallback) and 400 validation error message formatting
 - [ ] 01-02-PLAN.md — Add global 401 redirect + 403 toast to QueryProvider; verify response unwrapping
 
 ### Phase 2: Admin Backend
@@ -86,7 +86,7 @@ Note: Phase 3 and Phase 5 both depend only on Phase 1, so they can be executed i
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. API Foundation | 0/2 | In planning | - |
+| 1. API Foundation | 1/2 | In progress | - |
 | 2. Admin Backend | 0/TBD | Not started | - |
 | 3. Candidate Portal | 0/TBD | Not started | - |
 | 4. Reviewer Workflow | 0/TBD | Not started | - |
