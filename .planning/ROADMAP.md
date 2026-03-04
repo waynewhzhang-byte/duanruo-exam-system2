@@ -61,7 +61,12 @@ Plans:
   2. "我的报名"列表显示正确的申请状态（草稿/已提交/审核中/已通过等）和相关信息
   3. 审核通过且缴费完成的候选人可点击按钮下载准考证 PDF/图片，下载成功
   4. 候选人进入缴费页面并完成缴费操作，全程无报错且缴费状态正确更新
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Fix candidate applications list to use apiGetWithTenant and display correct status
+- [ ] 03-02-PLAN.md — Fix application form (remove @ts-nocheck, clean corrupted code, verify submission)
+- [ ] 03-03-PLAN.md — Fix ticket download and payment flow tenant context
 
 ### Phase 4: Reviewer Workflow
 **Goal**: 审核员可以查看分配给自己的申请列表，完整查看申请详情，并执行审核操作
@@ -92,8 +97,8 @@ Note: Phase 3 and Phase 5 both depend only on Phase 1, so they can be executed i
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. API Foundation | 1/2 | In progress | - |
-| 2. Admin Backend | 4/4 | Complete   | 2026-03-04 |
-| 3. Candidate Portal | 0/TBD | Not started | - |
+| 1. API Foundation | 2/2 | Complete | 2026-03-04 |
+| 2. Admin Backend | 5/5 | Complete | 2026-03-05 |
+| 3. Candidate Portal | 0/3 | In progress | - |
 | 4. Reviewer Workflow | 0/TBD | Not started | - |
 | 5. Super Admin | 0/TBD | Not started | - |
