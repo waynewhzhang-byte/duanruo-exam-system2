@@ -93,7 +93,7 @@ Note: Phase 3 and Phase 5 both depend only on Phase 1, so they can be executed i
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. API Foundation | 1/2 | In progress | - |
-| 2. Admin Backend | 0/4 | Not started | - |
+| 2. Admin Backend | 3/4 | In Progress|  |
 | 3. Candidate Portal | 0/TBD | Not started | - |
 | 4. Reviewer Workflow | 0/TBD | Not started | - |
 | 5. Super Admin | 0/TBD | Not started | - |

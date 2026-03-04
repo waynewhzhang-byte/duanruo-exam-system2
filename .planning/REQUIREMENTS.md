@@ -7,9 +7,9 @@
 
 ### 管理员后台（ADMIN）
 
-- [ ] **ADMIN-01**: 租户管理员后台首次加载无 JS 运行时错误
-- [ ] **ADMIN-02**: 考试列表正确获取并展示数据
-- [ ] **ADMIN-03**: 考试创建/编辑表单提交成功（DTO 字段与后端对齐）
+- [x] **ADMIN-01**: 租户管理员后台首次加载无 JS 运行时错误
+- [x] **ADMIN-02**: 考试列表正确获取并展示数据
+- [x] **ADMIN-03**: 考试创建/编辑表单提交成功（DTO 字段与后端对齐）
 - [x] **ADMIN-04**: 初审/复审申请列表正确加载
 - [x] **ADMIN-05**: 审核操作（通过/拒绝）可正常执行并更新状态
 - [x] **ADMIN-06**: 统计报表页面数据正确展示
@@ -69,9 +69,9 @@
 | API-03 | Phase 1 | Pending |
 | API-04 | Phase 1 | Complete |
 | API-05 | Phase 1 | Complete |
-| ADMIN-01 | Phase 2 | Pending |
-| ADMIN-02 | Phase 2 | Pending |
-| ADMIN-03 | Phase 2 | Pending |
+| ADMIN-01 | Phase 2 | Complete |
+| ADMIN-02 | Phase 2 | Complete |
+| ADMIN-03 | Phase 2 | Complete |
 | ADMIN-04 | Phase 2 | Complete |
 | ADMIN-05 | Phase 2 | Complete |
 | ADMIN-06 | Phase 2 | Complete |

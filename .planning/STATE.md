@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-04T17:58:12.998Z"
+last_updated: "2026-03-05T17:55:09Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 ## Current Position
 
 Phase: 2 of 5 (Admin Backend)
-Plan: 3 of 4 in current phase
+Plan: 4 of 4 in current phase
 Status: In progress
-Last activity: 2026-03-05 — Completed 02-03 (score statistics page tenant context fix)
+Last activity: 2026-03-05 — Completed 02-01 (exam field name mismatches, pagination type fix, ExamBasicInfo slug fix)
 
-Progress: [███░░░░░░░] 30%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Progress: [███░░░░░░░] 30%
 | Phase 01-api-foundation P02 | 2 min | 2 tasks | 2 files |
 | Phase 02-admin-backend P03 | 1 | 1 tasks | 1 files |
 | Phase 02-admin-backend P02 | 3 | 1 tasks | 1 files |
+| Phase 02-admin-backend P01 | 4 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,8 @@ From 01-01 execution:
 - [Phase 02-admin-backend]: Add enabled: !!tenant?.id guard to all React Query queries for tenant-scoped data to prevent premature requests
 - [Phase 02-admin-backend]: Review list scoped by examId — exam selector required before queue loads
 - [Phase 02-admin-backend]: Batch review decisions use taskIds (QueueTask.id) not applicationIds; endpoint is /reviews/batch-decide
+- [Phase 02-admin-backend P01]: Backend consistently uses examStart/examEnd (not examStartTime/examEndTime); frontend field names aligned to backend
+- [Phase 02-admin-backend P01]: ExamsResponse type uses pageSize/currentPage matching backend PaginatedResponse; totalElements for accurate cross-page count
 
 ### Pending Todos
 
@@ -81,5 +84,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 02-03-PLAN.md (score statistics page tenant context fix — apiGetWithTenant + useTenant for all four statistics API calls)
+Stopped at: Completed 02-01-PLAN.md (exam field name mismatches — examStart/examEnd schema, pagination type, ExamBasicInfo slug fix)
 Resume file: None
