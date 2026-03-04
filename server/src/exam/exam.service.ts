@@ -179,11 +179,12 @@ export class ExamService {
       announcement: exam.announcement || undefined,
       registrationStart: exam.registrationStart || undefined,
       registrationEnd: exam.registrationEnd || undefined,
-      examStart: exam.examStart || undefined,
+      examStart: exam.examStart || undefined, // examStart/examEnd fields confirmed
       examEnd: exam.examEnd || undefined,
       feeRequired: exam.feeRequired,
       feeAmount: exam.feeAmount ? Number(exam.feeAmount) : undefined,
       status: exam.status,
+      formTemplate: (exam as any).formTemplate || undefined,
       createdBy: exam.createdBy || undefined,
       createdAt: exam.createdAt,
       updatedAt: exam.updatedAt,
