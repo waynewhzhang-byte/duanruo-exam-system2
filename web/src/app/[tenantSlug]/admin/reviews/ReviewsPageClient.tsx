@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPost } from '@/lib/api'
+import { apiGetWithTenant, apiPostWithTenant } from '@/lib/api'
+import { useTenant } from '@/hooks/useTenant'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -29,74 +30,88 @@ interface ReviewsPageClientProps {
   tenantSlug: string
 }
 
-interface Application {
+interface QueueTask {
   id: string
-  applicationNo: string
-  candidateName: string
-  examTitle: string
-  positionTitle: string
-  reviewStatus: string
-  submittedAt: string
-  reviewLevel: string
+  applicationId: string
+  stage: string
+  status: string
+  assignedTo: string | null
+  lockedAt: Date | null
+  createdAt: Date
+  applicationNo?: string
+  candidateName?: string
+  examTitle?: string
+  positionTitle?: string
 }
 
 interface ReviewStatistics {
-  totalPending: number
-  primaryPending: number
-  secondaryPending: number
-  approvedToday: number
-  rejectedToday: number
+  totalReviews: number
+  pendingPrimary: number
+  pendingSecondary: number
+  approved: number
+  rejected: number
+  averageReviewTime: number
 }
 
 export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
+  const { tenant } = useTenant()
 
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [currentTab, setCurrentTab] = useState('pending')
-  const [selectedApplications, setSelectedApplications] = useState<string[]>([])
+  const [currentTab, setCurrentTab] = useState('primary')
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
   const [batchAction, setBatchAction] = useState<'approve' | 'reject' | null>(null)
   const [showBatchDialog, setShowBatchDialog] = useState(false)
+  const [selectedExamId, setSelectedExamId] = useState('')
 
-  // Fetch pending reviews
-  const { data: pendingReviews, isLoading: pendingLoading } = useQuery<Application[]>({
-    queryKey: ['reviews', 'pending', currentTab],
-    queryFn: async () => {
-      return apiGet<Application[]>('/reviews/pending')
-    },
+  // Fetch exam list for selector
+  const { data: exams } = useQuery<{ content: Array<{ id: string; title: string; code: string }> }>({
+    queryKey: ['admin-exams-for-review', tenant?.id],
+    queryFn: () => apiGetWithTenant('/exams', tenant!.id),
+    enabled: !!tenant?.id,
   })
 
-  // Fetch review statistics
+  // Fetch review queue from correct endpoint
+  const { data: reviewQueue, isLoading: queueLoading, refetch } = useQuery({
+    queryKey: ['reviews', 'queue', currentTab, selectedExamId, tenant?.id],
+    queryFn: async () => {
+      if (!tenant?.id || !selectedExamId) return { content: [], totalElements: 0 }
+      const stage = currentTab === 'primary' ? 'PRIMARY' : 'SECONDARY'
+      return apiGetWithTenant(
+        `/reviews/queue?examId=${selectedExamId}&stage=${stage}&page=0&size=50`,
+        tenant.id
+      )
+    },
+    enabled: !!tenant?.id && !!selectedExamId,
+  })
+
+  // Fetch review statistics from correct endpoint
   const { data: statistics, isLoading: statsLoading } = useQuery<ReviewStatistics>({
-    queryKey: ['reviews', 'statistics'],
+    queryKey: ['statistics', 'reviews', tenant?.id],
     queryFn: async () => {
-      return apiGet<ReviewStatistics>('/reviews/statistics')
+      if (!tenant?.id) throw new Error('No tenant')
+      return apiGetWithTenant<ReviewStatistics>('/statistics/reviews', tenant.id)
     },
+    enabled: !!tenant?.id,
   })
 
-  // Batch decision mutation (using application-based batch review)
+  // Batch decision mutation using correct endpoint
   const batchDecisionMutation = useMutation({
-    mutationFn: async ({ applicationIds, approve }: { applicationIds: string[]; approve: boolean }) => {
-      return apiPost('/reviews/batch-review', {
-        applicationIds,
-        approve,
-        reason: approve ? '批量审核通过' : '批量审核拒绝',
-      })
+    mutationFn: async ({ taskIds, decision }: { taskIds: string[]; decision: 'APPROVED' | 'REJECTED' }) => {
+      if (!tenant?.id) throw new Error('No tenant')
+      const decisions = taskIds.map(taskId => ({
+        taskId,
+        decision,
+        comment: decision === 'APPROVED' ? '批量审核通过' : '批量审核拒绝',
+      }))
+      return apiPostWithTenant('/reviews/batch-decide', tenant.id, { decisions })
     },
-    onSuccess: (data: any, variables) => {
-      const action = variables.approve ? '通过' : '拒绝'
-      const successCount = data.success || data.successCount || 0
-      const failedCount = data.failed || data.failureCount || 0
-
-      if (failedCount > 0) {
-        toast.warning(`批量${action}完成：${successCount} 个成功，${failedCount} 个失败`)
-      } else {
-        toast.success(`批量${action}成功：${successCount} 个${action}`)
-      }
-
+    onSuccess: () => {
+      toast.success('批量操作成功')
       queryClient.invalidateQueries({ queryKey: ['reviews'] })
-      setSelectedApplications([])
+      setSelectedTaskIds([])
       setShowBatchDialog(false)
     },
     onError: (error: any) => {
@@ -110,17 +125,17 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
 
   const handleSelectAll = (checked: boolean) => {
     if (checked && filteredReviews) {
-      setSelectedApplications(filteredReviews.map((r) => r.id))
+      setSelectedTaskIds(filteredReviews.map((r) => r.id))
     } else {
-      setSelectedApplications([])
+      setSelectedTaskIds([])
     }
   }
 
-  const handleSelectApplication = (applicationId: string, checked: boolean) => {
+  const handleSelectTask = (taskId: string, checked: boolean) => {
     if (checked) {
-      setSelectedApplications([...selectedApplications, applicationId])
+      setSelectedTaskIds([...selectedTaskIds, taskId])
     } else {
-      setSelectedApplications(selectedApplications.filter((id) => id !== applicationId))
+      setSelectedTaskIds(selectedTaskIds.filter((id) => id !== taskId))
     }
   }
 
@@ -137,42 +152,42 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
   const handleConfirmBatchAction = () => {
     if (batchAction) {
       batchDecisionMutation.mutate({
-        applicationIds: selectedApplications,
-        approve: batchAction === 'approve',
+        taskIds: selectedTaskIds,
+        decision: batchAction === 'approve' ? 'APPROVED' : 'REJECTED',
       })
     }
   }
 
-  // Filter reviews
-  const filteredReviews = Array.isArray(pendingReviews)
-    ? pendingReviews.filter((review) => {
-        const matchesSearch =
-          review.candidateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          review.applicationNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          review.examTitle.toLowerCase().includes(searchTerm.toLowerCase())
-
-        const matchesStatus = statusFilter === 'all' || review.reviewStatus === statusFilter
-
-        return matchesSearch && matchesStatus
-      })
+  // Filter queue items
+  const queueContent: QueueTask[] = Array.isArray((reviewQueue as any)?.content)
+    ? (reviewQueue as any).content
     : []
+
+  const filteredReviews = queueContent.filter((review) => {
+    const matchesSearch =
+      (review.candidateName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (review.applicationNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (review.examTitle || '').toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesStatus = statusFilter === 'all' || review.status === statusFilter
+
+    return matchesSearch && matchesStatus
+  })
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PENDING_PRIMARY_REVIEW':
-        return <Badge variant="outline">待初审</Badge>
-      case 'PENDING_SECONDARY_REVIEW':
-        return <Badge variant="default">待复审</Badge>
-      case 'APPROVED':
-        return <Badge variant="default" className="bg-green-600">已通过</Badge>
-      case 'REJECTED':
-        return <Badge variant="destructive">已拒绝</Badge>
+      case 'PENDING':
+        return <Badge variant="outline">待审核</Badge>
+      case 'ASSIGNED':
+        return <Badge variant="default">已分配</Badge>
+      case 'COMPLETED':
+        return <Badge variant="default" className="bg-green-600">已完成</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
   }
 
-  if (pendingLoading || statsLoading) {
+  if (statsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner size="lg" />
@@ -190,19 +205,38 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
         </div>
         <Badge variant="outline" className="text-lg px-4 py-2">
           <ClipboardList className="h-5 w-5 mr-2" />
-          待审核: {statistics?.totalPending || 0}
+          待初审: {statistics?.pendingPrimary || 0}
         </Badge>
       </div>
 
+      {/* Exam Selector */}
+      <Card>
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">选择考试</label>
+            <select
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+              value={selectedExamId}
+              onChange={(e) => setSelectedExamId(e.target.value)}
+            >
+              <option value="">请选择考试...</option>
+              {(exams?.content || []).map((exam: any) => (
+                <option key={exam.id} value={exam.id}>{exam.title} ({exam.code})</option>
+              ))}
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">待审核总数</CardTitle>
+            <CardTitle className="text-sm font-medium">审核总数</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statistics?.totalPending || 0}</div>
+            <div className="text-2xl font-bold">{statistics?.totalReviews || 0}</div>
           </CardContent>
         </Card>
 
@@ -213,7 +247,7 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
-              {statistics?.primaryPending || 0}
+              {statistics?.pendingPrimary || 0}
             </div>
           </CardContent>
         </Card>
@@ -225,34 +259,38 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {statistics?.secondaryPending || 0}
+              {statistics?.pendingSecondary || 0}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">今日通过</CardTitle>
+            <CardTitle className="text-sm font-medium">已通过</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {statistics?.approvedToday || 0}
+              {statistics?.approved || 0}
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">今日拒绝</CardTitle>
-            <XCircle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {statistics?.rejectedToday || 0}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Stage Tabs */}
+      <div className="flex gap-2">
+        <Button
+          variant={currentTab === 'primary' ? 'default' : 'outline'}
+          onClick={() => { setCurrentTab('primary'); setSelectedTaskIds([]) }}
+        >
+          初审队列
+        </Button>
+        <Button
+          variant={currentTab === 'secondary' ? 'default' : 'outline'}
+          onClick={() => { setCurrentTab('secondary'); setSelectedTaskIds([]) }}
+        >
+          复审队列
+        </Button>
       </div>
 
       {/* Filters */}
@@ -275,14 +313,13 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="审核状态" />
+                <SelectValue placeholder="任务状态" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部状态</SelectItem>
-                <SelectItem value="PENDING_PRIMARY_REVIEW">待初审</SelectItem>
-                <SelectItem value="PENDING_SECONDARY_REVIEW">待复审</SelectItem>
-                <SelectItem value="APPROVED">已通过</SelectItem>
-                <SelectItem value="REJECTED">已拒绝</SelectItem>
+                <SelectItem value="PENDING">待审核</SelectItem>
+                <SelectItem value="ASSIGNED">已分配</SelectItem>
+                <SelectItem value="COMPLETED">已完成</SelectItem>
               </SelectContent>
             </Select>
 
@@ -300,18 +337,18 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
       </Card>
 
       {/* Batch Actions Bar */}
-      {selectedApplications.length > 0 && (
+      {selectedTaskIds.length > 0 && (
         <Card className="border-primary">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="text-base px-3 py-1">
-                  已选择 {selectedApplications.length} 项
+                  已选择 {selectedTaskIds.length} 项
                 </Badge>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setSelectedApplications([])}
+                  onClick={() => setSelectedTaskIds([])}
                 >
                   取消选择
                 </Button>
@@ -344,11 +381,22 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
         <CardHeader>
           <CardTitle>审核列表</CardTitle>
           <CardDescription>
-            共 {filteredReviews?.length || 0} 条记录
+            {!selectedExamId
+              ? '请先选择考试以查看审核队列'
+              : `共 ${filteredReviews?.length || 0} 条记录`}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!filteredReviews || filteredReviews.length === 0 ? (
+          {queueLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Spinner size="lg" />
+            </div>
+          ) : !selectedExamId ? (
+            <div className="text-center py-12">
+              <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+              <p className="text-sm text-muted-foreground">请先在上方选择考试</p>
+            </div>
+          ) : !filteredReviews || filteredReviews.length === 0 ? (
             <div className="text-center py-12">
               <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
               <p className="text-sm text-muted-foreground">暂无待审核的报名</p>
@@ -362,7 +410,7 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
                       <Checkbox
                         checked={
                           filteredReviews.length > 0 &&
-                          selectedApplications.length === filteredReviews.length
+                          selectedTaskIds.length === filteredReviews.length
                         }
                         onCheckedChange={handleSelectAll}
                       />
@@ -371,8 +419,8 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
                     <TableHead>考生姓名</TableHead>
                     <TableHead>考试名称</TableHead>
                     <TableHead>报考岗位</TableHead>
-                    <TableHead>审核状态</TableHead>
-                    <TableHead>提交时间</TableHead>
+                    <TableHead>任务状态</TableHead>
+                    <TableHead>创建时间</TableHead>
                     <TableHead className="text-right">操作</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -381,28 +429,28 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
                     <TableRow key={review.id}>
                       <TableCell>
                         <Checkbox
-                          checked={selectedApplications.includes(review.id)}
+                          checked={selectedTaskIds.includes(review.id)}
                           onCheckedChange={(checked) =>
-                            handleSelectApplication(review.id, checked as boolean)
+                            handleSelectTask(review.id, checked as boolean)
                           }
                         />
                       </TableCell>
                       <TableCell className="font-mono text-sm">
-                        {review.applicationNo}
+                        {review.applicationNo || '-'}
                       </TableCell>
-                      <TableCell className="font-medium">{review.candidateName}</TableCell>
-                      <TableCell>{review.examTitle}</TableCell>
-                      <TableCell>{review.positionTitle}</TableCell>
-                      <TableCell>{getStatusBadge(review.reviewStatus)}</TableCell>
+                      <TableCell className="font-medium">{review.candidateName || '-'}</TableCell>
+                      <TableCell>{review.examTitle || '-'}</TableCell>
+                      <TableCell>{review.positionTitle || '-'}</TableCell>
+                      <TableCell>{getStatusBadge(review.status)}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {new Date(review.submittedAt).toLocaleString('zh-CN')}
+                        {new Date(review.createdAt).toLocaleString('zh-CN')}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
                           data-testid="btn-view-detail"
                           variant="outline"
                           size="sm"
-                          onClick={() => handleViewApplication(review.id)}
+                          onClick={() => handleViewApplication(review.applicationId)}
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           查看详情
@@ -425,7 +473,7 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
               {batchAction === 'approve' ? '批量审核通过' : '批量审核拒绝'}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              您确定要{batchAction === 'approve' ? '通过' : '拒绝'} {selectedApplications.length} 个报名申请吗？
+              您确定要{batchAction === 'approve' ? '通过' : '拒绝'} {selectedTaskIds.length} 个审核任务吗？
               此操作不可撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -443,4 +491,3 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
     </div>
   )
 }
-
