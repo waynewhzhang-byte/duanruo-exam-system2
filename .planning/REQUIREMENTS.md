@@ -31,10 +31,10 @@
 ### 前后端接口对接（API）
 
 - [ ] **API-01**: 所有租户作用域 API 调用均携带正确的 X-Tenant-ID 头
-- [ ] **API-02**: 前端正确解包后端统一响应格式 `{ data, message, statusCode }`
+- [x] **API-02**: 前端正确解包后端统一响应格式 `{ data, message, statusCode }`
 - [ ] **API-03**: DTO 校验失败（400）的错误信息对用户可见
-- [ ] **API-04**: JWT 过期/401 响应自动跳转登录页
-- [ ] **API-05**: 403 权限不足有明确的用户提示
+- [x] **API-04**: JWT 过期/401 响应自动跳转登录页
+- [x] **API-05**: 403 权限不足有明确的用户提示
 
 ### 超级管理员（SADM）
 
@@ -65,10 +65,10 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | API-01 | Phase 1 | Pending |
-| API-02 | Phase 1 | Pending |
+| API-02 | Phase 1 | Complete |
 | API-03 | Phase 1 | Pending |
-| API-04 | Phase 1 | Pending |
-| API-05 | Phase 1 | Pending |
+| API-04 | Phase 1 | Complete |
+| API-05 | Phase 1 | Complete |
 | ADMIN-01 | Phase 2 | Pending |
 | ADMIN-02 | Phase 2 | Pending |
 | ADMIN-03 | Phase 2 | Pending |

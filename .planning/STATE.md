@@ -1,3 +1,16 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: unknown
+last_updated: "2026-03-04T09:18:03.831Z"
+progress:
+  total_phases: 1
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
+---
+
 # Project State
 
 ## Project Reference
@@ -10,30 +23,31 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 ## Current Position
 
 Phase: 1 of 5 (API Foundation)
-Plan: 1 of TBD in current phase
+Plan: 2 of TBD in current phase
 Status: In progress
-Last activity: 2026-03-04 — Completed 01-01 (API client fixes)
+Last activity: 2026-03-04 — Completed 01-02 (global 401/403 error handling in QueryProvider)
 
-Progress: [█░░░░░░░░░] 10%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
+- Total plans completed: 2
 - Average duration: 2 min
-- Total execution time: 0.03 hours
+- Total execution time: 0.07 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-api-foundation | 1 | 2 min | 2 min |
+| 01-api-foundation | 2 | 4 min | 2 min |
 
 **Recent Trend:**
 - Last 5 plans: 2 min
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01-api-foundation P02 | 2 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -47,6 +61,8 @@ From PROJECT.md Key Decisions:
 From 01-01 execution:
 - URL slug fallback caches resolved tenantId back to localStorage('tenant_id') for subsequent call efficiency
 - extractMessage() helper normalizes NestJS string[] and string validation error formats with '; ' join separator
+- [Phase 01-api-foundation]: React Query global error handler attaches to cache config.onError (not QueryClient constructor) for React Query v5 compatibility
+- [Phase 01-api-foundation]: Use window.location.href for 401 redirects (not Next.js router) since handler runs outside React component lifecycle
 
 ### Pending Todos
 
@@ -59,5 +75,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 01-01-PLAN.md (API client fixes — resolveTenantId + validation error formatting)
+Stopped at: Completed 01-02-PLAN.md (global 401/403 error handling — QueryProvider handleGlobalError + api.ts unwrapping contract)
 Resume file: None
