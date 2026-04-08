@@ -1,0 +1,13 @@
+{
+  "name": "duanruo-exam-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "端若数智考盟 - 多租户在线招聘考试报名管理平台",
+  "scripts": {
+    "sonar": "npx @sonar/scan",
+    "sonar:scan": "npx @sonar/scan"
+  },
+  "devDependencies": {
+    "@sonar/scan": "^4.3.4"
+  }
+}

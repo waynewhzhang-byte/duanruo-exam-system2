@@ -344,3 +344,4 @@ jconsole.log
 # JUnit
 TEST-*.xml
 dist
+.gstack/

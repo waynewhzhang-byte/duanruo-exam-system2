@@ -1,0 +1,4 @@
+curl: option --session: is unknown
+curcurl: option --session: is unknown
+curl: try 'curl --help' or 'curl --manual' for more information
+l: try 'curl --help' or 'curl --manual' for more information

@@ -163,3 +163,15 @@ MINIO_SECRET_KEY=minioadmin
 - Frontend uses path alias `@/*` → `./src/*`
 - OpenAPI contract in `api-contracts/` serves as the frontend-backend interface agreement
 - Backend test files: `*.spec.ts` co-located with source files
+
+## gstack
+
+An opinionated collection of AI-powered skills to automate development workflows.
+
+- `/browse`: Fast headless browser for QA and site testing.
+- `/qa`: Automated browser-based testing for features and regressions.
+- `/review`: In-depth code quality and architectural review.
+- `/autoplan`: Complete strategy pipeline (CEO + Design + Eng review).
+- `/ship`: End-to-end deployment preparation (PR, changelog, tests).
+- `/investigate`: Deep dive into bugs with browser-based reproduction.
+- `/office-hours`: Product strategy and framing consultation.
