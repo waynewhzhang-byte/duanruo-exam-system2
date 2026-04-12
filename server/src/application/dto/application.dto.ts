@@ -47,6 +47,9 @@ export class ApplicationResponse {
   status: string;
   submittedAt?: Date;
   attachments?: AttachmentRef[];
+  feeRequired?: boolean;
+  feeAmount?: number;
+  taskId?: string;
 }
 
 export class ApplicationListItemResponse extends ApplicationResponse {
@@ -55,6 +58,4 @@ export class ApplicationListItemResponse extends ApplicationResponse {
   candidateName?: string;
   candidateEmail?: string;
   candidatePhone?: string;
-  feeRequired: boolean;
-  feeAmount: number;
 }

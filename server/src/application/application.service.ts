@@ -2,11 +2,13 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AutoReviewService } from '../review/auto-review.service';
 import { Application, FileRecord, Prisma } from '@prisma/client';
+import { getErrorMessage } from '../common/utils/error.util';
 import {
   ApplicationSubmitRequest,
   ApplicationResponse,
@@ -86,9 +88,9 @@ export class ApplicationService {
     }
 
     // ✅ 触发自动审核（异步处理，不阻塞响应）
-    this.triggerAutoReview(application.id).catch((error) => {
+    this.triggerAutoReview(application.id).catch((error: unknown) => {
       this.logger.error(
-        `Auto-review failed for application ${application.id}: ${error.message}`,
+        `Auto-review failed for application ${application.id}: ${getErrorMessage(error)}`,
       );
     });
 
@@ -100,7 +102,9 @@ export class ApplicationService {
    */
   private async triggerAutoReview(applicationId: string): Promise<void> {
     try {
-      this.logger.log(`Triggering auto-review for application: ${applicationId}`);
+      this.logger.log(
+        `Triggering auto-review for application: ${applicationId}`,
+      );
 
       // 1. 执行自动审核
       const result =
@@ -112,11 +116,10 @@ export class ApplicationService {
       this.logger.log(
         `Auto-review completed for ${applicationId}: ${result.passed ? 'PASSED' : 'FAILED'}`,
       );
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(
-        `Auto-review error for ${applicationId}: ${error.message}`,
+        `Auto-review error for ${applicationId}: ${getErrorMessage(error)}`,
       );
-      // 不抛出错误，让报名流程继续
     }
   }
 
@@ -160,6 +163,92 @@ export class ApplicationService {
     }
 
     return this.mapToResponse(application);
+  }
+
+  async updateDraft(
+    candidateId: string,
+    draftId: string,
+    request: ApplicationSubmitRequest,
+  ): Promise<ApplicationResponse> {
+    const existing = await this.client.application.findFirst({
+      where: { id: draftId, candidateId, status: 'DRAFT' },
+    });
+    if (!existing) {
+      throw new NotFoundException('Draft not found');
+    }
+    if (request.examId !== existing.examId) {
+      throw new BadRequestException('Cannot change exam for an existing draft');
+    }
+
+    await this.client.application.update({
+      where: { id: draftId },
+      data: {
+        positionId: request.positionId,
+        payload: toJsonValue(request.payload),
+        formVersion: request.formVersion ?? existing.formVersion,
+      },
+    });
+
+    if (request.attachments && request.attachments.length > 0) {
+      for (const attachment of request.attachments) {
+        await this.client.fileRecord.update({
+          where: { id: attachment.fileId },
+          data: {
+            applicationId: draftId,
+            status: 'AVAILABLE',
+            fieldKey: attachment.fieldKey,
+          },
+        });
+      }
+    }
+
+    const withAttachments = await this.client.application.findUnique({
+      where: { id: draftId },
+      include: { attachments: true },
+    });
+    if (!withAttachments) {
+      throw new NotFoundException('Draft not found');
+    }
+    return this.mapToResponse(withAttachments);
+  }
+
+  async getAuditLogsForApplication(
+    applicationId: string,
+    user: { userId: string; permissions?: string[] },
+  ): Promise<
+    Array<{
+      id: string;
+      fromStatus: string;
+      toStatus: string;
+      operator: string;
+      action: string;
+      comment: string;
+      createdAt: string;
+    }>
+  > {
+    const app = await this.client.application.findUnique({
+      where: { id: applicationId },
+    });
+    if (!app) throw new NotFoundException('Application not found');
+    const canViewAll = user.permissions?.includes('application:view:all');
+    if (!canViewAll && app.candidateId !== user.userId) {
+      throw new ForbiddenException();
+    }
+
+    const logs = await this.client.applicationAuditLog.findMany({
+      where: { applicationId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return logs.map((log) => ({
+      id: log.id,
+      fromStatus: log.fromStatus ?? '',
+      toStatus: log.toStatus,
+      operator: log.actor ?? '',
+      action: log.toStatus,
+      comment: log.reason ?? '',
+      createdAt: log.createdAt.toISOString(),
+    }));
   }
 
   async listMyEnriched(
@@ -212,7 +301,7 @@ export class ApplicationService {
   }) {
     const { examId, status, page, size } = params;
     const skip = page * size;
-    const where: any = {};
+    const where: Prisma.ApplicationWhereInput = {};
 
     if (examId) {
       where.examId = examId;

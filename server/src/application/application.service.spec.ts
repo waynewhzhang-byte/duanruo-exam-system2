@@ -9,7 +9,11 @@ describe('ApplicationService', () => {
     const prisma = {
       client: {
         exam: { findUnique: jest.fn() },
-        application: { upsert: jest.fn(), findMany: jest.fn(), findUnique: jest.fn() },
+        application: {
+          upsert: jest.fn(),
+          findMany: jest.fn(),
+          findUnique: jest.fn(),
+        },
       },
     } as unknown as PrismaService;
 

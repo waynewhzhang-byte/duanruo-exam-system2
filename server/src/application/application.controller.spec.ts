@@ -18,8 +18,8 @@ describe('ApplicationController', () => {
 
   beforeEach(() => {
     controller = new ApplicationController(
-      mockApplicationService as any,
-      mockReviewService as any,
+      mockApplicationService as unknown as ApplicationService,
+      mockReviewService as unknown as ReviewService,
     );
   });
 

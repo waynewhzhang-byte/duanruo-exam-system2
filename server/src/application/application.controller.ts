@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   Param,
   UseGuards,
@@ -24,7 +25,7 @@ export class ApplicationController {
   constructor(
     private readonly applicationService: ApplicationService,
     private readonly reviewService: ReviewService,
-  ) { }
+  ) {}
 
   @Get('my')
   @Permissions('application:view:own')
@@ -38,22 +39,24 @@ export class ApplicationController {
   async listAll(
     @Query('examId') examId?: string,
     @Query('status') status?: string,
-    @Query('page') page = 0,
-    @Query('size') size = 10,
+    @Query('page') page: string = '0',
+    @Query('size') size: string = '10',
   ) {
+    const parsedPage = Number(page);
+    const parsedSize = Number(size);
     const { content, total } = await this.applicationService.listAll({
       examId,
       status,
-      page: Number(page),
-      size: Number(size),
+      page: parsedPage,
+      size: parsedSize,
     });
     return {
       success: true,
       data: {
         content,
         total,
-        page: Number(page),
-        size: Number(size),
+        page: parsedPage,
+        size: parsedSize,
       },
     };
   }
@@ -86,6 +89,34 @@ export class ApplicationController {
       request,
     );
     return ApiResult.ok(app, 'Draft saved successfully');
+  }
+
+  @Put('drafts/:id')
+  @Permissions('application:create')
+  async updateDraft(
+    @Param('id') id: string,
+    @Body() request: ApplicationSubmitRequest,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const app = await this.applicationService.updateDraft(
+      req.user.userId,
+      id,
+      request,
+    );
+    return ApiResult.ok(app, 'Draft updated successfully');
+  }
+
+  @Get(':id/audit-logs')
+  @Permissions('application:view:own')
+  async getAuditLogs(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const logs = await this.applicationService.getAuditLogsForApplication(
+      id,
+      req.user,
+    );
+    return ApiResult.ok(logs);
   }
 
   @Get(':id')
