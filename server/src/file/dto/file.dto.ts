@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsUUID, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  IsNumber,
+  IsArray,
+} from 'class-validator';
 
 export class FileUploadUrlRequest {
   @IsString()
@@ -17,13 +23,13 @@ export class FileUploadUrlRequest {
 
   @IsNumber()
   @IsOptional()
-  fileSize?: number;  // Optional - can be validated at step 1
+  fileSize?: number; // Optional - can be validated at step 1
 }
 
 export class FileConfimRequest {
   @IsNumber()
   @IsOptional()
-  fileSize?: number;  // Optional - can be auto-detected if not provided
+  fileSize?: number; // Optional - can be auto-detected if not provided
 }
 
 export class FileUploadUrlResponse {
@@ -65,6 +71,8 @@ export class PresignedUrlResponse {
 }
 
 export class FileBatchInfoRequest {
+  @IsArray()
+  @IsUUID(undefined, { each: true })
   fileIds: string[];
 }
 

@@ -2,11 +2,13 @@ import { Module, Global } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { FileService, MINIO_CLIENT } from './file.service';
 import { FileController } from './file.controller';
+import { PrismaModule } from '../prisma/prisma.module';
+import { PrismaService } from '../prisma/prisma.service';
 import * as Minio from 'minio';
 
 @Global()
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, PrismaModule],
   providers: [
     {
       provide: MINIO_CLIENT,
@@ -28,6 +30,7 @@ import * as Minio from 'minio';
       },
       inject: [ConfigService],
     },
+    PrismaService,
     FileService,
   ],
   controllers: [FileController],

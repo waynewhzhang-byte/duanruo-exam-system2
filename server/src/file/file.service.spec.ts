@@ -1,4 +1,4 @@
-import { FileService, MINIO_CLIENT } from './file.service';
+import { FileService } from './file.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'minio';

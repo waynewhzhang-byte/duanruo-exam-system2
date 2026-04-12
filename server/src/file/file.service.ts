@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import * as Minio from 'minio';
+import type { LifecycleConfig } from 'minio';
 import { v4 as uuidv4 } from 'uuid';
 import { FileValidator } from './file-validator';
 import {
@@ -16,6 +17,9 @@ import {
   PresignedUrlResponse,
   FileBatchInfoResponse,
 } from './dto/file.dto';
+import { getErrorMessage } from '../common/utils/error.util';
+import { PaginationHelper } from '../common/dto/paginated-response.dto';
+import { Prisma } from '@prisma/client';
 
 export const MINIO_CLIENT = 'MINIO_CLIENT';
 
@@ -43,7 +47,9 @@ export class FileService {
    * Required when MinIO runs behind a Docker network or reverse proxy.
    */
   private replaceWithPublicEndpoint(url: string): string {
-    const publicEndpoint = this.configService.get<string>('MINIO_PUBLIC_ENDPOINT');
+    const publicEndpoint = this.configService.get<string>(
+      'MINIO_PUBLIC_ENDPOINT',
+    );
     if (!publicEndpoint) return url;
     try {
       const parsed = new URL(url);
@@ -72,7 +78,7 @@ export class FileService {
         );
         await this.minioClient.makeBucket(bucketName, 'us-east-1');
         this.logger.log(`Created MinIO bucket: ${bucketName}`);
-        
+
         // Set lifecycle policy for new bucket
         await this.ensureBucketLifecycle(bucketName);
       }
@@ -93,7 +99,7 @@ export class FileService {
    */
   private async ensureBucketLifecycle(bucketName: string) {
     try {
-      const lifecycleConfig = {
+      const lifecycleConfig: LifecycleConfig = {
         Rule: [
           {
             ID: 'CleanupTemporaryUploads',
@@ -107,10 +113,12 @@ export class FileService {
           },
         ],
       };
-      await this.minioClient.setBucketLifecycle(bucketName, lifecycleConfig as any);
+      await this.minioClient.setBucketLifecycle(bucketName, lifecycleConfig);
       this.logger.log(`Set lifecycle policy for bucket: ${bucketName}`);
     } catch (error) {
-      this.logger.error(`Failed to set lifecycle for ${bucketName}: ${error}`);
+      this.logger.error(
+        `Failed to set lifecycle for ${bucketName}: ${getErrorMessage(error)}`,
+      );
     }
   }
 
@@ -147,7 +155,8 @@ export class FileService {
     // Validate fileSize at step 1 if provided
     if (fileSize !== undefined) {
       const sizeValid = FileValidator.validateFileSize(fileSize);
-      if (!sizeValid.valid) throw new BadRequestException(sizeValid.errorMessage);
+      if (!sizeValid.valid)
+        throw new BadRequestException(sizeValid.errorMessage);
     }
 
     const fileId = uuidv4();
@@ -365,5 +374,42 @@ export class FileService {
 
   async findById(id: string) {
     return this.prisma.publicClient.fileRecord.findUnique({ where: { id } });
+  }
+
+  async listMyFiles(
+    userId: string,
+    params: { page: number; size: number; status?: string },
+  ) {
+    const { page, size, status } = params;
+    const where: Prisma.FileRecordWhereInput = { uploadedBy: userId };
+    if (status) {
+      where.status = status;
+    }
+
+    const [rows, total] = await Promise.all([
+      this.prisma.publicClient.fileRecord.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: page * size,
+        take: size,
+      }),
+      this.prisma.publicClient.fileRecord.count({ where }),
+    ]);
+
+    const content = rows.map((f) => ({
+      id: f.id,
+      originalName: f.originalName,
+      storedName: f.storedName,
+      objectKey: f.objectKey,
+      contentType: f.contentType || '',
+      fileSize: Number(f.fileSize || 0),
+      status: f.status,
+      virusScanStatus: f.virusScanStatus,
+      fieldKey: f.fieldKey,
+      applicationId: f.applicationId,
+      uploadedAt: f.createdAt,
+    }));
+
+    return PaginationHelper.createResponse(content, total, page, size);
   }
 }

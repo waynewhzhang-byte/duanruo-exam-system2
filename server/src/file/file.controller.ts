@@ -5,6 +5,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Req,
   Logger,
@@ -96,6 +97,21 @@ export class FileController {
     return ApiResult.ok(result);
   }
 
+  @Get('my')
+  @Permissions('file:view')
+  async listMyFiles(
+    @Req() req: AuthenticatedRequest,
+    @Query('page') page = '0',
+    @Query('size') size = '10',
+    @Query('status') status?: string,
+  ) {
+    return this.fileService.listMyFiles(req.user.userId, {
+      page: Number(page),
+      size: Number(size),
+      status,
+    });
+  }
+
   @Get(':id')
   @Permissions('file:view')
   async getFileInfo(@Param('id') id: string) {
@@ -131,10 +147,7 @@ export class FileController {
 
   @Delete(':id')
   @Permissions('file:delete')
-  async deleteFile(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async deleteFile(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const tenantId =
       req.user.tenantId || (req.headers['x-tenant-id'] as string);
     await this.fileService.deleteFile(tenantId, id);
