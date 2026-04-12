@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { getErrorMessage } from '../common/utils/error.util';
 
 /**
  * Mock支付网关服务
@@ -30,7 +31,7 @@ export class MockGatewayService {
   /**
    * 创建Mock支付订单
    */
-  async createOrder(params: {
+  createOrder(params: {
     outTradeNo: string;
     amount: number;
     currency: string;
@@ -48,9 +49,12 @@ export class MockGatewayService {
     });
 
     // 设置5分钟后自动清理
-    setTimeout(() => {
-      this.orderCache.delete(outTradeNo);
-    }, 5 * 60 * 1000);
+    setTimeout(
+      () => {
+        this.orderCache.delete(outTradeNo);
+      },
+      5 * 60 * 1000,
+    );
 
     this.logger.log(`Mock order created: ${outTradeNo}, amount: ${amount}`);
 
@@ -131,7 +135,10 @@ export class MockGatewayService {
   /**
    * 发送HTTP回调
    */
-  private async sendCallback(url: string, data: any) {
+  private async sendCallback(
+    url: string,
+    data: Record<string, unknown>,
+  ): Promise<unknown> {
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -141,12 +148,12 @@ export class MockGatewayService {
         body: JSON.stringify(data),
       });
 
-      const result = await response.json();
+      const result: unknown = await response.json();
       this.logger.log(`Callback sent to ${url}, result:`, result);
 
       return result;
     } catch (error) {
-      this.logger.error(`Callback failed: ${error.message}`);
+      this.logger.error(`Callback failed: ${getErrorMessage(error)}`);
       throw error;
     }
   }

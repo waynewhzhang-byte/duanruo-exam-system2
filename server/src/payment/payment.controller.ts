@@ -5,14 +5,17 @@ import {
   Body,
   Param,
   UseGuards,
-  Request,
+  Req,
 } from '@nestjs/common';
+import type { AuthenticatedRequest } from '../auth/interfaces/authenticated-request.interface';
 import { PaymentService } from './payment.service';
 import { ApiResult } from '../common/dto/api-result.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
+import { PermissionsAnyGuard } from '../auth/permissions-any.guard';
 import { TenantGuard } from '../auth/tenant.guard';
 import { Permissions } from '../auth/permissions.decorator';
+import { PermissionsAny } from '../auth/permissions-any.decorator';
 import {
   InitiatePaymentRequest,
   PaymentCallbackRequest,
@@ -49,9 +52,13 @@ export class PaymentController {
    * GET /payments/order/:orderId
    */
   @Get('order/:orderId')
-  @UseGuards(JwtAuthGuard)
-  async queryOrder(@Param('orderId') orderId: string) {
-    const result = await this.paymentService.queryOrder(orderId);
+  @UseGuards(JwtAuthGuard, TenantGuard, PermissionsAnyGuard)
+  @PermissionsAny('payment:view:own', 'payment:order:read')
+  async queryOrder(
+    @Param('orderId') orderId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const result = await this.paymentService.queryOrder(orderId, req.user);
     return ApiResult.ok(result);
   }
 
@@ -60,8 +67,9 @@ export class PaymentController {
    * GET /payments/my-orders
    */
   @Get('my-orders')
-  @UseGuards(JwtAuthGuard)
-  async listMyOrders(@Request() req: any) {
+  @UseGuards(JwtAuthGuard, TenantGuard, PermissionsGuard)
+  @Permissions('payment:view:own')
+  async listMyOrders(@Req() req: AuthenticatedRequest) {
     const candidateId = req.user.userId;
     const result = await this.paymentService.listMyOrders(candidateId);
     return ApiResult.ok(result);

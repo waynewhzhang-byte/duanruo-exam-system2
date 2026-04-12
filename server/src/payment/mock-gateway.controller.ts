@@ -11,6 +11,7 @@ import {
 import type { Response } from 'express';
 import { MockGatewayService } from './mock-gateway.service';
 import { ConfigService } from '@nestjs/config';
+import { getErrorMessage } from '../common/utils/error.util';
 
 /**
  * Mock支付网关控制器
@@ -34,7 +35,7 @@ export class MockGatewayController {
    * GET /mock-pay/:outTradeNo
    */
   @Get(':outTradeNo')
-  async showPaymentPage(
+  showPaymentPage(
     @Param('outTradeNo') outTradeNo: string,
     @Res() res: Response,
   ) {
@@ -63,16 +64,20 @@ export class MockGatewayController {
 
     try {
       if (action === 'success') {
-        const result =
-          await this.mockGateway.mockPaymentSuccess(outTradeNo, callbackUrl);
+        const result = await this.mockGateway.mockPaymentSuccess(
+          outTradeNo,
+          callbackUrl,
+        );
         return {
           success: true,
           message: '支付成功',
           result,
         };
       } else {
-        const result =
-          await this.mockGateway.mockPaymentFailed(outTradeNo, callbackUrl);
+        const result = await this.mockGateway.mockPaymentFailed(
+          outTradeNo,
+          callbackUrl,
+        );
         return {
           success: true,
           message: '支付失败',
@@ -80,10 +85,10 @@ export class MockGatewayController {
         };
       }
     } catch (error) {
-      this.logger.error(`Payment action failed: ${error.message}`);
+      this.logger.error(`Payment action failed: ${getErrorMessage(error)}`);
       return {
         success: false,
-        message: error.message,
+        message: getErrorMessage(error),
       };
     }
   }

@@ -5,9 +5,10 @@ import { MockGatewayService } from './mock-gateway.service';
 import { MockGatewayController } from './mock-gateway.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, ConfigModule],
+  imports: [PrismaModule, ConfigModule, AuthModule],
   providers: [PaymentService, MockGatewayService],
   controllers: [PaymentController, MockGatewayController],
   exports: [PaymentService],

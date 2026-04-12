@@ -2,8 +2,11 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
+import type { AuthenticatedUser } from '../auth/interfaces/authenticated-request.interface';
+
 import { PrismaService } from '../prisma/prisma.service';
 import { MockGatewayService } from './mock-gateway.service';
 import {
@@ -71,7 +74,7 @@ export class PaymentService {
         outTradeNo: existingOrder.outTradeNo,
         payUrl:
           existingOrder.channel === 'MOCK'
-            ? await this.getMockPayUrl(existingOrder.outTradeNo)
+            ? this.getMockPayUrl(existingOrder.outTradeNo)
             : null,
         status: existingOrder.status,
         expiredAt: existingOrder.expiredAt,
@@ -99,7 +102,7 @@ export class PaymentService {
 
     // Handle MOCK channel
     if (channel === PaymentChannel.MOCK) {
-      const mockResult = await this.mockGateway.createOrder({
+      const mockResult = this.mockGateway.createOrder({
         outTradeNo,
         amount,
         currency: 'CNY',
@@ -195,21 +198,37 @@ export class PaymentService {
   /**
    * 获取Mock支付URL的辅助方法
    */
-  private async getMockPayUrl(outTradeNo: string): Promise<string> {
-    const baseUrl =
-      process.env.SERVER_URL || 'http://localhost:3000';
+  private getMockPayUrl(outTradeNo: string): string {
+    const baseUrl = process.env.SERVER_URL || 'http://localhost:3000';
     return `${baseUrl}/mock-pay/${outTradeNo}`;
   }
 
   /**
-   * 查询订单状态
+   * 查询订单状态（考生仅本人订单；租户管理员等需 payment:order:read / application:view:all）
    */
-  async queryOrder(orderId: string) {
+  async queryOrder(orderId: string, user: AuthenticatedUser) {
     const order = await this.client.paymentOrder.findUnique({
       where: { id: orderId },
     });
 
     if (!order) throw new NotFoundException('Order not found');
+
+    const application = await this.client.application.findUnique({
+      where: { id: order.applicationId },
+      select: { candidateId: true },
+    });
+
+    if (!application) throw new NotFoundException('Application not found');
+
+    const isOwner = application.candidateId === user.userId;
+    const hasElevated =
+      user.roles.includes('SUPER_ADMIN') ||
+      user.permissions.includes('payment:order:read') ||
+      user.permissions.includes('application:view:all');
+
+    if (!isOwner && !hasElevated) {
+      throw new ForbiddenException('Cannot access this payment order');
+    }
 
     return {
       orderId: order.id,
