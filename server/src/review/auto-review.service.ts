@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { getErrorMessage } from '../common/utils/error.util';
 
 /**
  * 自动审核规则类型
@@ -67,7 +68,7 @@ export interface AutoReviewResult {
   failedRules: {
     rule: AutoReviewRule;
     reason: string;
-    fieldValue: any;
+    fieldValue: unknown;
   }[];
   summary: string;
 }
@@ -103,9 +104,7 @@ export class AutoReviewService {
   /**
    * 执行自动审核
    */
-  async executeAutoReview(
-    applicationId: string,
-  ): Promise<AutoReviewResult> {
+  async executeAutoReview(applicationId: string): Promise<AutoReviewResult> {
     this.logger.log(`Starting auto-review for application: ${applicationId}`);
 
     // 1. 获取报名信息
@@ -134,7 +133,7 @@ export class AutoReviewService {
 
     // 3. 执行规则验证
     const failedRules: AutoReviewResult['failedRules'] = [];
-    const payload = application.payload as any;
+    const payload = application.payload;
 
     for (const rule of config.rules) {
       const fieldValue = this.getFieldValue(payload, rule.field);
@@ -155,7 +154,7 @@ export class AutoReviewService {
       }
 
       // 根据规则类型验证
-      const validationResult = await this.validateRule(rule, fieldValue);
+      const validationResult = this.validateRule(rule, fieldValue);
       if (!validationResult.passed) {
         failedRules.push({
           rule,
@@ -248,10 +247,10 @@ export class AutoReviewService {
   /**
    * 验证单个规则
    */
-  private async validateRule(
+  private validateRule(
     rule: AutoReviewRule,
-    value: any,
-  ): Promise<{ passed: boolean; reason: string }> {
+    value: unknown,
+  ): { passed: boolean; reason: string } {
     try {
       switch (rule.type) {
         case AutoReviewRuleType.AGE_RANGE:
@@ -282,10 +281,10 @@ export class AutoReviewService {
           return { passed: true, reason: '' };
       }
     } catch (error) {
-      this.logger.error(`Rule validation error: ${error.message}`);
+      this.logger.error(`Rule validation error: ${getErrorMessage(error)}`);
       return {
         passed: false,
-        reason: `验证失败: ${error.message}`,
+        reason: `验证失败: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -295,7 +294,7 @@ export class AutoReviewService {
    */
   private validateAgeRange(
     rule: AutoReviewRule,
-    value: any,
+    value: unknown,
   ): { passed: boolean; reason: string } {
     const age = this.parseAge(value);
 
@@ -309,16 +308,14 @@ export class AutoReviewService {
     if (rule.minAge && age < rule.minAge) {
       return {
         passed: false,
-        reason:
-          rule.rejectReason || `年龄不符合要求（最小 ${rule.minAge} 岁）`,
+        reason: rule.rejectReason || `年龄不符合要求（最小 ${rule.minAge} 岁）`,
       };
     }
 
     if (rule.maxAge && age > rule.maxAge) {
       return {
         passed: false,
-        reason:
-          rule.rejectReason || `年龄不符合要求（最大 ${rule.maxAge} 岁）`,
+        reason: rule.rejectReason || `年龄不符合要求（最大 ${rule.maxAge} 岁）`,
       };
     }
 
@@ -330,14 +327,11 @@ export class AutoReviewService {
    */
   private validateGender(
     rule: AutoReviewRule,
-    value: any,
+    value: unknown,
   ): { passed: boolean; reason: string } {
     const gender = String(value).trim();
 
-    if (
-      rule.allowedGenders &&
-      !rule.allowedGenders.some((g) => g === gender)
-    ) {
+    if (rule.allowedGenders && !rule.allowedGenders.some((g) => g === gender)) {
       return {
         passed: false,
         reason:
@@ -354,7 +348,7 @@ export class AutoReviewService {
    */
   private validateEducation(
     rule: AutoReviewRule,
-    value: any,
+    value: unknown,
   ): { passed: boolean; reason: string } {
     const education = String(value).trim();
     const educationLevel = this.EDUCATION_LEVELS[education];
@@ -386,7 +380,7 @@ export class AutoReviewService {
    */
   private validateWorkExperience(
     rule: AutoReviewRule,
-    value: any,
+    value: unknown,
   ): { passed: boolean; reason: string } {
     const years = Number(value);
 
@@ -423,12 +417,13 @@ export class AutoReviewService {
    */
   private validateIdNumber(
     rule: AutoReviewRule,
-    value: any,
+    value: unknown,
   ): { passed: boolean; reason: string } {
     const idNumber = String(value).trim();
 
     // 18位身份证号正则
-    const pattern = /^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/;
+    const pattern =
+      /^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/;
 
     if (!pattern.test(idNumber)) {
       return {
@@ -445,7 +440,7 @@ export class AutoReviewService {
    */
   private validatePhone(
     rule: AutoReviewRule,
-    value: any,
+    value: unknown,
   ): { passed: boolean; reason: string } {
     const phone = String(value).trim();
     const pattern = /^1[3-9]\d{9}$/;
@@ -465,7 +460,7 @@ export class AutoReviewService {
    */
   private validateEmail(
     rule: AutoReviewRule,
-    value: any,
+    value: unknown,
   ): { passed: boolean; reason: string } {
     const email = String(value).trim();
     const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -485,7 +480,7 @@ export class AutoReviewService {
    */
   private validateCustomField(
     rule: AutoReviewRule,
-    value: any,
+    value: unknown,
   ): { passed: boolean; reason: string } {
     // 枚举值验证
     if (rule.allowedValues) {
@@ -516,7 +511,7 @@ export class AutoReviewService {
   /**
    * 解析年龄
    */
-  private parseAge(value: any): number | null {
+  private parseAge(value: unknown): number | null {
     // 如果直接是年龄数字
     if (typeof value === 'number') {
       return value;
@@ -557,32 +552,54 @@ export class AutoReviewService {
   /**
    * 获取自动审核配置
    */
-  private getAutoReviewConfig(rulesConfig: any): AutoReviewConfig {
-    if (!rulesConfig || typeof rulesConfig !== 'object') {
+  private getAutoReviewConfig(
+    rulesConfig: Prisma.JsonValue | null | undefined,
+  ): AutoReviewConfig {
+    if (
+      rulesConfig === null ||
+      rulesConfig === undefined ||
+      typeof rulesConfig !== 'object' ||
+      Array.isArray(rulesConfig)
+    ) {
       return { enabled: false, rules: [] };
     }
 
-    const autoReview = rulesConfig.autoReview;
-    if (!autoReview) {
+    const rc = rulesConfig as Record<string, unknown>;
+    const autoReview = rc['autoReview'];
+    if (
+      !autoReview ||
+      typeof autoReview !== 'object' ||
+      Array.isArray(autoReview)
+    ) {
       return { enabled: false, rules: [] };
     }
+
+    const ar = autoReview as Record<string, unknown>;
+    const enabled = Boolean(ar['enabled']);
+    const rawRules = ar['rules'];
+    const rules = Array.isArray(rawRules) ? (rawRules as AutoReviewRule[]) : [];
 
     return {
-      enabled: autoReview.enabled || false,
-      rules: autoReview.rules || [],
+      enabled,
+      rules,
     };
   }
 
   /**
    * 获取字段值（支持嵌套）
    */
-  private getFieldValue(obj: any, fieldPath: string): any {
+  private getFieldValue(obj: Prisma.JsonValue, fieldPath: string): unknown {
     const keys = fieldPath.split('.');
-    let value = obj;
+    let value: unknown = obj;
 
     for (const key of keys) {
-      if (value && typeof value === 'object' && key in value) {
-        value = value[key];
+      if (
+        value !== null &&
+        typeof value === 'object' &&
+        !Array.isArray(value) &&
+        key in value
+      ) {
+        value = (value as Record<string, unknown>)[key];
       } else {
         return undefined;
       }
@@ -594,7 +611,7 @@ export class AutoReviewService {
   /**
    * 检查值是否为空
    */
-  private isEmpty(value: any): boolean {
+  private isEmpty(value: unknown): boolean {
     return (
       value === null ||
       value === undefined ||

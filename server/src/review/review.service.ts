@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { getErrorMessage } from '../common/utils/error.util';
 import {
   ReviewStage,
   PullTaskRequest,
@@ -22,6 +23,10 @@ interface QueueTaskRaw {
   locked_at: Date | null;
   last_heartbeat_at: Date | null;
   created_at: Date;
+}
+
+interface CountResultRaw {
+  total: bigint;
 }
 
 interface HistoryReviewRaw {
@@ -43,7 +48,7 @@ export class ReviewService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
-  ) { }
+  ) {}
 
   private get client() {
     return this.prisma.client;
@@ -97,7 +102,7 @@ export class ReviewService {
       return null;
     }
 
-    const applicationIds = applications.map(a => a.id);
+    const applicationIds = applications.map((a) => a.id);
 
     // Atomic transaction to find and claim the next available application
     const result = await this.client.$transaction(async (tx) => {
@@ -112,10 +117,14 @@ export class ReviewService {
         select: { applicationId: true },
       });
 
-      const activeApplicationIds = new Set(activeTasks.map(t => t.applicationId));
-      
+      const activeApplicationIds = new Set(
+        activeTasks.map((t) => t.applicationId),
+      );
+
       // 2. Find the first application that really doesn't have an active task
-      const availableApp = applications.find(app => !activeApplicationIds.has(app.id));
+      const availableApp = applications.find(
+        (app) => !activeApplicationIds.has(app.id),
+      );
 
       if (!availableApp) {
         return null;
@@ -235,8 +244,11 @@ export class ReviewService {
       }
 
       // 异步发送通知 (Async notification)
-      this.sendReviewNotification(app.candidateId, app.examId, toStatus).catch(err => 
-        this.logger.error(`Failed to send review notification: ${err.message}`)
+      this.sendReviewNotification(app.candidateId, app.examId, toStatus).catch(
+        (err: unknown) =>
+          this.logger.error(
+            `Failed to send review notification: ${getErrorMessage(err)}`,
+          ),
       );
 
       return { applicationId: app.id, fromStatus, toStatus };
@@ -246,11 +258,21 @@ export class ReviewService {
   /**
    * Helper to fetch candidate info and send notification
    */
-  private async sendReviewNotification(candidateId: string, examId: string, status: string) {
+  private async sendReviewNotification(
+    candidateId: string,
+    examId: string,
+    status: string,
+  ) {
     try {
       const [user, exam] = await Promise.all([
-        this.prisma.user.findUnique({ where: { id: candidateId }, select: { email: true, fullName: true } }),
-        this.client.exam.findUnique({ where: { id: examId }, select: { title: true } })
+        this.prisma.user.findUnique({
+          where: { id: candidateId },
+          select: { email: true, fullName: true },
+        }),
+        this.client.exam.findUnique({
+          where: { id: examId },
+          select: { title: true },
+        }),
       ]);
 
       if (user?.email) {
@@ -258,11 +280,13 @@ export class ReviewService {
           user.email,
           user.fullName,
           exam?.title || '考试',
-          status
+          status,
         );
       }
     } catch (error) {
-      this.logger.error(`Error in sendReviewNotification: ${error.message}`);
+      this.logger.error(
+        `Error in sendReviewNotification: ${getErrorMessage(error)}`,
+      );
     }
   }
 
@@ -313,7 +337,7 @@ export class ReviewService {
     const offset = page * size;
 
     const statusClause = status ? `AND rt.status = $4` : '';
-    
+
     const countQuery = `
       SELECT COUNT(*) as total
       FROM review_tasks rt
@@ -322,7 +346,7 @@ export class ReviewService {
         AND rt.stage = $2
         ${statusClause}
     `;
-    
+
     const dataQuery = `
       SELECT 
         rt.id,
@@ -342,22 +366,20 @@ export class ReviewService {
       LIMIT $3 OFFSET $${status ? 5 : 4}
     `;
 
-    const countParams = status 
-      ? [examId, stage, status]
-      : [examId, stage];
-    const dataParams = status 
+    const countParams = status ? [examId, stage, status] : [examId, stage];
+    const dataParams = status
       ? [examId, stage, size, offset, status]
       : [examId, stage, size, offset];
 
     const [countResult, tasks] = await Promise.all([
-      this.client.$queryRawUnsafe<{ total: bigint }[]>(countQuery, ...countParams),
+      this.client.$queryRawUnsafe<CountResultRaw[]>(countQuery, ...countParams),
       this.client.$queryRawUnsafe<QueueTaskRaw[]>(dataQuery, ...dataParams),
     ]);
 
     const total = Number(countResult[0]?.total ?? 0);
 
-    return { 
-      content: tasks.map(t => ({
+    return {
+      content: tasks.map((t) => ({
         id: t.id,
         applicationId: t.application_id,
         stage: t.stage,
@@ -366,8 +388,8 @@ export class ReviewService {
         lockedAt: t.locked_at,
         lastHeartbeatAt: t.last_heartbeat_at,
         createdAt: t.created_at,
-      })), 
-      total 
+      })),
+      total,
     };
   }
 
@@ -396,9 +418,8 @@ export class ReviewService {
       paramIndex++;
     }
 
-    const whereClause = conditions.length > 0 
-      ? `WHERE ${conditions.join(' AND ')}` 
-      : '';
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const countQuery = `
       SELECT COUNT(*) as total
@@ -425,14 +446,19 @@ export class ReviewService {
     `;
 
     const [countResult, reviews] = await Promise.all([
-      this.client.$queryRawUnsafe<{ total: bigint }[]>(countQuery, ...queryParams),
-      this.client.$queryRawUnsafe<HistoryReviewRaw[]>(dataQuery, ...queryParams, size, offset),
+      this.client.$queryRawUnsafe<CountResultRaw[]>(countQuery, ...queryParams),
+      this.client.$queryRawUnsafe<HistoryReviewRaw[]>(
+        dataQuery,
+        ...queryParams,
+        size,
+        offset,
+      ),
     ]);
 
     const total = Number(countResult[0]?.total ?? 0);
 
-    return { 
-      content: reviews.map(r => ({
+    return {
+      content: reviews.map((r) => ({
         id: r.id,
         applicationId: r.application_id,
         stage: r.stage,
@@ -441,12 +467,15 @@ export class ReviewService {
         comment: r.comment,
         reviewedAt: r.reviewed_at,
         createdAt: r.created_at,
-      })), 
-      total 
+      })),
+      total,
     };
   }
 
-  async batchDecide(reviewerId: string, decisions: { id: string; decision: boolean; reason?: string }[]) {
+  async batchDecide(
+    reviewerId: string,
+    decisions: { id: string; decision: boolean; reason?: string }[],
+  ) {
     const result = {
       success: [] as string[],
       failed: [] as { id: string; reason: string }[],
@@ -469,5 +498,47 @@ export class ReviewService {
     }
 
     return result;
+  }
+
+  /** Dashboard: assigned tasks + reviews completed today / this week */
+  async getMyStats(reviewerId: string): Promise<{
+    myAssigned: number;
+    todayDone: number;
+    weekDone: number;
+  }> {
+    const now = new Date();
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    const startOfWeek = new Date(startOfToday);
+    const dow = startOfToday.getDay();
+    startOfWeek.setDate(startOfWeek.getDate() - dow);
+
+    const [myAssigned, todayDone, weekDone] = await Promise.all([
+      this.client.reviewTask.count({
+        where: {
+          assignedTo: reviewerId,
+          status: 'ASSIGNED',
+        },
+      }),
+      this.client.review.count({
+        where: {
+          reviewerId,
+          reviewedAt: { gte: startOfToday },
+          decision: { not: null },
+        },
+      }),
+      this.client.review.count({
+        where: {
+          reviewerId,
+          reviewedAt: { gte: startOfWeek },
+          decision: { not: null },
+        },
+      }),
+    ]);
+
+    return { myAssigned, todayDone, weekDone };
   }
 }

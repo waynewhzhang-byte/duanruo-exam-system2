@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Get, UseGuards, Req, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Req,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { ApiResult } from '../common/dto/api-result.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -6,7 +15,7 @@ import { PermissionsGuard } from '../auth/permissions.guard';
 import { TenantGuard } from '../auth/tenant.guard';
 import { Permissions } from '../auth/permissions.decorator';
 import { PullTaskRequest, DecisionTaskRequest } from './dto/review.dto';
-import { BatchReviewDecisionRequest, BatchResult } from '../common/dto/batch.dto';
+import { BatchReviewDecisionRequest } from '../common/dto/batch.dto';
 import type { AuthenticatedRequest } from '../auth/interfaces/authenticated-request.interface';
 import {
   PaginatedResponse,
@@ -16,7 +25,14 @@ import {
 @Controller('reviews')
 @UseGuards(JwtAuthGuard, TenantGuard, PermissionsGuard)
 export class ReviewController {
-  constructor(private readonly reviewService: ReviewService) { }
+  constructor(private readonly reviewService: ReviewService) {}
+
+  @Get('stats/me')
+  @Permissions('review:view')
+  async getMyStats(@Req() req: AuthenticatedRequest) {
+    const stats = await this.reviewService.getMyStats(req.user.userId);
+    return ApiResult.ok(stats);
+  }
 
   @Post('pull')
   @Permissions('review:perform')
@@ -47,7 +63,10 @@ export class ReviewController {
     @Req() req: AuthenticatedRequest,
     @Body() request: BatchReviewDecisionRequest,
   ) {
-    const result = await this.reviewService.batchDecide(req.user.userId, request.decisions);
+    const result = await this.reviewService.batchDecide(
+      req.user.userId,
+      request.decisions,
+    );
     return ApiResult.ok(result, 'Batch review decisions recorded');
   }
 
@@ -73,7 +92,7 @@ export class ReviewController {
     @Query('status') status?: string,
     @Query('page') page = 0,
     @Query('size') size = 10,
-  ): Promise<PaginatedResponse<any>> {
+  ): Promise<PaginatedResponse<Record<string, unknown>>> {
     const { content, total } = await this.reviewService.getQueue({
       examId,
       stage,
@@ -96,7 +115,7 @@ export class ReviewController {
     @Query('reviewerId') reviewerId?: string,
     @Query('page') page = 0,
     @Query('size') size = 10,
-  ): Promise<PaginatedResponse<any>> {
+  ): Promise<PaginatedResponse<Record<string, unknown>>> {
     const { content, total } = await this.reviewService.getHistory({
       examId,
       reviewerId,
