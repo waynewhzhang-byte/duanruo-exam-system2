@@ -32,11 +32,42 @@ model User {
   version           BigInt    @default(0)
 
   tenantRoles       UserTenantRole[]
+  profile           UserProfile?
+
   // In the tenant schema, candidates will refer to this id.
   // Prisma doesn't natively support cross-schema relations perfectly in a single client,
   // but we can manage them by ID.
 
   @@map("users")
+}
+
+model UserProfile {
+  id                  String              @id @default(uuid()) @db.Uuid
+  userId              String              @unique @map("user_id") @db.Uuid
+  gender              String?             @db.VarChar(10)
+  birthDate           DateTime?           @map("birth_date")
+  idNumber            String?             @map("id_number") @db.VarChar(50)
+  idNumberEncrypted   Boolean             @default(false) @map("id_number_encrypted")
+  politicalStatus     String?             @map("political_status") @db.VarChar(20)
+  hukouLocation       String?             @map("hukou_location") @db.VarChar(200)
+  workExperience      String?             @map("work_experience") @db.VarChar(100)
+  photoId             String?             @map("photo_id") @db.Uuid
+  education           String?             @db.VarChar(50)
+  major               String?             @db.VarChar(100)
+  graduateYear        Int?                @map("graduate_year")
+  university          String?             @db.VarChar(200)
+  currentCompany      String?             @map("current_company") @db.VarChar(200)
+  currentPosition     String?             @map("current_position") @db.VarChar(100)
+  emergencyContact    String?             @map("emergency_contact") @db.VarChar(100)
+  emergencyPhone      String?             @map("emergency_phone") @db.VarChar(20)
+  address             String?             @db.VarChar(300)
+  customFields        Json?               @map("custom_fields")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
 }
 
 model Tenant {
@@ -74,6 +105,26 @@ model UserTenantRole {
 
   @@unique([userId, tenantId, role])
   @@map("user_tenant_roles")
+}
+
+model SecurityAuditLog {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String?   @map("user_id") @db.Uuid
+  username        String?   @db.VarChar(100)
+  action          String    @db.VarChar(100)
+  resource        String?   @db.VarChar(100)
+  resourceId      String?   @map("resource_id") @db.VarChar(100)
+  details          Json?
+  ipAddress       String?   @map("ip_address") @db.VarChar(45)
+  userAgent       String?   @map("user_agent") @db.Text
+  success         Boolean  @default(true)
+  errorMessage     String?   @map("error_message") @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([action])
+  @@index([userId], map: "security_audit_logs_user_id_idx")
+  @@index([createdAt], map: "security_audit_logs_created_at_idx")
+  @@map("security_audit_logs")
 }
 
 // --- Tenant Schema Tables (Template) ---

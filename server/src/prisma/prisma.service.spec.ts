@@ -15,4 +15,10 @@ describe('PrismaService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
+
+  it('client should reference the full Prisma API (not Prisma internal stub)', () => {
+    expect(service.client).toBe(service);
+    expect(service.client.exam).toBeDefined();
+    expect(service.client.tenant).toBeDefined();
+  });
 });
