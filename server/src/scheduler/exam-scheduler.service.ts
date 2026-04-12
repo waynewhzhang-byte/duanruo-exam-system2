@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ExamSchedulerService {
   private readonly logger = new Logger(ExamSchedulerService.name);
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * 自动关闭报名定时任务 (每 5 分钟执行一次)

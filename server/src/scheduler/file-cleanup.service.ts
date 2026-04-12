@@ -10,9 +10,7 @@ export class FileCleanupService {
   private readonly logger = new Logger(FileCleanupService.name);
   private readonly UPLOAD_TIMEOUT_HOURS = 1;
 
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   private getTenantBucketName(tenantCode: string): string {
     const sanitizedCode = tenantCode.toLowerCase().replace(/_/g, '-');
@@ -52,7 +50,7 @@ export class FileCleanupService {
     for (const file of timeoutFiles) {
       try {
         const tenant = tenants.find((t) => t.id === file.uploadedBy);
-        
+
         const minioClient = new Minio.Client({
           endPoint: process.env.MINIO_ENDPOINT || 'localhost',
           port: parseInt(process.env.MINIO_PORT || '9000'),
@@ -65,9 +63,13 @@ export class FileCleanupService {
 
         try {
           await minioClient.removeObject(bucketName, file.objectKey);
-          this.logger.log(`[FileCleanup] Deleted MinIO object: ${file.objectKey}`);
-        } catch (e) {
-          this.logger.warn(`[FileCleanup] Failed to delete MinIO object: ${file.objectKey}`);
+          this.logger.log(
+            `[FileCleanup] Deleted MinIO object: ${file.objectKey}`,
+          );
+        } catch {
+          this.logger.warn(
+            `[FileCleanup] Failed to delete MinIO object: ${file.objectKey}`,
+          );
         }
 
         await this.prisma.publicClient.fileRecord.update({
@@ -101,7 +103,9 @@ export class FileCleanupService {
       return;
     }
 
-    this.logger.log(`[FileAutoConfirm] Found ${pendingFiles.length} pending files`);
+    this.logger.log(
+      `[FileAutoConfirm] Found ${pendingFiles.length} pending files`,
+    );
 
     const tenants = await this.prisma.publicClient.tenant.findMany({
       where: { status: 'ACTIVE' },
@@ -133,7 +137,9 @@ export class FileCleanupService {
         this.logger.log(`[FileAutoConfirm] Auto-confirmed file: ${file.id}`);
       } catch (e) {
         if ((e as { code?: string }).code === 'NotFound') {
-          this.logger.debug(`[FileAutoConfirm] File not in MinIO: ${file.objectKey}`);
+          this.logger.debug(
+            `[FileAutoConfirm] File not in MinIO: ${file.objectKey}`,
+          );
         } else {
           this.logger.warn(
             `[FileAutoConfirm] Error checking file ${file.id}: ${(e as Error).message}`,

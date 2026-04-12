@@ -8,4 +8,4 @@ import { PrismaModule } from '../prisma/prisma.module';
   imports: [ScheduleModule.forRoot(), PrismaModule],
   providers: [ExamSchedulerService, FileCleanupService],
 })
-export class SchedulerModule { }
+export class SchedulerModule {}
