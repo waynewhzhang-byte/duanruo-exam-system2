@@ -6,8 +6,17 @@ import {
 } from '@nestjs/common';
 import * as Minio from 'minio';
 import { ConfigService } from '@nestjs/config';
+import { getErrorMessage, getErrorStack } from '../common/utils/error.util';
 
 const MINIO_CLIENT = 'MINIO_CLIENT';
+
+/** MinIO JS client v8 supports CORS; @types/minio may omit this method */
+interface MinioClientWithBucketCors {
+  setBucketCors(
+    bucketName: string,
+    corsConfig: { CORSRules: unknown[] },
+  ): Promise<void>;
+}
 
 /**
  * Tenant Bucket Management Service
@@ -61,7 +70,7 @@ export class TenantBucketService {
       await this.setBucketCorsPolicy(bucketName);
 
       // Set bucket lifecycle policy (optional: auto-delete expired files)
-      await this.setBucketLifecyclePolicy(bucketName);
+      this.setBucketLifecyclePolicy(bucketName);
 
       // Set bucket versioning (optional: enable versioning for audit trail)
       // await this.enableBucketVersioning(bucketName);
@@ -72,10 +81,10 @@ export class TenantBucketService {
     } catch (error) {
       this.logger.error(
         `Failed to create MinIO bucket for tenant ${tenantCode}`,
-        error.stack,
+        getErrorStack(error),
       );
       throw new InternalServerErrorException(
-        `Failed to create storage bucket for tenant: ${error.message}`,
+        `Failed to create storage bucket for tenant: ${getErrorMessage(error)}`,
       );
     }
   }
@@ -90,8 +99,8 @@ export class TenantBucketService {
         'MINIO_CORS_ORIGINS',
         '*',
       );
-      // @types/minio v7 doesn't declare setBucketCors, but minio v8 supports it
-      await (this.minioClient as any).setBucketCors(bucketName, {
+      const client = this.minioClient as unknown as MinioClientWithBucketCors;
+      await client.setBucketCors(bucketName, {
         CORSRules: [
           {
             AllowedHeaders: ['*'],
@@ -105,7 +114,7 @@ export class TenantBucketService {
       this.logger.log(`Set CORS policy for bucket: ${bucketName}`);
     } catch (error) {
       this.logger.warn(
-        `Failed to set CORS policy for ${bucketName}: ${error.message}`,
+        `Failed to set CORS policy for ${bucketName}: ${getErrorMessage(error)}`,
       );
     }
   }
@@ -113,45 +122,14 @@ export class TenantBucketService {
   /**
    * Set lifecycle policy to auto-delete files with expiration date
    */
-  private async setBucketLifecyclePolicy(bucketName: string): Promise<void> {
+  private setBucketLifecyclePolicy(bucketName: string): void {
     try {
-      // Lifecycle rule: Delete objects with tag "expired=true" after 1 day
-      // Or delete objects in /temp/ prefix after 7 days
-      const lifecycleConfig = {
-        Rule: [
-          {
-            ID: 'delete-expired-files',
-            Status: 'Enabled',
-            Filter: {
-              Tag: {
-                Key: 'expired',
-                Value: 'true',
-              },
-            },
-            Expiration: {
-              Days: 1,
-            },
-          },
-          {
-            ID: 'cleanup-temp-files',
-            Status: 'Enabled',
-            Filter: {
-              Prefix: 'temp/',
-            },
-            Expiration: {
-              Days: 7,
-            },
-          },
-        ],
-      };
-
-      // Note: MinIO lifecycle API may vary by version
-      // This is a placeholder - adjust based on your MinIO version
+      // Placeholder: wire MinIO lifecycle API when ready (e.g. temp/ prefix expiry, tag-based expiry).
       this.logger.debug(`Set lifecycle policy for bucket: ${bucketName}`);
     } catch (error) {
       // Non-critical error, log and continue
       this.logger.warn(
-        `Failed to set lifecycle policy for ${bucketName}: ${error.message}`,
+        `Failed to set lifecycle policy for ${bucketName}: ${getErrorMessage(error)}`,
       );
     }
   }
@@ -159,14 +137,14 @@ export class TenantBucketService {
   /**
    * Enable bucket versioning for audit trail
    */
-  private async enableBucketVersioning(bucketName: string): Promise<void> {
+  private enableBucketVersioning(bucketName: string): void {
     try {
       // Note: MinIO versioning API
       // await this.minioClient.setBucketVersioning(bucketName, { Status: 'Enabled' });
       this.logger.debug(`Enabled versioning for bucket: ${bucketName}`);
     } catch (error) {
       this.logger.warn(
-        `Failed to enable versioning for ${bucketName}: ${error.message}`,
+        `Failed to enable versioning for ${bucketName}: ${getErrorMessage(error)}`,
       );
     }
   }
@@ -199,10 +177,10 @@ export class TenantBucketService {
     } catch (error) {
       this.logger.error(
         `Failed to delete bucket ${bucketName}`,
-        error.stack,
+        getErrorStack(error),
       );
       throw new InternalServerErrorException(
-        `Failed to delete storage bucket: ${error.message}`,
+        `Failed to delete storage bucket: ${getErrorMessage(error)}`,
       );
     }
   }
@@ -222,31 +200,34 @@ export class TenantBucketService {
         }
       });
 
-      objectsStream.on('end', async () => {
-        if (objectsToDelete.length > 0) {
-          try {
-            await this.minioClient.removeObjects(bucketName, objectsToDelete);
+      objectsStream.on('end', () => {
+        if (objectsToDelete.length === 0) {
+          resolve();
+          return;
+        }
+        this.minioClient
+          .removeObjects(bucketName, objectsToDelete)
+          .then(() => {
             this.logger.log(
               `Deleted ${objectsToDelete.length} objects from ${bucketName}`,
             );
-          } catch (error) {
-            reject(error);
-            return;
-          }
-        }
-        resolve();
+            resolve();
+          })
+          .catch((error: unknown) => {
+            reject(error instanceof Error ? error : new Error(String(error)));
+          });
       });
 
-      objectsStream.on('error', reject);
+      objectsStream.on('error', (error: unknown) => {
+        reject(error instanceof Error ? error : new Error(String(error)));
+      });
     });
   }
 
   /**
    * Get bucket statistics for a tenant
    */
-  async getTenantBucketStats(
-    tenantCode: string,
-  ): Promise<{
+  async getTenantBucketStats(tenantCode: string): Promise<{
     bucketName: string;
     exists: boolean;
     objectCount?: number;
@@ -285,10 +266,10 @@ export class TenantBucketService {
     } catch (error) {
       this.logger.error(
         `Failed to get bucket stats for ${tenantCode}`,
-        error,
+        getErrorStack(error),
       );
       throw new InternalServerErrorException(
-        `Failed to get bucket statistics: ${error.message}`,
+        `Failed to get bucket statistics: ${getErrorMessage(error)}`,
       );
     }
   }
