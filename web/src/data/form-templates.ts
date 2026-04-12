@@ -1,7 +1,7 @@
 import { FormTemplate, PRESET_FIELDS } from '@/types/form-template'
 
 // 基础模板 - 适用于简单考试（包含身份信息和学历信息）
-export const BASIC_TEMPLATE: any = {
+export const BASIC_TEMPLATE: FormTemplate = {
   id: 'basic-template',
   name: '基础报名模板',
   description: '包含身份信息、学历信息和对应附件的标准报名表单',
@@ -24,7 +24,7 @@ export const BASIC_TEMPLATE: any = {
       collapsible: false,
       collapsed: false,
       fields: [
-        { ...PRESET_FIELDS.fullName, id: 'fullName', key: 'fullName', order: 1, width: 'half' } as any,
+        { ...PRESET_FIELDS.fullName, id: 'fullName', key: 'fullName', order: 1, width: 'half' } ,
         { ...PRESET_FIELDS.idNumber, id: 'idNumber', key: 'idNumber', order: 2, width: 'half' } as any,
         { ...PRESET_FIELDS.idCardFiles, id: 'idCardFiles', key: 'idCardFiles', order: 3 } as any,
         { ...PRESET_FIELDS.gender, id: 'gender', key: 'gender', order: 4, width: 'third' } as any,
@@ -105,7 +105,7 @@ export const BASIC_TEMPLATE: any = {
 }
 
 // 完整模板 - 适用于复杂考试（含工作经历）
-export const COMPREHENSIVE_TEMPLATE: any = {
+export const COMPREHENSIVE_TEMPLATE: FormTemplate = {
   id: 'comprehensive-template',
   name: '完整报名模板',
   description: '包含身份、学历、工作经历及所有对应附件的完整报名表单',
@@ -411,7 +411,7 @@ export const COMPREHENSIVE_TEMPLATE: any = {
 }
 
 // 技能认证模板 - 适用于技能类考试
-export const SKILL_CERTIFICATION_TEMPLATE: any = {
+export const SKILL_CERTIFICATION_TEMPLATE: FormTemplate = {
   id: 'skill-certification-template',
   name: '技能认证模板',
   description: '适用于技能认证类考试，包含身份信息和技能证书附件',
@@ -562,18 +562,18 @@ export const SKILL_CERTIFICATION_TEMPLATE: any = {
 }
 
 // 导出所有模板
-export const FORM_TEMPLATES: any[] = [
+export const FORM_TEMPLATES: FormTemplate[] = [
   BASIC_TEMPLATE,
   COMPREHENSIVE_TEMPLATE,
   SKILL_CERTIFICATION_TEMPLATE,
 ]
 
 // 根据ID获取模板
-export function getTemplateById(id: string): any {
+export function getTemplateById(id: string): FormTemplate | undefined {
   return FORM_TEMPLATES.find(template => template.id === id)
 }
 
 // 根据分类获取模板
-export function getTemplatesByCategory(category: string): any[] {
+export function getTemplatesByCategory(category: string): FormTemplate[] {
   return FORM_TEMPLATES.filter(template => template.category === category)
 }

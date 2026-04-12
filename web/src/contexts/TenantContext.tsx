@@ -33,11 +33,12 @@ export function TenantProvider({ children, tenantSlug }: TenantProviderProps) {
       setError(null)
 
       try {
-        // Call backend API to get tenant by slug
+        // Call backend API to get tenant by slug (backend uses code field)
         const data = await apiGet<TenantType>(`/tenants/slug/${tenantSlug}`, {
           schema: Tenant
         })
-        setTenant(data)
+        // Ensure slug is set (backend returns code, frontend uses slug for URLs)
+        setTenant({ ...data, slug: data.slug || data.code || tenantSlug })
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Failed to fetch tenant')
         setError(error)

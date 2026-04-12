@@ -300,15 +300,19 @@ export function getExaminerNavigation(tenantSlug: string): RoleNavigation {
 }
 
 /**
- * Get navigation items based on user's primary role
+ * Get navigation items based on user's primary role.
+ * For tenant-scoped roles, tenantSlug must be the current tenant's slug from URL/context.
+ * Do NOT use 'default' as fallback - it could point to a real tenant and leak cross-tenant data.
  */
 export function getNavigationForRole(role: string, tenantSlug?: string): RoleNavigation {
-  const slug = tenantSlug || 'default'
+  // SUPER_ADMIN/ADMIN don't need tenant slug
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
+    return getSuperAdminNavigation()
+  }
+  // Tenant-scoped roles require valid slug; use placeholder only to avoid crashes
+  const slug = tenantSlug || '__select_tenant__'
 
   switch (role) {
-    case 'SUPER_ADMIN':
-    case 'ADMIN':
-      return getSuperAdminNavigation()
     case 'TENANT_ADMIN':
       return getTenantAdminNavigation(slug)
     case 'EXAM_ADMIN':
