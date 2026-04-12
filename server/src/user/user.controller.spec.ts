@@ -1,11 +1,11 @@
 import { UserController } from './user.controller';
-import { UserService } from './user.service';
+import type { UserService } from './user.service';
 
 describe('UserController', () => {
   let controller: UserController;
 
   beforeEach(() => {
-    controller = new UserController({} as any);
+    controller = new UserController({} as unknown as UserService);
   });
 
   it('should be defined', () => {

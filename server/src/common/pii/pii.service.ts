@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 
 export enum PiiType {
   NAME = 'NAME',
@@ -12,9 +14,66 @@ export enum PiiType {
 
 @Injectable()
 export class PiiService {
-  /**
-   * 脱敏 PII 数据
-   */
+  private readonly logger = new Logger(PiiService.name);
+  private readonly encryptionKey: string;
+  private readonly algorithm = 'aes-256-gcm';
+
+  constructor(private readonly configService: ConfigService) {
+    this.encryptionKey =
+      this.configService.get<string>('ENCRYPTION_KEY') ||
+      this.configService.get<string>('APP_SECRET') ||
+      'default-encryption-key-change-in-production';
+  }
+
+  encrypt(value: string): string {
+    if (!value) return value;
+
+    try {
+      const iv = crypto.randomBytes(16);
+      const key = crypto.scryptSync(this.encryptionKey, 'salt', 32);
+      const cipher = crypto.createCipheriv(this.algorithm, key, iv);
+
+      let encrypted = cipher.update(value, 'utf8', 'hex');
+      encrypted += cipher.final('hex');
+
+      const authTag = cipher.getAuthTag().toString('hex');
+
+      return `${iv.toString('hex')}:${authTag}:${encrypted}`;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(`Encryption failed: ${errorMessage}`);
+      return value;
+    }
+  }
+
+  decrypt(value: string): string {
+    if (!value || !value.includes(':')) return value;
+
+    try {
+      const parts = value.split(':');
+      if (parts.length !== 3) return value;
+
+      const [ivHex, authTagHex, encrypted] = parts;
+      const iv = Buffer.from(ivHex, 'hex');
+      const authTag = Buffer.from(authTagHex, 'hex');
+      const key = crypto.scryptSync(this.encryptionKey, 'salt', 32);
+
+      const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
+      decipher.setAuthTag(authTag);
+
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+
+      return decrypted;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(`Decryption failed: ${errorMessage}`);
+      return value;
+    }
+  }
+
   mask(value: string, type: PiiType): string {
     if (!value) return value;
 
@@ -74,9 +133,6 @@ export class PiiService {
     return address.substring(0, 6) + '****';
   }
 
-  /**
-   * 判断是否需要脱敏
-   */
   shouldMask(userRoles: string[], allowedRoles: string[]): boolean {
     if (!allowedRoles || allowedRoles.length === 0) return true;
     if (!userRoles || userRoles.length === 0) return true;
