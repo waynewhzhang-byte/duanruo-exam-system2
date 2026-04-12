@@ -349,7 +349,7 @@ When('访问租户管理页', async function () {
 
 Then('显示所有租户', function () {
   expect(lastResponse.success !== false).to.be.true;
-  const data = lastResponse.data || lastResponse.content;
+  const data = lastResponse.data?.content || lastResponse.data || lastResponse.content;
   expect(data).to.be.an('array');
 });
 
