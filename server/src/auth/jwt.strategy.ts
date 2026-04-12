@@ -1,6 +1,6 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthenticatedUser } from './interfaces/authenticated-request.interface';
 
@@ -13,25 +13,21 @@ interface JwtPayload {
   permissions: string[];
 }
 
-const logger = new Logger('JwtStrategy');
-
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly configService: ConfigService) {
     const secret = configService.get<string>('JWT_SECRET');
-    
-    if (!secret && configService.get<string>('NODE_ENV') === 'production') {
-      throw new Error('JWT_SECRET environment variable is required in production.');
-    }
-    
+
     if (!secret) {
-      logger.warn('Using default JWT secret - only for development!');
+      throw new Error(
+        'JWT_SECRET environment variable is required. Set it in .env or environment config.',
+      );
     }
-    
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: secret || 'dev-only-jwt-secret-change-in-production-do-not-use',
+      secretOrKey: secret,
     });
   }
 

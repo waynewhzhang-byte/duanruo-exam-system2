@@ -5,15 +5,45 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { getPermissionsForRoles } from './permissions.config';
 import * as bcrypt from 'bcrypt';
-import { User } from '@prisma/client';
+import { User, UserTenantRole } from '@prisma/client';
+import { parseUserRoles } from './roles.util';
+
+export interface TenantRoleItem {
+  tenantId: string;
+  tenantName: string;
+  tenantCode: string;
+  role: string;
+  active: boolean;
+}
+
+export interface UserResponse {
+  id: string;
+  username: string;
+  email: string;
+  fullName: string;
+  status: string;
+  roles: string[];
+  globalRoles?: string[];
+  tenantRoles?: TenantRoleItem[];
+  permissions: string[];
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+type TenantRoleRow = UserTenantRole & {
+  tenant: { name: string; code: string };
+};
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-  ) { }
+  ) {}
 
   async validateUser(username: string, pass: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
@@ -28,24 +58,16 @@ export class AuthService {
 
   async login(user: User) {
     const tenantRoles = await this.prisma.userTenantRole.findMany({
-      where: {
-        userId: user.id,
-        active: true,
-      },
+      where: { userId: user.id, active: true },
       include: { tenant: true },
     });
 
-    const globalRoles = JSON.parse(user.roles) as string[];
-    let currentTenantId: string | null = null;
-    let currentRoles = [...globalRoles];
-
-    if (tenantRoles.length > 0) {
-      const primaryTenantRole = tenantRoles[0];
-      currentTenantId = primaryTenantRole.tenantId;
-      currentRoles = [...globalRoles, primaryTenantRole.role];
-    }
-
-    const permissions = this.getPermissionsForRoles(currentRoles);
+    const firstTenantId = tenantRoles[0]?.tenantId ?? null;
+    const session = await this.computeSessionForTenant(
+      user,
+      firstTenantId,
+      tenantRoles,
+    );
 
     const payload = {
       sub: user.id,
@@ -53,267 +75,219 @@ export class AuthService {
       email: user.email,
       fullName: user.fullName,
       status: user.status,
-      roles: currentRoles,
-      tenantId: currentTenantId,
-      permissions: permissions,
+      roles: session.currentRoles,
+      tenantId: session.effectiveTenantId,
+      permissions: session.permissions,
     };
 
-    const resultUser = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      fullName: user.fullName,
-      status: user.status,
-      roles: currentRoles,
-      permissions: permissions,
-      emailVerified: user.emailVerified ?? false,
-      phoneVerified: user.phoneVerified ?? false,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-    };
+    const globalRoles = parseUserRoles(user.roles);
+    const resultUser = this.buildUserResponse(
+      user,
+      session.currentRoles,
+      session.permissions,
+      {
+        globalRoles,
+        tenantRoles: session.tenantRoleItems,
+      },
+    );
 
     return {
       token: this.jwtService.sign(payload),
       tokenType: 'Bearer',
       expiresIn: 86400,
       user: resultUser,
-      tenantRoles: tenantRoles.map((tr) => ({
-        tenantId: tr.tenantId,
-        tenantName: tr.tenant.name,
-        tenantCode: tr.tenant.code,
-        role: tr.role,
-        active: tr.active,
-      })),
+      tenantRoles: session.tenantRoleItems,
     };
-  }
-
-  private getPermissionsForRoles(roles: string[]): string[] {
-    const permissions = new Set<string>();
-
-    permissions.add('application:view:own');
-    permissions.add('application:create');
-    permissions.add('file:upload');
-    permissions.add('file:view:own');
-    permissions.add('ticket:view:own');
-    permissions.add('payment:initiate');
-
-    if (roles.includes('CANDIDATE')) {
-      permissions.add('exam:view:public');
-      permissions.add('application:view:own');
-      permissions.add('application:update:own');
-      permissions.add('ticket:view:own');
-    }
-
-    if (roles.includes('SUPER_ADMIN')) {
-      permissions.add('tenant:view:all');
-      permissions.add('tenant:create');
-      permissions.add('tenant:update');
-      permissions.add('tenant:delete');
-      permissions.add('user:manage');
-      permissions.add('user:view');
-      permissions.add('user:create');
-      permissions.add('user:update');
-      permissions.add('user:delete');
-      permissions.add('statistics:system:view');
-      permissions.add('exam:view');
-      permissions.add('exam:view:all');
-      permissions.add('exam:create');
-      permissions.add('exam:edit');
-      permissions.add('exam:delete');
-      permissions.add('exam:publish');
-      permissions.add('exam:open');
-      permissions.add('exam:close');
-      permissions.add('application:view');
-      permissions.add('application:view:all');
-      permissions.add('application:update');
-      permissions.add('application:delete');
-      permissions.add('review:view');
-      permissions.add('review:view:all');
-      permissions.add('review:perform');
-      permissions.add('review:primary');
-      permissions.add('review:secondary');
-      permissions.add('ticket:view');
-      permissions.add('ticket:view:all');
-      permissions.add('ticket:generate');
-      permissions.add('ticket:batch-generate');
-      permissions.add('seating:view');
-      permissions.add('seating:view:all');
-      permissions.add('seating:create');
-      permissions.add('seating:edit');
-      permissions.add('seating:delete');
-      permissions.add('seating:allocate');
-      permissions.add('file:view');
-      permissions.add('file:view:all');
-      permissions.add('file:delete');
-      permissions.add('position:view');
-      permissions.add('position:create');
-      permissions.add('position:edit');
-      permissions.add('position:delete');
-    }
-
-    if (roles.includes('TENANT_ADMIN')) {
-      permissions.add('exam:create');
-      permissions.add('exam:view');
-      permissions.add('exam:view:all');
-      permissions.add('exam:edit');
-      permissions.add('exam:delete');
-      permissions.add('exam:publish');
-      permissions.add('exam:open');
-      permissions.add('exam:close');
-      permissions.add('position:create');
-      permissions.add('position:view');
-      permissions.add('position:view:all');
-      permissions.add('position:edit');
-      permissions.add('position:delete');
-      permissions.add('application:view');
-      permissions.add('application:view:all');
-      permissions.add('application:update');
-      permissions.add('application:export');
-      permissions.add('review:view');
-      permissions.add('review:view:all');
-      permissions.add('review:assign');
-      permissions.add('ticket:view');
-      permissions.add('ticket:view:all');
-      permissions.add('ticket:generate');
-      permissions.add('ticket:batch-generate');
-      permissions.add('seating:view');
-      permissions.add('seating:view:all');
-      permissions.add('seating:create');
-      permissions.add('seating:allocate');
-      permissions.add('file:view');
-      permissions.add('file:view:all');
-      permissions.add('file:delete');
-      permissions.add('statistics:tenant:view');
-      permissions.add('user:view');
-      permissions.add('user:create');
-    }
-
-    if (roles.includes('PRIMARY_REVIEWER')) {
-      permissions.add('review:primary');
-      permissions.add('review:view');
-      permissions.add('review:view:assigned');
-      permissions.add('review:perform');
-      permissions.add('application:view:assigned');
-    }
-
-    if (roles.includes('SECONDARY_REVIEWER')) {
-      permissions.add('review:secondary');
-      permissions.add('review:view');
-      permissions.add('review:view:assigned');
-      permissions.add('review:perform');
-      permissions.add('application:view:assigned');
-    }
-
-    return Array.from(permissions);
   }
 
   async selectTenant(userId: string, tenantId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new BadRequestException('User not found');
 
-    const globalRoles = JSON.parse(user.roles) as string[];
+    const globalRoles = parseUserRoles(user.roles);
     const isSuperAdmin = globalRoles.includes('SUPER_ADMIN');
 
-    const tenantRole = await this.prisma.userTenantRole.findFirst({
-      where: {
-        userId,
-        tenantId,
-        active: true,
-      },
-      include: { tenant: true },
-    });
-
-    if (!isSuperAdmin && !tenantRole) {
-      throw new UnauthorizedException('No access to this tenant');
+    if (!isSuperAdmin) {
+      const utr = await this.prisma.userTenantRole.findFirst({
+        where: { userId, tenantId, active: true },
+      });
+      if (!utr) {
+        throw new UnauthorizedException('No access to this tenant');
+      }
     }
 
-    const allTenantRoles = await this.prisma.userTenantRole.findMany({
-      where: { userId: user.id, active: true },
-      include: { tenant: true },
-    });
-
-    const currentRoles = Array.from(
-      new Set([
-        ...globalRoles,
-        ...(tenantRole ? [tenantRole.role] : []),
-      ]),
-    );
-
-    const permissions = this.getPermissionsForRoles(currentRoles);
+    const session = await this.computeSessionForTenant(user, tenantId);
 
     const payload = {
       sub: user.id,
       username: user.username,
       email: user.email,
       fullName: user.fullName,
-      tenantId: tenantId,
-      roles: currentRoles,
-      permissions: permissions,
+      tenantId,
+      roles: session.currentRoles,
+      permissions: session.permissions,
       status: user.status,
     };
 
     return {
       token: this.jwtService.sign(payload),
       tokenType: 'Bearer',
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-        status: user.status,
-        roles: currentRoles,
-        globalRoles: globalRoles,
-        tenantRoles: allTenantRoles.map((tr) => ({
-          tenantId: tr.tenantId,
-          tenantName: tr.tenant.name,
-          tenantCode: tr.tenant.code,
-          role: tr.role,
-          active: tr.active,
-        })),
-        permissions: permissions,
-        emailVerified: user.emailVerified ?? false,
-        phoneVerified: user.phoneVerified ?? false,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
-      },
+      user: this.buildUserResponse(
+        user,
+        session.currentRoles,
+        session.permissions,
+        {
+          globalRoles,
+          tenantRoles: session.tenantRoleItems,
+        },
+      ),
     };
   }
 
-  async getMe(userId: string) {
+  /**
+   * Full role merge (all tenants) for account overview / legacy clients.
+   * When `sessionTenantId` is set, returns roles & permissions for that tenant only (matches JWT session).
+   */
+  async getMe(userId: string, sessionTenantId?: string | null) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new BadRequestException('User not found');
 
-    const tenantRoles = await this.prisma.userTenantRole.findMany({
-      where: { userId: user.id, active: true },
-      include: { tenant: true },
-    });
+    if (sessionTenantId !== undefined) {
+      const session = await this.computeSessionForTenant(user, sessionTenantId);
+      const globalRoles = parseUserRoles(user.roles);
+      return this.buildUserResponse(
+        user,
+        session.currentRoles,
+        session.permissions,
+        {
+          globalRoles,
+          tenantRoles: session.tenantRoleItems,
+        },
+      );
+    }
 
-    const globalRoles = JSON.parse(user.roles) as string[];
-    const mergedRoles = Array.from(
-      new Set([
-        ...globalRoles,
-        ...tenantRoles.map((tr) => tr.role),
-      ]),
+    const { mergedRoles, tenantRoleItems, globalRoles } =
+      await this.resolveUserRoles(user);
+
+    const permissions = getPermissionsForRoles(mergedRoles);
+
+    return this.buildUserResponse(user, mergedRoles, permissions, {
+      globalRoles,
+      tenantRoles: tenantRoleItems,
+    });
+  }
+
+  /**
+   * Re-issue JWT with the same session semantics as login/select-tenant (no cross-tenant permission merge).
+   */
+  async refreshToken(userId: string, sessionTenantId?: string | null) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User not found');
+
+    const effectiveTenantId =
+      sessionTenantId === undefined || sessionTenantId === ''
+        ? null
+        : sessionTenantId;
+
+    const session = await this.computeSessionForTenant(user, effectiveTenantId);
+
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      status: user.status,
+      roles: session.currentRoles,
+      tenantId: session.effectiveTenantId,
+      permissions: session.permissions,
+    };
+
+    const globalRoles = parseUserRoles(user.roles);
+
+    return {
+      token: this.jwtService.sign(payload),
+      tokenType: 'Bearer',
+      expiresIn: 86400,
+      user: this.buildUserResponse(
+        user,
+        session.currentRoles,
+        session.permissions,
+        {
+          globalRoles,
+          tenantRoles: session.tenantRoleItems,
+        },
+      ),
+    };
+  }
+
+  /**
+   * Effective roles for the active tenant (or platform-only when activeTenantId is null).
+   * Super admins may use a tenant context without a UserTenantRole row.
+   */
+  private async computeSessionForTenant(
+    user: User,
+    activeTenantId: string | null,
+    preloadedTenantRoles?: TenantRoleRow[],
+  ): Promise<{
+    currentRoles: string[];
+    permissions: string[];
+    tenantRoleItems: TenantRoleItem[];
+    effectiveTenantId: string | null;
+  }> {
+    const tenantRoles =
+      preloadedTenantRoles ??
+      (await this.prisma.userTenantRole.findMany({
+        where: { userId: user.id, active: true },
+        include: { tenant: true },
+      }));
+
+    const tenantRoleItems = this.mapTenantRoles(tenantRoles);
+    const globalRoles = parseUserRoles(user.roles);
+    const isSuperAdmin = globalRoles.includes('SUPER_ADMIN');
+
+    if (!activeTenantId) {
+      return {
+        currentRoles: globalRoles,
+        permissions: getPermissionsForRoles(globalRoles),
+        tenantRoleItems,
+        effectiveTenantId: null,
+      };
+    }
+
+    const tenantRole = tenantRoles.find((tr) => tr.tenantId === activeTenantId);
+
+    if (!isSuperAdmin && !tenantRole) {
+      throw new UnauthorizedException('No access to this tenant');
+    }
+
+    const currentRoles = Array.from(
+      new Set([...globalRoles, ...(tenantRole ? [tenantRole.role] : [])]),
     );
 
-    const permissions = this.getPermissionsForRoles(mergedRoles);
+    return {
+      currentRoles,
+      permissions: getPermissionsForRoles(currentRoles),
+      tenantRoleItems,
+      effectiveTenantId: activeTenantId,
+    };
+  }
 
+  private buildUserResponse(
+    user: User,
+    roles: string[],
+    permissions: string[],
+    extra: { globalRoles: string[]; tenantRoles: TenantRoleItem[] },
+  ): UserResponse {
     return {
       id: user.id,
       username: user.username,
       email: user.email,
       fullName: user.fullName,
       status: user.status,
-      roles: mergedRoles,
-      globalRoles: globalRoles,
-      tenantRoles: tenantRoles.map((tr) => ({
-        tenantId: tr.tenantId,
-        tenantName: tr.tenant.name,
-        tenantCode: tr.tenant.code,
-        role: tr.role,
-        active: tr.active,
-      })),
-      permissions: permissions,
+      roles,
+      globalRoles: extra.globalRoles,
+      tenantRoles: extra.tenantRoles,
+      permissions,
       emailVerified: user.emailVerified ?? false,
       phoneVerified: user.phoneVerified ?? false,
       createdAt: user.createdAt.toISOString(),
@@ -321,63 +295,35 @@ export class AuthService {
     };
   }
 
-  async refreshToken(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new BadRequestException('User not found');
+  private mapTenantRoles(
+    tenantRoles: (UserTenantRole & {
+      tenant: { name: string; code: string };
+    })[],
+  ): TenantRoleItem[] {
+    return tenantRoles.map((tr) => ({
+      tenantId: tr.tenantId,
+      tenantName: tr.tenant.name,
+      tenantCode: tr.tenant.code,
+      role: tr.role,
+      active: tr.active,
+    }));
+  }
 
+  private async resolveUserRoles(user: User) {
     const tenantRoles = await this.prisma.userTenantRole.findMany({
       where: { userId: user.id, active: true },
       include: { tenant: true },
     });
 
-    const globalRoles = JSON.parse(user.roles) as string[];
+    const globalRoles = parseUserRoles(user.roles);
     const mergedRoles = Array.from(
-      new Set([
-        ...globalRoles,
-        ...tenantRoles.map((tr) => tr.role),
-      ]),
+      new Set([...globalRoles, ...tenantRoles.map((tr) => tr.role)]),
     );
 
-    const permissions = this.getPermissionsForRoles(mergedRoles);
-
-    const currentTenantId = tenantRoles.length > 0 ? tenantRoles[0].tenantId : null;
-
-    const payload = {
-      sub: user.id,
-      username: user.username,
-      email: user.email,
-      fullName: user.fullName,
-      status: user.status,
-      roles: mergedRoles,
-      tenantId: currentTenantId,
-      permissions: permissions,
-    };
-
     return {
-      token: this.jwtService.sign(payload),
-      tokenType: 'Bearer',
-      expiresIn: 86400,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-        status: user.status,
-        roles: mergedRoles,
-        globalRoles: globalRoles,
-        tenantRoles: tenantRoles.map((tr) => ({
-          tenantId: tr.tenantId,
-          tenantName: tr.tenant.name,
-          tenantCode: tr.tenant.code,
-          role: tr.role,
-          active: tr.active,
-        })),
-        permissions: permissions,
-        emailVerified: user.emailVerified ?? false,
-        phoneVerified: user.phoneVerified ?? false,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
-      },
+      mergedRoles,
+      tenantRoleItems: this.mapTenantRoles(tenantRoles),
+      globalRoles,
     };
   }
 }

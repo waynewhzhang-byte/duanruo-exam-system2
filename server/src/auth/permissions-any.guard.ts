@@ -5,21 +5,21 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { PERMISSIONS_KEY } from './permissions.decorator';
+import { PERMISSIONS_ANY_KEY } from './permissions-any.decorator';
 import { AuthenticatedRequest } from './interfaces/authenticated-request.interface';
 import { permissionMatches } from './permission-match';
 
 @Injectable()
-export class PermissionsGuard implements CanActivate {
+export class PermissionsAnyGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
-      PERMISSIONS_KEY,
+    const requiredAny = this.reflector.getAllAndOverride<string[]>(
+      PERMISSIONS_ANY_KEY,
       [context.getHandler(), context.getClass()],
     );
 
-    if (!requiredPermissions || requiredPermissions.length === 0) {
+    if (!requiredAny || requiredAny.length === 0) {
       return true;
     }
 
@@ -29,21 +29,15 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('User permissions not found');
     }
 
-    const hasAllPermissions = requiredPermissions.every((requiredPerm) =>
+    const hasOne = requiredAny.some((requiredPerm) =>
       user.permissions.some((userPerm) =>
         permissionMatches(userPerm, requiredPerm),
       ),
     );
 
-    if (!hasAllPermissions) {
-      const missingPermissions = requiredPermissions.filter(
-        (requiredPerm) =>
-          !user.permissions.some((userPerm) =>
-            permissionMatches(userPerm, requiredPerm),
-          ),
-      );
+    if (!hasOne) {
       throw new ForbiddenException(
-        `Missing required permissions: ${missingPermissions.join(', ')}`,
+        `Missing one of required permissions: ${requiredAny.join(', ')}`,
       );
     }
 

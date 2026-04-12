@@ -11,4 +11,6 @@ export interface AuthenticatedUser {
 
 export interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
+  /** Set by TenantMiddleware when X-Tenant-ID or X-Tenant-Slug is present */
+  tenantSchema?: string;
 }
