@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useExams } from '@/lib/api-hooks'
 import { apiGet, apiPost } from '@/lib/api'
 import { Input } from '@/components/ui/input'
@@ -17,17 +17,17 @@ export default function ReviewersPage() {
 
   const { data: exams, isLoading: examsLoading } = useExams()
 
-  const loadList = async () => {
+  const loadList = useCallback(async () => {
     if (!selectedExamId) return
     try {
       const data = await apiGet<{ examId: string; stage: string; reviewerIds: string[] }>(`/exams/${selectedExamId}/reviewers${stage ? `?stage=${stage}` : ''}`)
-      setReviewerIds((data as any).reviewerIds || [])
+      setReviewerIds((data as { reviewerIds?: string[] }).reviewerIds || [])
     } catch {
       setReviewerIds([])
     }
-  }
+  }, [selectedExamId, stage])
 
-  useEffect(() => { loadList() }, [selectedExamId, stage])
+  useEffect(() => { loadList() }, [loadList])
 
   const canAdd = selectedExamId && newReviewerId
 

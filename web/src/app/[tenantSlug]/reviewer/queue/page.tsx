@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,30 +11,39 @@ import { Spinner } from '@/components/ui/loading';
 import { RouteGuard } from '@/components/auth/RouteGuard';
 import { useTenant } from '@/hooks/useTenant';
 import { useAuth } from '@/contexts/AuthContext';
+import { useExams } from '@/lib/api-hooks';
 import { apiGetWithTenant, apiPostWithTenant } from '@/lib/api';
 import { toast } from 'sonner';
 import { ArrowLeft, ClipboardList, RefreshCw, User, FileText } from 'lucide-react';
 import Link from 'next/link';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-// 后端 /applications/pending-review 返回的申请结构
-interface ApplicationItem {
+// 后端 /reviews/queue 返回的任务结构
+interface ReviewTaskItem {
   id: string;
-  applicationNumber?: string;
-  examId: string;
+  applicationId: string;
+  examId?: string;
   examTitle?: string;
-  positionId: string;
+  positionId?: string;
   positionTitle?: string;
-  candidateId: string;
+  candidateId?: string;
   candidateName?: string;
   candidateEmail?: string;
   candidatePhone?: string;
-  formVersion: number;
   status: string;
-  submittedAt?: string;
+  pulledAt?: string;
+  stage: string;
+  createdAt?: string;
 }
 
-interface ApplicationPageResponse {
-  content: ApplicationItem[];
+interface ReviewQueueResponse {
+  content: ReviewTaskItem[];
   totalElements: number;
   totalPages: number;
   currentPage: number;
@@ -44,13 +53,9 @@ interface ApplicationPageResponse {
 }
 
 const statusLabels: Record<string, string> = {
-  PENDING_PRIMARY_REVIEW: '待初审',
-  PENDING_SECONDARY_REVIEW: '待复审',
-  PRIMARY_PASSED: '初审通过',
-  PRIMARY_REJECTED: '初审拒绝',
-  SECONDARY_PASSED: '复审通过',
-  APPROVED: '审核通过',
-  REJECTED: '已拒绝',
+  PENDING: '待审核',
+  IN_PROGRESS: '审核中',
+  COMPLETED: '已完成',
 };
 
 function ReviewQueueContent() {
@@ -62,22 +67,28 @@ function ReviewQueueContent() {
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // 需要先选择考试才能查看审核队列
+  const [selectedExamId, setSelectedExamId] = useState<string>('');
+
+  // 获取考试列表供选择
+  const { data: examsData } = useExams({ status: 'OPEN' });
+
   // 确定审核级别
   const isPrimaryReviewer = user?.roles?.includes('PRIMARY_REVIEWER');
   const reviewLevel = isPrimaryReviewer ? 'PRIMARY' : 'SECONDARY';
 
-  // 使用新的 /applications/pending-review API 获取待审核申请列表
-  const { data, isLoading, error, refetch } = useQuery<ApplicationPageResponse>({
-    queryKey: ['pending-review-applications', tenant?.id],
+  const { data, isLoading, error, refetch } = useQuery<ReviewQueueResponse>({
+    queryKey: ['review-queue', tenant?.id, reviewLevel, selectedExamId],
     queryFn: async () => {
       if (!tenant?.id) throw new Error('Tenant not loaded');
-      // 调用审核员专用的待审核申请列表 API
-      return apiGetWithTenant<ApplicationPageResponse>(
-        `/applications/pending-review?page=0&size=50`,
+      if (!selectedExamId) throw new Error('请先选择考试');
+      const stage = isPrimaryReviewer ? 'PRIMARY' : 'SECONDARY';
+      return apiGetWithTenant<ReviewQueueResponse>(
+        `/reviews/queue?examId=${selectedExamId}&stage=${stage}&page=0&size=50`,
         tenant.id
       );
     },
-    enabled: !!tenant?.id,
+    enabled: !!tenant?.id && !!reviewLevel && !!selectedExamId,
   });
 
   const applications = data?.content || [];
@@ -96,13 +107,13 @@ function ReviewQueueContent() {
     toast.info('批量审核功能开发中');
   };
 
-  const handleApprove = async (applicationId: string) => {
+  const handleApprove = async (taskId: string) => {
     if (!tenant?.id) return;
     try {
-      await apiPostWithTenant(`/reviews/${applicationId}/approve`, tenant.id, {
-        decision: 'APPROVE',
-        comment: '审核通过',
-        evidence: []
+      await apiPostWithTenant('/reviews/decide', tenant.id, {
+        taskId,
+        approve: true,
+        reason: '审核通过'
       });
       toast.success('审核通过');
       refetch();
@@ -111,15 +122,15 @@ function ReviewQueueContent() {
     }
   };
 
-  const handleReject = async (applicationId: string) => {
+  const handleReject = async (taskId: string) => {
     if (!tenant?.id) return;
     const reason = window.prompt('请输入拒绝原因：');
     if (!reason) return;
     try {
-      await apiPostWithTenant(`/reviews/${applicationId}/reject`, tenant.id, {
-        decision: 'REJECT',
-        comment: reason,
-        evidence: []
+      await apiPostWithTenant('/reviews/decide', tenant.id, {
+        taskId,
+        approve: false,
+        reason
       });
       toast.success('已拒绝');
       refetch();
@@ -166,10 +177,25 @@ function ReviewQueueContent() {
             {isPrimaryReviewer ? '初审' : '复审'}待处理的报名申请（共 {applications.length} 条）
           </p>
         </div>
-        <Button variant="outline" onClick={() => refetch()}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          刷新
-        </Button>
+        <div className="flex items-center gap-4">
+          {/* 考试选择器 */}
+          <Select value={selectedExamId} onValueChange={setSelectedExamId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="选择考试" />
+            </SelectTrigger>
+            <SelectContent>
+              {examsData?.content?.map((exam) => (
+                <SelectItem key={exam.id} value={exam.id}>
+                  {exam.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={() => refetch()} disabled={!selectedExamId}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            刷新
+          </Button>
+        </div>
       </div>
 
       {/* 批量操作栏 */}
@@ -236,8 +262,8 @@ function ReviewQueueContent() {
                         {app.positionTitle || '未知岗位'}
                       </CardTitle>
                       <CardDescription className="mt-1">
-                        报名号: {app.applicationNumber || app.id.substring(0, 8).toUpperCase()} |
-                        考试: {app.examTitle || '未知考试'}
+                        申请ID: {app.applicationId?.substring(0, 8).toUpperCase() || '-'} |
+                        状态: {app.status || '待审核'}
                       </CardDescription>
                     </div>
                   </div>
@@ -249,7 +275,7 @@ function ReviewQueueContent() {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-muted-foreground task-timestamp">
-                    提交时间: {app.submittedAt ? new Date(app.submittedAt).toLocaleString('zh-CN') : '-'}
+                    任务创建时间: {app.createdAt ? new Date(app.createdAt).toLocaleString('zh-CN') : '-'}
                   </div>
                   <div className="flex gap-2">
                     <Button

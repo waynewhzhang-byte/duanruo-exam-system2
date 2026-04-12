@@ -166,7 +166,7 @@ export default function PublicExamPage({ params }: PublicExamPageProps) {
                               <p className="text-gray-600 mt-1">{position.description}</p>
                             )}
                             <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                              {position.quota && (
+                              {position.quota != null && (
                                 <div className="flex items-center">
                                   <UsersIcon className="h-4 w-4 mr-1" />
                                   招聘 {position.quota} 人

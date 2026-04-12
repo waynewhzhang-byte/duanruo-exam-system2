@@ -39,13 +39,21 @@ interface Exam {
   feeAmount?: number
 }
 
-// Backend returns paginated response
+// Backend returns paginated response (PaginationHelper: content + pagination)
 type ExamsResponse = {
   content: Exam[]
-  totalElements: number
-  totalPages: number
-  pageSize: number
-  currentPage: number
+  pagination?: {
+    totalItems: number
+    totalPages: number
+    page: number
+    size: number
+    hasNext: boolean
+    hasPrevious: boolean
+  }
+  totalElements?: number
+  totalPages?: number
+  pageSize?: number
+  currentPage?: number
 }
 
 export default function TenantAdminExamsPage() {
@@ -251,6 +259,8 @@ export default function TenantAdminExamsPage() {
     }
   }
 
+  const totalElements = examsData?.pagination?.totalItems ?? examsData?.totalElements ?? 0
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -328,7 +338,7 @@ export default function TenantAdminExamsPage() {
           <CardTitle className="flex items-center justify-between">
             <span>考试列表</span>
             <div className="flex items-center gap-2 text-gray-600">
-              <span>共 {examsData?.totalElements || 0} 个考试</span>
+              <span>共 {totalElements} 个考试</span>
             </div>
           </CardTitle>
         </CardHeader>
@@ -517,7 +527,7 @@ export default function TenantAdminExamsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">总考试数</p>
-                <p className="text-2xl font-bold text-gray-900">{examsData?.totalElements || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{totalElements}</p>
               </div>
               <FileText className="h-8 w-8 text-blue-500" />
             </div>

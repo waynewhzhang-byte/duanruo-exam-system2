@@ -56,6 +56,7 @@ import { RouteGuard } from '@/components/auth/RouteGuard'
 import { PermissionCodes } from '@/lib/permissions-unified'
 import { toast } from 'sonner'
 import type { ReviewerRole } from '@/lib/schemas'
+import { useTenant } from '@/hooks/useTenant'
 
 export default function ExamReviewersPage() {
   return (
@@ -70,6 +71,7 @@ function ExamReviewersContent() {
   const params = useParams()
   const examId = params.examId as string
   const tenantSlug = params.tenantSlug as string
+  const { tenant } = useTenant()
 
   const { data: reviewers = [], isLoading: reviewersLoading } = useExamReviewers(examId)
   const { data: availableUsers = [], isLoading: availableLoading } = useAvailableReviewers(examId)
@@ -90,11 +92,17 @@ function ExamReviewersContent() {
       return
     }
 
+    if (!tenant?.id) {
+      toast.error('缺少租户信息，请刷新页面后重试')
+      return
+    }
+
     try {
       await addReviewer.mutateAsync({
         examId,
         userId: selectedUserId,
         role: selectedRole,
+        tenantId: tenant.id,
       })
       toast.success('审核员添加成功')
       setIsAddDialogOpen(false)
@@ -108,11 +116,17 @@ function ExamReviewersContent() {
   const handleRemoveReviewer = async () => {
     if (!reviewerToRemove) return
 
+    if (!tenant?.id) {
+      toast.error('缺少租户信息，请刷新页面后重试')
+      return
+    }
+
     try {
       await removeReviewer.mutateAsync({
         examId,
         reviewerId: reviewerToRemove.id,
         role: reviewerToRemove.role,
+        tenantId: tenant.id,
       })
       toast.success('审核员移除成功')
       setReviewerToRemove(null)

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { usePaymentConfig } from '@/lib/api-hooks'
+import { useMemo, useState } from 'react'
+import { usePaymentConfig, useTenants } from '@/lib/api-hooks'
+import { NotificationTemplatesPanel } from '@/components/notifications/notification-templates-panel'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,17 +10,35 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   CreditCard,
   Bell,
   Save,
   AlertCircle,
   Mail,
   MessageSquare,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  LayoutTemplate,
 } from 'lucide-react'
 
 export default function SettingsPage() {
   const { data: paymentConfig, isLoading, error } = usePaymentConfig()
+  const {
+    data: tenantsData,
+    isLoading: tenantsLoading,
+    isError: tenantsError,
+    error: tenantsQueryError,
+  } = useTenants({ page: 0, size: 200 })
+  /** Radix Select 不要用空字符串作受控 value，否则易出现无法选择 */
+  const [templateTenantId, setTemplateTenantId] = useState<string | undefined>(undefined)
+
+  const tenants = useMemo(() => tenantsData?.content ?? [], [tenantsData?.content])
 
   // Payment settings state
   const [paymentSettings, setPaymentSettings] = useState({
@@ -84,7 +103,7 @@ export default function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">系统设置</h1>
-        <p className="text-gray-600">配置系统级别的支付和通知设置</p>
+        <p className="text-gray-600">配置系统级别的支付、通知渠道与各租户的通知模板</p>
       </div>
 
       {/* Status Alert */}
@@ -111,6 +130,10 @@ export default function SettingsPage() {
           <TabsTrigger value="notification" className="flex items-center">
             <Bell className="h-4 w-4 mr-2" />
             通知设置
+          </TabsTrigger>
+          <TabsTrigger value="notification-templates" className="flex items-center">
+            <LayoutTemplate className="h-4 w-4 mr-2" />
+            通知模板
           </TabsTrigger>
         </TabsList>
 
@@ -519,6 +542,58 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="notification-templates" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>按租户管理通知模板</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-600">
+                通知模板存储在租户专属库中。请选择要管理的租户，然后进行模板的查看、创建与编辑。
+              </p>
+              <div className="max-w-md space-y-2">
+                <Label htmlFor="template-tenant">目标租户</Label>
+                {tenantsError && (
+                  <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                    加载租户列表失败：
+                    {tenantsQueryError instanceof Error ? tenantsQueryError.message : '请刷新页面或检查网络'}
+                  </div>
+                )}
+                {!tenantsLoading && !tenantsError && tenants.length === 0 && (
+                  <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                    当前没有可用租户。请先在「租户管理」中创建租户。
+                  </p>
+                )}
+                <Select
+                  value={templateTenantId}
+                  onValueChange={setTemplateTenantId}
+                  disabled={tenantsLoading || tenantsError || tenants.length === 0}
+                >
+                  <SelectTrigger id="template-tenant" className="w-full">
+                    <SelectValue placeholder={tenantsLoading ? '加载租户列表…' : '请选择租户'} />
+                  </SelectTrigger>
+                  <SelectContent position="popper" className="z-[100] max-h-72">
+                    {tenants.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                        {t.code ? `（${t.code}）` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {templateTenantId ? (
+            <NotificationTemplatesPanel impersonateTenantId={templateTenantId} />
+          ) : (
+            <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/50 px-6 py-10 text-center text-sm text-gray-500">
+              请先选择租户以加载该租户的通知模板。
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

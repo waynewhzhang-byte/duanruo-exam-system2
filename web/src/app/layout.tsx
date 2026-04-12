@@ -1,32 +1,13 @@
-import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
-import QueryProvider from '@/components/providers/QueryProvider'
-import { AuthProvider } from '@/contexts/AuthContext'
-import NavigationWrapper from '@/components/layout/NavigationWrapper'
-import ErrorBoundary from '@/components/ErrorBoundary'
-import { Toaster } from 'sonner'
-
-const inter = Inter({ subsets: ['latin'] })
-
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
-  viewportFit: 'cover',
-  themeColor: '#3b82f6',
-}
+import type { Metadata } from "next"
+import { Toaster } from "@/components/ui/toaster"
+import { Toaster as SonnerToaster } from "sonner"
+import "./globals.css"
+import QueryProvider from "@/components/providers/QueryProvider"
+import { AuthProvider } from "@/contexts/AuthContext"
 
 export const metadata: Metadata = {
-  title: '端若数智考盟 - 智能招聘考试平台',
-  description: '智能化招聘考试报名与管理平台',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: '端若考盟'
-  }
+  title: "端若数智考盟 - 在线招聘考试管理平台",
+  description: "全流程多租户在线招聘考试管理系统",
 }
 
 export default function RootLayout({
@@ -36,20 +17,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body className={inter.className}>
-        <ErrorBoundary>
-          <QueryProvider>
-            <AuthProvider>
-              <div className="min-h-screen bg-background">
-                <NavigationWrapper />
-                <main className="conditional-main">
-                  {children}
-                </main>
-              </div>
-              <Toaster position="top-right" richColors />
-            </AuthProvider>
-          </QueryProvider>
-        </ErrorBoundary>
+      <body className="antialiased min-h-screen bg-background font-sans">
+        <QueryProvider>
+          <AuthProvider>
+            {children}
+            <Toaster />
+            <SonnerToaster position="top-right" richColors closeButton />
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   )

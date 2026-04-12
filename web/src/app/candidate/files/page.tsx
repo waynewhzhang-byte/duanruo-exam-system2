@@ -49,8 +49,8 @@ function PreviewModal({ fileId, fileName, fileType, onClose }: PreviewModalProps
   const isPdf = fileType === 'application/pdf'
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }} aria-label="关闭预览">
+      <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }} aria-label="预览内容">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold">{fileName}</h3>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
@@ -62,7 +62,10 @@ function PreviewModal({ fileId, fileName, fileType, onClose }: PreviewModalProps
           {error && <div className="text-center py-8 text-red-500">{error}</div>}
           {!loading && !error && previewUrl && (
             <>
-              {isImage && <img src={previewUrl} alt={fileName} className="max-w-full h-auto" />}
+              {isImage && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={previewUrl} alt={fileName} className="max-w-full h-auto" />
+              )}
               {isPdf && <iframe src={previewUrl} className="w-full h-[70vh]" />}
               {!isImage && !isPdf && (
                 <div className="text-center py-8">

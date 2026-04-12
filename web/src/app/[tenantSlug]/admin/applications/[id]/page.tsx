@@ -476,10 +476,18 @@ export default function ApplicationDetailPage() {
         <div
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
           onClick={closePreview}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closePreview(); } }}
+          aria-label="关闭预览"
         >
           <div
             className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
+            aria-label="预览内容"
           >
             <div className="p-4 border-b flex items-center justify-between">
               <div>
@@ -500,6 +508,7 @@ export default function ApplicationDetailPage() {
                 </div>
               ) : previewUrl ? (
                 selectedAttachment.contentType?.startsWith('image/') ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={previewUrl}
                     alt={selectedAttachment.fileName}

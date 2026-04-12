@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState, useEffect, useCallback } from 'react'
+import { use, useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
@@ -41,6 +41,7 @@ export default function PaymentPage({ params }: PaymentPageProps) {
   const { tenant } = useTenant()
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('MOCK')
+  const paymentMethodInitializedRef = useRef(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED'>('PENDING')
   const [paymentUrl, setPaymentUrl] = useState<string>('')
@@ -54,6 +55,24 @@ export default function PaymentPage({ params }: PaymentPageProps) {
   
   // 获取支付配置
   const { data: paymentConfig, isLoading: configLoading } = usePaymentConfig()
+
+  // 生产向：默认非「仅模拟」；有正式渠道时默认选中支付宝→微信→模拟（stubOnly 时固定模拟）
+  useEffect(() => {
+    if (!paymentConfig || paymentMethodInitializedRef.current) return
+    paymentMethodInitializedRef.current = true
+    const stubOnly = paymentConfig.stubOnly ?? false
+    if (stubOnly) {
+      setSelectedMethod('MOCK')
+      return
+    }
+    if (paymentConfig.channels?.alipayEnabled) {
+      setSelectedMethod('ALIPAY')
+    } else if (paymentConfig.channels?.wechatEnabled) {
+      setSelectedMethod('WECHAT')
+    } else {
+      setSelectedMethod('MOCK')
+    }
+  }, [paymentConfig])
   
   const initiatePayment = useInitiatePayment()
 
@@ -276,7 +295,7 @@ export default function PaymentPage({ params }: PaymentPageProps) {
     )
   }
 
-  const isStubOnly = paymentConfig?.stubOnly ?? true
+  const isStubOnly = paymentConfig?.stubOnly ?? false
 
   return (
     <div className="container mx-auto py-8 space-y-6">

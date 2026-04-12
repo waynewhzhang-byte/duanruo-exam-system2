@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -208,7 +208,7 @@ export default function CandidateExamDetailPage() {
                         <CardTitle className="text-lg">{position.title}</CardTitle>
                         <CardDescription>岗位代码: {position.code}</CardDescription>
                       </div>
-                      {position.quota && (
+                      {position.quota != null && (
                         <Badge variant="outline">招聘 {position.quota} 人</Badge>
                       )}
                     </div>

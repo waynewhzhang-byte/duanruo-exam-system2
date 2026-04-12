@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LoginRequest } from '@/types/auth'
-import { apiPost, apiGetPublic, apiPostWithTenant } from '@/lib/api'
+import { apiPostWithTenant, unwrapApiResult } from '@/lib/api'
 import { LogIn, AlertCircle, Building2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -93,23 +93,7 @@ function TenantLoginForm() {
             // If we have a tenantId, try to select the tenant to get tenant-specific roles
             if (tenantId) {
                 try {
-                    const selectTenantResponse = await fetch('/api/proxy/auth/select-tenant', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${finalToken}`
-                        },
-                        body: JSON.stringify({ tenantId })
-                    })
-
-                    // If direct proxy call fails, try using the api helper but we need to handle the token manually
-                    // Actually, let's use the apiPost helper but we need to pass the token in headers
-                    // Since apiPost uses the token from localStorage/cookie which isn't set yet,
-                    // we should use a direct fetch or a helper that accepts a token.
-
-                    // Let's try to use the backend URL directly since we are on the client
-                    const backendUrl = '/api/v1/auth/select-tenant'
-                    const response = await fetch(backendUrl, {
+                    const response = await fetch('/api/v1/auth/select-tenant', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -119,7 +103,10 @@ function TenantLoginForm() {
                     })
 
                     if (response.ok) {
-                        const data = await response.json()
+                        const raw = await response.json()
+                        const data =
+                            unwrapApiResult<{ token: string; user: typeof finalUser }>(raw) ??
+                            (raw as { token?: string; user?: typeof finalUser })
                         if (data.token && data.user) {
                             console.log('✅ Successfully selected tenant, upgraded token')
                             finalToken = data.token

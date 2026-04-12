@@ -291,6 +291,7 @@ export default function TicketsPage({ params }: TicketsPageProps) {
 
                 {previewTicket.qrCode && (
                   <div className="flex justify-center pt-4 border-t">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={previewTicket.qrCode} alt="QR Code" className="w-24 h-24" />
                   </div>
                 )}

@@ -321,6 +321,10 @@ function PositionRulesEditor({
                         : 'hover:bg-muted/50'
                     }`}
                     onClick={() => onSelectRule(index)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectRule(index); } }}
+                    aria-label={`规则 ${rule.name}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">

@@ -33,6 +33,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { apiGetWithTenant, apiPostWithTenant } from '@/lib/api'
+import { useTenant } from '@/hooks/useTenant'
 import { toast } from 'sonner'
 import { Search, MapPin, Users, Play, FileSpreadsheet, Ticket, DollarSign, CheckCircle } from 'lucide-react'
 
@@ -76,6 +77,7 @@ interface SeatArrangementPageProps {
 
 export default function SeatArrangementPage({ params }: SeatArrangementPageProps) {
   const { tenantSlug } = use(params)
+  const { tenant } = useTenant()
   const router = useRouter()
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
@@ -87,10 +89,12 @@ export default function SeatArrangementPage({ params }: SeatArrangementPageProps
 
   // Fetch exams with tenant context
   const { data: exams, isLoading } = useQuery<Exam[]>({
-    queryKey: ['exams', tenantSlug],
+    queryKey: ['exams', tenant?.id],
     queryFn: async () => {
-      return apiGetWithTenant<Exam[]>(tenantSlug, '/exams')
+      if (!tenant?.id) throw new Error('No tenant')
+      return apiGetWithTenant<Exam[]>('/exams', tenant.id)
     },
+    enabled: !!tenant?.id,
   })
 
   // Filter exams - only show exams with closed registration (CLOSED status)
@@ -109,9 +113,10 @@ export default function SeatArrangementPage({ params }: SeatArrangementPageProps
   // Arrange seats and issue tickets mutation (batch operation)
   const arrangeAndIssue = useMutation({
     mutationFn: async ({ examId, strategy }: { examId: string; strategy: string }) => {
+      if (!tenant?.id) throw new Error('No tenant')
       return apiPostWithTenant<ArrangeResult>(
-        tenantSlug,
         `/exams/${examId}/arrange-and-issue?strategy=${strategy}`,
+        tenant.id,
         {}
       )
     },

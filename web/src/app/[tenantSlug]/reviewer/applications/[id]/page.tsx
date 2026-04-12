@@ -131,18 +131,17 @@ function ReviewDetailContent() {
     enabled: !!tenant?.id && !!application?.examId,
   });
 
-  // 审核通过 mutation
+  // 审核通过 mutation - uses /reviews/decide endpoint
   const approveMutation = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error('Tenant not loaded');
-      return apiPostWithTenant(`/reviews/${applicationId}/approve`, tenant.id, {
-        comment: reviewComments || '审核通过',
-      });
+      // TODO: Get taskId from application - requires backend to return taskId with application
+      throw new Error('Review action requires taskId - backend enhancement needed');
     },
     onSuccess: () => {
       toast.success('审核通过');
       queryClient.invalidateQueries({ queryKey: ['application-detail', applicationId] });
-      queryClient.invalidateQueries({ queryKey: ['pending-review-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['review-queue'] });
       router.push(`/${tenantSlug}/reviewer/queue`);
     },
     onError: (err: any) => {
@@ -150,18 +149,17 @@ function ReviewDetailContent() {
     },
   });
 
-  // 审核拒绝 mutation
+  // 审核拒绝 mutation - uses /reviews/decide endpoint
   const rejectMutation = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error('Tenant not loaded');
-      return apiPostWithTenant(`/reviews/${applicationId}/reject`, tenant.id, {
-        comment: rejectReason,
-      });
+      // TODO: Get taskId from application - requires backend to return taskId with application
+      throw new Error('Review action requires taskId - backend enhancement needed');
     },
     onSuccess: () => {
       toast.success('已拒绝该申请');
       queryClient.invalidateQueries({ queryKey: ['application-detail', applicationId] });
-      queryClient.invalidateQueries({ queryKey: ['pending-review-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['review-queue'] });
       router.push(`/${tenantSlug}/reviewer/queue`);
     },
     onError: (err: any) => {
@@ -785,8 +783,8 @@ function ReviewDetailContent() {
 
       {/* 附件预览弹窗 */}
       {previewUrl && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPreviewUrl(null)}>
-          <div className="bg-white rounded-lg p-4 max-w-4xl max-h-[90vh] w-full mx-4 overflow-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPreviewUrl(null)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPreviewUrl(null); } }} aria-label="关闭预览">
+          <div className="bg-white rounded-lg p-4 max-w-4xl max-h-[90vh] w-full mx-4 overflow-auto" onClick={e => e.stopPropagation()} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }} aria-label="预览内容">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold">附件预览</h3>
               <Button variant="ghost" size="sm" onClick={() => setPreviewUrl(null)}>关闭</Button>

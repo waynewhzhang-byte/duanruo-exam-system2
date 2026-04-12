@@ -916,7 +916,11 @@ function CandidateRecentApplications() {
             <div
               key={application.id}
               onClick={() => router.push(`/candidate/applications/${application.id}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/candidate/applications/${application.id}`); } }}
               className="flex items-center justify-between p-4 border rounded-lg hover:border-primary hover:shadow-sm transition-all cursor-pointer"
+              aria-label={`查看报名 ${application.examTitle || application.examId}`}
             >
               <div className="flex-1">
                 <h3 className="font-semibold mb-1">
@@ -1055,7 +1059,11 @@ function OpenExamsList() {
             <div
               key={exam.id}
               onClick={() => router.push(`/candidate/exams/${exam.examId}?tenantId=${exam.tenantId}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/candidate/exams/${exam.examId}?tenantId=${exam.tenantId}`); } }}
               className="group p-4 border rounded-lg hover:border-primary hover:shadow-md transition-all cursor-pointer"
+              aria-label={`考试 ${exam.title}`}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">

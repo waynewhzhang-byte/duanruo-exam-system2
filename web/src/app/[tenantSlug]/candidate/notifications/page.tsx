@@ -176,6 +176,10 @@ export default function NotificationsPage({ params }: NotificationsPageProps) {
                     !notification.read ? 'bg-blue-50 border-blue-200' : 'bg-white'
                   }`}
                   onClick={() => handleViewNotification(notification)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleViewNotification(notification); } }}
+                  aria-label={notification.subject || '查看通知'}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3 flex-1">

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { use, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -241,7 +241,7 @@ export default function TenantPositionsPage({ params }: PositionsPageProps) {
                         </div>
 
                         {/* Capacity */}
-                        {position.quota && (
+                        {position.quota != null && (
                           <div className="text-sm text-gray-600 flex items-center gap-2">
                             <Users className="h-4 w-4" />
                             <span>

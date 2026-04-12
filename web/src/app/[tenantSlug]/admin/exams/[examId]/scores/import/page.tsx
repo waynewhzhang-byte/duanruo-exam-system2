@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGetWithTenant } from '@/lib/api'
 import { useTenant } from '@/hooks/useTenant'
-import { useBatchRecordScore } from '@/lib/api-hooks'
+import { useBatchImportScores, useScoreImportTemplate } from '@/lib/api-hooks'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
 import { ArrowLeft, Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
-import { Spinner } from '@/components/ui/loading'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { toast } from 'sonner'
 import Papa from 'papaparse'
 
@@ -32,11 +32,11 @@ interface Exam {
 
 interface ImportRecord {
   row: number
+  applicationId: string
   candidateName: string
-  ticketNo: string
+  subjectId: string
   subjectName: string
   score: number | null
-  isAbsent: boolean
   remarks?: string
   status: 'pending' | 'success' | 'error'
   error?: string
@@ -70,22 +70,27 @@ export default function ScoreImportPage({ params }: ImportPageProps) {
     enabled: !!tenant?.id,
   })
 
-  // 下载模板
-  const handleDownloadTemplate = () => {
-    const template = [
-      ['准考证号', '考生姓名', '科目名称', '分数', '是否缺考', '备注'],
-      ['2025-EXAM-001-0001', '张三', '数学', '85', '否', ''],
-      ['2025-EXAM-001-0002', '李四', '数学', '', '是', '考生缺考'],
-      ['2025-EXAM-001-0003', '王五', '英语', '90', '否', ''],
-    ]
+  // 模板下载 Hook
+  const { refetch: downloadTemplate } = useScoreImportTemplate(resolvedParams.examId)
 
-    const csv = Papa.unparse(template)
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `成绩导入模板_${exam?.title || '考试'}.csv`
-    link.click()
-    toast.success('模板下载成功')
+  // 下载模板
+  const handleDownloadTemplate = async () => {
+    try {
+      const { data: csv } = await downloadTemplate()
+      if (!csv) {
+        toast.error('生成模板失败')
+        return
+      }
+
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `成绩导入模板_${exam?.title || '考试'}.csv`
+      link.click()
+      toast.success('模板下载成功，请按模板填写成绩')
+    } catch (error) {
+      toast.error('模板下载失败')
+    }
   }
 
   // 处理文件选择
@@ -94,10 +99,10 @@ export default function ScoreImportPage({ params }: ImportPageProps) {
     if (!selectedFile) return
 
     // 验证文件类型
-    const validTypes = ['.csv', '.xlsx', '.xls']
+    const validTypes = ['.csv']
     const fileExtension = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toLowerCase()
     if (!validTypes.includes(fileExtension)) {
-      toast.error('请上传CSV或Excel文件')
+      toast.error('请上传CSV文件')
       return
     }
 
@@ -107,23 +112,16 @@ export default function ScoreImportPage({ params }: ImportPageProps) {
 
   // 解析文件
   const parseFile = (file: File) => {
-    const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
-
-    if (fileExtension === '.csv') {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          processData(results.data as any[])
-        },
-        error: (error) => {
-          toast.error(`文件解析失败: ${error.message}`)
-        },
-      })
-    } else {
-      // Excel文件需要使用xlsx库，这里简化处理
-      toast.error('暂不支持Excel文件，请使用CSV格式')
-    }
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        processData(results.data as any[])
+      },
+      error: (error) => {
+        toast.error(`文件解析失败: ${error.message}`)
+      },
+    })
   }
 
   // 处理数据
@@ -132,38 +130,39 @@ export default function ScoreImportPage({ params }: ImportPageProps) {
     const errors: ValidationError[] = []
 
     data.forEach((row, index) => {
-      const rowNumber = index + 2 // Excel行号从2开始（第1行是表头）
+      const rowNumber = index + 2 // Excel行号从2开始
+
+      // 获取字段（支持不同表头名称，以防用户手动修改）
+      const applicationId = row['报名ID'] || row['applicationId']
+      const subjectId = row['科目ID'] || row['subjectId']
+      const candidateName = row['姓名'] || row['candidateName']
+      const subjectName = row['科目名称'] || row['subjectName']
+      const scoreStr = row['分数'] || row['score']
+      const remarks = row['备注'] || row['remarks']
 
       // 验证必填字段
-      if (!row['准考证号']) {
-        errors.push({ row: rowNumber, field: '准考证号', message: '准考证号不能为空' })
+      if (!applicationId) {
+        errors.push({ row: rowNumber, field: '报名ID', message: '报名ID不能为空' })
       }
-      if (!row['考生姓名']) {
-        errors.push({ row: rowNumber, field: '考生姓名', message: '考生姓名不能为空' })
-      }
-      if (!row['科目名称']) {
-        errors.push({ row: rowNumber, field: '科目名称', message: '科目名称不能为空' })
+      if (!subjectId) {
+        errors.push({ row: rowNumber, field: '科目ID', message: '科目ID不能为空' })
       }
 
-      const isAbsent = row['是否缺考'] === '是' || row['是否缺考'] === 'true' || row['是否缺考'] === '1'
-      const score = row['分数'] ? parseFloat(row['分数']) : null
+      const score = scoreStr !== undefined && scoreStr !== '' ? parseFloat(scoreStr) : null
 
-      // 验证分数
-      if (!isAbsent && (score === null || isNaN(score))) {
-        errors.push({ row: rowNumber, field: '分数', message: '非缺考考生必须填写分数' })
-      }
-      if (score !== null && (score < 0 || score > 100)) {
+      // 验证分数范围
+      if (score !== null && (isNaN(score) || score < 0 || score > 100)) {
         errors.push({ row: rowNumber, field: '分数', message: '分数必须在0-100之间' })
       }
 
       records.push({
         row: rowNumber,
-        candidateName: row['考生姓名'] || '',
-        ticketNo: row['准考证号'] || '',
-        subjectName: row['科目名称'] || '',
-        score: score,
-        isAbsent: isAbsent,
-        remarks: row['备注'] || '',
+        applicationId: applicationId || '',
+        candidateName: candidateName || '未知',
+        subjectId: subjectId || '',
+        subjectName: subjectName || '未知',
+        score,
+        remarks: remarks || '',
         status: 'pending',
       })
     })
@@ -172,19 +171,19 @@ export default function ScoreImportPage({ params }: ImportPageProps) {
     setValidationErrors(errors)
 
     if (errors.length > 0) {
-      toast.error(`发现 ${errors.length} 个验证错误，请修正后重新上传`)
+      toast.error(`解析完成，但发现 ${errors.length} 个错误`)
     } else {
-      toast.success(`成功解析 ${records.length} 条记录，可以开始导入`)
+      toast.success(`解析完成，共 ${records.length} 条记录待导入`)
     }
   }
 
-  // 批量导入
-  const batchImportMutation = useBatchRecordScore()
+  // 批量导入 Hook
+  const batchImportMutation = useBatchImportScores()
 
   // 开始导入
   const handleImport = () => {
     if (validationErrors.length > 0) {
-      toast.error('请先修正验证错误')
+      toast.error('请先修正表格中的错误')
       return
     }
 
@@ -196,64 +195,33 @@ export default function ScoreImportPage({ params }: ImportPageProps) {
     setIsImporting(true)
     setImportProgress(0)
 
-    // 准备导入数据
-    const importData = importRecords.map((record) => ({
-      ticketNo: record.ticketNo,
-      subjectName: record.subjectName,
-      score: record.score,
-      isAbsent: record.isAbsent,
-      remarks: record.remarks,
-    }))
+    const payload = {
+      examId: resolvedParams.examId,
+      scores: importRecords.map(r => ({
+        applicationId: r.applicationId,
+        subjectId: r.subjectId,
+        score: r.score,
+        remarks: r.remarks
+      }))
+    }
 
-    // 模拟进度
-    const progressInterval = setInterval(() => {
-      setImportProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(progressInterval)
-          return prev
-        }
-        return prev + 10
-      })
-    }, 200)
-
-    batchImportMutation.mutate(importData, {
+    batchImportMutation.mutate(payload, {
       onSuccess: (data) => {
-        clearInterval(progressInterval)
-        toast.success(`成功导入 ${data.successCount} 条成绩`)
-        if (data.failCount > 0) {
-          toast.warning(`${data.failCount} 条记录导入失败`)
+        toast.success(`成功导入 ${data.success} 条成绩`)
+        if (data.failed > 0) {
+          toast.warning(`${data.failed} 条记录导入失败`)
         }
-        queryClient.invalidateQueries({ queryKey: ['scores', resolvedParams.examId] })
         
-        // 更新记录状态 - 根据后端返回的错误信息更新
-        if (data.errors && data.errors.length > 0) {
-          const errorRows = new Set(data.errors.map(e => e.row))
-          setImportRecords((prev) =>
-            prev.map((record) => ({
-              ...record,
-              status: errorRows.has(record.row) ? 'error' : 'success',
-              error: data.errors?.find(e => e.row === record.row)?.message,
-            }))
-          )
-        } else {
-          // 如果没有错误信息，假设前successCount条成功
-          setImportRecords((prev) =>
-            prev.map((record, index) => ({
-              ...record,
-              status: index < data.successCount ? 'success' : 'error',
-              error: index >= data.successCount ? '导入失败' : undefined,
-            }))
-          )
-        }
+        setImportRecords(prev => prev.map(r => ({ ...r, status: 'success' })))
         setIsImporting(false)
         setImportProgress(100)
+        queryClient.invalidateQueries({ queryKey: ['scores'] })
       },
       onError: (error: any) => {
-        clearInterval(progressInterval)
-        toast.error(`批量导入失败: ${error.message || '未知错误'}`)
+        toast.error(`导入失败: ${error.message || '网络错误'}`)
         setIsImporting(false)
         setImportProgress(0)
-      },
+      }
     })
   }
 
@@ -269,7 +237,7 @@ export default function ScoreImportPage({ params }: ImportPageProps) {
   if (examLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Spinner size="lg" />
+        <LoadingSpinner size="lg" />
       </div>
     )
   }
@@ -284,39 +252,33 @@ export default function ScoreImportPage({ params }: ImportPageProps) {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">批量导入成绩</h1>
-            <p className="text-sm text-muted-foreground">{exam?.title}</p>
+            <p className="text-sm text-muted-foreground">{exam?.title} (ID: {resolvedParams.examId})</p>
           </div>
         </div>
-        <Button variant="outline" onClick={handleDownloadTemplate}>
+        <Button variant="outline" onClick={handleDownloadTemplate} className="border-primary text-primary hover:bg-primary/5">
           <Download className="h-4 w-4 mr-2" />
-          下载模板
+          下载精准匹配模板
         </Button>
       </div>
 
-      {/* 导入步骤说明 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>导入步骤</CardTitle>
+      {/* 导入说明 */}
+      <Card className="border-blue-100 bg-blue-50/30">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-blue-500" />
+            重要说明
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <ol className="list-decimal list-inside space-y-2 text-sm">
-            <li>点击"下载模板"按钮，下载CSV模板文件</li>
-            <li>在模板中填写成绩数据（准考证号、考生姓名、科目名称、分数、是否缺考、备注）</li>
-            <li>保存为CSV格式（UTF-8编码）</li>
-            <li>点击"选择文件"上传填好的CSV文件</li>
-            <li>系统会自动验证数据，检查是否有错误</li>
-            <li>确认无误后，点击"开始导入"按钮</li>
-          </ol>
+        <CardContent className="text-sm text-blue-800 space-y-2">
+          <p>1. 请务必点击右上角<b>“下载精准匹配模板”</b>，系统会自动导出当前考试所有考生的唯一标识码。</p>
+          <p>2. 请勿修改模板中的“报名ID”和“科目ID”列，否则系统将无法正确匹配考生。</p>
+          <p>3. 导入时系统会自动验证分数格式。完成后请前往成绩大盘查看分析统计。</p>
         </CardContent>
       </Card>
 
       {/* 文件上传 */}
       <Card>
-        <CardHeader>
-          <CardTitle>上传文件</CardTitle>
-          <CardDescription>支持CSV格式，文件大小不超过10MB</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex items-center gap-4">
             <input
               type="file"
@@ -327,10 +289,10 @@ export default function ScoreImportPage({ params }: ImportPageProps) {
               disabled={isImporting}
             />
             <label htmlFor="file-upload">
-              <Button variant="outline" asChild disabled={isImporting}>
+              <Button variant="default" asChild disabled={isImporting}>
                 <span>
                   <Upload className="h-4 w-4 mr-2" />
-                  选择文件
+                  {file ? '更换文件' : '选择 CSV 文件'}
                 </span>
               </Button>
             </label>
@@ -347,132 +309,81 @@ export default function ScoreImportPage({ params }: ImportPageProps) {
         </CardContent>
       </Card>
 
-      {/* 验证错误 */}
+      {/* 错误提示 */}
       {validationErrors.length > 0 && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            <div className="font-medium mb-2">发现 {validationErrors.length} 个验证错误：</div>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              {validationErrors.slice(0, 10).map((error, index) => (
-                <li key={index}>
-                  第 {error.row} 行，{error.field}：{error.message}
-                </li>
-              ))}
-              {validationErrors.length > 10 && (
-                <li className="text-muted-foreground">还有 {validationErrors.length - 10} 个错误...</li>
-              )}
-            </ul>
+            表格中发现 {validationErrors.length} 处格式错误，请在下方预览表格中查看红色高亮部分并修正。
           </AlertDescription>
         </Alert>
       )}
 
-      {/* 导入进度 */}
+      {/* 进度条 */}
       {isImporting && (
-        <Card>
-          <CardHeader>
-            <CardTitle>导入进度</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Progress value={importProgress} />
-              <p className="text-sm text-muted-foreground text-center">{importProgress}%</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-2">
+          <Progress value={importProgress} />
+          <p className="text-center text-sm text-muted-foreground">正在提交数据，请勿刷新页面...</p>
+        </div>
       )}
 
       {/* 数据预览 */}
-      {importRecords.length > 0 && !isImporting && (
+      {importRecords.length > 0 && (
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>数据预览</CardTitle>
-                <CardDescription>共 {importRecords.length} 条记录</CardDescription>
-              </div>
-              <Button
-                onClick={handleImport}
-                disabled={validationErrors.length > 0 || isImporting}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                开始导入
-              </Button>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>导入数据预览</CardTitle>
+              <CardDescription>
+                共解析 {importRecords.length} 行数据，
+                其中 <span className="text-red-500">{validationErrors.length}</span> 行存在问题
+              </CardDescription>
             </div>
+            <Button 
+              size="lg"
+              disabled={validationErrors.length > 0 || isImporting}
+              onClick={handleImport}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              确认并开始导入
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto max-h-96">
+            <div className="max-h-[500px] overflow-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>行号</TableHead>
-                    <TableHead>准考证号</TableHead>
-                    <TableHead>考生姓名</TableHead>
-                    <TableHead>科目</TableHead>
+                    <TableHead>姓名</TableHead>
+                    <TableHead>科目名称</TableHead>
                     <TableHead>分数</TableHead>
-                    <TableHead>状态</TableHead>
                     <TableHead>备注</TableHead>
+                    <TableHead>状态</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {importRecords.map((record) => {
-                    const hasError = validationErrors.some(e => e.row === record.row)
+                    const rowErrors = validationErrors.filter(e => e.row === record.row)
+                    const isRowError = rowErrors.length > 0
+                    
                     return (
-                      <TableRow 
-                        key={record.row}
-                        className={hasError ? 'bg-red-50' : record.status === 'error' ? 'bg-red-50' : record.status === 'success' ? 'bg-green-50' : ''}
-                      >
+                      <TableRow key={record.row} className={isRowError ? 'bg-red-50' : ''}>
                         <TableCell>{record.row}</TableCell>
-                        <TableCell className="font-mono">{record.ticketNo}</TableCell>
-                        <TableCell>{record.candidateName}</TableCell>
+                        <TableCell>
+                          <div className="font-medium">{record.candidateName}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">ID: {record.applicationId}</div>
+                        </TableCell>
                         <TableCell>{record.subjectName}</TableCell>
+                        <TableCell className={rowErrors.some(e => e.field === '分数') ? 'text-red-600 font-bold' : ''}>
+                          {record.score ?? '-'}
+                        </TableCell>
+                        <TableCell className="max-w-[200px] truncate">{record.remarks || '-'}</TableCell>
                         <TableCell>
-                          {record.isAbsent ? (
-                            <Badge variant="secondary">缺考</Badge>
+                          {isRowError ? (
+                            <Badge variant="destructive">格式错误</Badge>
+                          ) : record.status === 'success' ? (
+                            <Badge className="bg-green-600">已导入</Badge>
                           ) : (
-                            <span className="font-mono">{record.score ?? '-'}</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {record.status === 'success' && (
-                            <Badge variant="default" className="bg-green-600">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              成功
-                            </Badge>
-                          )}
-                          {record.status === 'error' && (
-                            <Badge variant="destructive">
-                              <XCircle className="h-3 w-3 mr-1" />
-                              失败
-                            </Badge>
-                          )}
-                          {record.status === 'pending' && (
-                            hasError ? (
-                              <Badge variant="destructive">
-                                <AlertCircle className="h-3 w-3 mr-1" />
-                                错误
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline">待导入</Badge>
-                            )
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {hasError && (
-                            <div className="text-red-600">
-                              {validationErrors.filter(e => e.row === record.row).map((e, idx) => (
-                                <div key={idx}>{e.field}: {e.message}</div>
-                              ))}
-                            </div>
-                          )}
-                          {record.error && (
-                            <div className="text-red-600">{record.error}</div>
-                          )}
-                          {!hasError && !record.error && record.remarks && (
-                            <span className="text-muted-foreground">{record.remarks}</span>
-                          )}
-                          {!hasError && !record.error && !record.remarks && (
-                            <span className="text-muted-foreground">-</span>
+                            <Badge variant="outline">等待中</Badge>
                           )}
                         </TableCell>
                       </TableRow>

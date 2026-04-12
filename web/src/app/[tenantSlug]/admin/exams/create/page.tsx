@@ -16,6 +16,14 @@ import { ArrowLeft, Save } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 
+function localDateTimeToIso(value: string): string | undefined {
+    const v = value.trim()
+    if (!v) return undefined
+    const d = new Date(v)
+    if (Number.isNaN(d.getTime())) return undefined
+    return d.toISOString()
+}
+
 interface ExamFormData {
     code: string
     slug: string
@@ -66,21 +74,14 @@ export default function NewExamPage() {
                 feeRequired: data.feeRequired,
             }
 
-            // 添加报名时间（转换为后端格式 yyyy-MM-dd HH:mm:ss）
-            if (data.registrationStart) {
-                requestData.registrationStart = data.registrationStart.replace('T', ' ') + ':00'
-            }
-            if (data.registrationEnd) {
-                requestData.registrationEnd = data.registrationEnd.replace('T', ' ') + ':00'
-            }
-
-            // 添加考试时间（转换为后端格式 yyyy-MM-dd HH:mm:ss）
-            if (data.examStart) {
-                requestData.examStart = data.examStart.replace('T', ' ') + ':00'
-            }
-            if (data.examEnd) {
-                requestData.examEnd = data.examEnd.replace('T', ' ') + ':00'
-            }
+            const rs = localDateTimeToIso(data.registrationStart)
+            if (rs) requestData.registrationStart = rs
+            const re = localDateTimeToIso(data.registrationEnd)
+            if (re) requestData.registrationEnd = re
+            const es = localDateTimeToIso(data.examStart)
+            if (es) requestData.examStart = es
+            const ee = localDateTimeToIso(data.examEnd)
+            if (ee) requestData.examEnd = ee
 
             // 添加费用金额
             if (data.feeRequired && data.feeAmount) {

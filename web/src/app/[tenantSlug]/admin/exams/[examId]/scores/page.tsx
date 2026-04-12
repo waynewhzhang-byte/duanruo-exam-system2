@@ -4,6 +4,7 @@ import { use, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGetWithTenant, apiPost, apiDelete } from '@/lib/api'
+import { normalizePaginatedOrArray } from '@/lib/normalize-paginated-or-array'
 import { useTenant } from '@/hooks/useTenant'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -140,7 +141,11 @@ export default function ScoresPage({ params }: ScoresPageProps) {
     queryKey: ['applications', examId, tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) throw new Error('No tenant selected')
-      return apiGetWithTenant<Application[]>(`/exams/${examId}/applications`, tenant.id)
+      const raw = await apiGetWithTenant<unknown>(
+        `/exams/${examId}/applications?size=500`,
+        tenant.id,
+      )
+      return normalizePaginatedOrArray<Application>(raw)
     },
     enabled: !!tenant?.id,
   })

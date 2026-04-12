@@ -3,12 +3,67 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { apiGet } from '@/lib/api'
+import { apiGet, APIError } from '@/lib/api'
 import { selectTenant } from '@/lib/auth-api'
 import { TenantListResponseType, TenantType } from '@/types/tenant'
 import { useQuery } from '@tanstack/react-query'
 import { Search, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react'
 import { toast } from 'sonner'
+/** `GET /users/me/tenants` 返回项（与后端 UserTenantRoleResponse 对齐） */
+interface UserTenantRoleRow {
+  id: string
+  userId: string
+  tenantId: string
+  role: string
+  active: boolean
+  tenant?: {
+    id: string
+    name: string
+    code: string
+    schemaName: string
+    status: string
+    contactEmail: string
+    contactPhone?: string
+    createdAt: string
+  }
+}
+
+function toIso(d: string | Date): string {
+  if (typeof d === 'string') return d
+  return d.toISOString()
+}
+
+function mapMyTenantsToPage(rows: UserTenantRoleRow[]): TenantListResponseType {
+  const byId = new Map<string, TenantType>()
+  for (const row of rows) {
+    const t = row.tenant
+    if (!t) continue
+    if (byId.has(t.id)) continue
+    const created = toIso(t.createdAt)
+    const status = t.status as TenantType['status']
+    byId.set(t.id, {
+      id: t.id,
+      name: t.name,
+      code: t.code,
+      slug: t.code,
+      schemaName: t.schemaName,
+      description: null,
+      status,
+      contactEmail: t.contactEmail,
+      contactPhone: t.contactPhone ?? null,
+      createdAt: created,
+      updatedAt: created,
+    })
+  }
+  const content = [...byId.values()]
+  return {
+    content,
+    totalElements: content.length,
+    totalPages: content.length > 0 ? 1 : 0,
+    size: content.length,
+    number: 0,
+  }
+}
 
 export default function TenantSelectionPage() {
   const router = useRouter()
@@ -38,20 +93,16 @@ export default function TenantSelectionPage() {
     !userRoles.includes('SUPER_ADMIN')
 
   // For candidates, fetch public exams across all tenants
-  // For other roles, fetch available tenants
+  // For other roles: 后端列表为 GET /users/me/tenants（无 GET /tenants）
   const { data: tenantsData, isLoading, error } = useQuery({
-    queryKey: ['tenants', isCandidate],
-    queryFn: () => {
+    queryKey: ['tenants', 'my-tenants', isCandidate],
+    queryFn: async () => {
       if (isCandidate) {
-        // Candidates see public exams, not tenants
-        // Redirect to public exams page
         router.push('/exams/public')
-        return Promise.resolve({ content: [], totalElements: 0, totalPages: 0, size: 0, number: 0 })
+        return { content: [], totalElements: 0, totalPages: 0, size: 0, number: 0 }
       }
-      return apiGet<TenantListResponseType>('/tenants', {
-        // Note: This endpoint should return tenants the user has access to
-        // Backend should filter based on user's permissions
-      })
+      const rows = await apiGet<UserTenantRoleRow[]>('/users/me/tenants')
+      return mapMyTenantsToPage(rows)
     },
   })
 
@@ -156,6 +207,7 @@ export default function TenantSelectionPage() {
   }
 
   if (error) {
+    const detail = error instanceof APIError ? error.message : '请稍后重试'
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -163,7 +215,9 @@ export default function TenantSelectionPage() {
             <XCircle className="h-8 w-8 text-red-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">加载失败</h2>
-          <p className="text-gray-600 mb-4">无法加载考试列表，请稍后重试</p>
+          <p className="text-gray-600 mb-4 max-w-md mx-auto">
+            无法加载租户列表：{detail}
+          </p>
           <button
             onClick={() => window.location.reload()}
             className="btn btn-primary"
@@ -186,10 +240,10 @@ export default function TenantSelectionPage() {
             </div>
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            选择考试
+            选择租户
           </h1>
           <p className="text-xl text-gray-600">
-            请选择您要参加的考试实例
+            请选择要进入的租户（管理端、审核或考生入口）
           </p>
         </div>
 
@@ -199,7 +253,7 @@ export default function TenantSelectionPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
               type="text"
-              placeholder="搜索考试名称或描述..."
+              placeholder="搜索租户名称或描述..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -213,8 +267,8 @@ export default function TenantSelectionPage() {
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Calendar className="h-8 w-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无可用的考试</h3>
-            <p className="text-gray-600">当前没有可参加的考试，请稍后再试</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无可用的租户</h3>
+            <p className="text-gray-600">当前账号未关联任何租户，请联系管理员</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -223,6 +277,10 @@ export default function TenantSelectionPage() {
                 key={tenant.id}
                 className="bg-white rounded-lg shadow-card border border-gray-200 p-6 hover:shadow-card-hover transition-shadow cursor-pointer"
                 onClick={() => handleTenantSelect(tenant)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleTenantSelect(tenant); } }}
+                aria-label={`选择租户 ${tenant.name}`}
               >
                 {/* Header */}
                 <div className="flex justify-between items-start mb-4">
@@ -267,7 +325,7 @@ export default function TenantSelectionPage() {
                     handleTenantSelect(tenant)
                   }}
                 >
-                  {isSelecting ? '选择中...' : tenant.status === 'ACTIVE' ? '进入考试' : '考试已结束'}
+                  {isSelecting ? '选择中...' : tenant.status === 'ACTIVE' ? '进入' : '不可用'}
                 </button>
               </div>
             ))}

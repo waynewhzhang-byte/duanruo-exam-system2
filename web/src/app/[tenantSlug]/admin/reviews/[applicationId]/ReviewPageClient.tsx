@@ -431,8 +431,12 @@ export default function ReviewPageClient({ tenantSlug, applicationId }: ReviewPa
         <div
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedAttachment(null)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedAttachment(null); } }}
+          aria-label="关闭预览"
         >
-          <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }} aria-label="预览内容">
             <div className="p-4 border-b flex items-center justify-between">
               <h3 className="font-medium">{selectedAttachment.fileName}</h3>
               <Button variant="ghost" size="sm" onClick={() => setSelectedAttachment(null)}>
@@ -441,6 +445,7 @@ export default function ReviewPageClient({ tenantSlug, applicationId }: ReviewPa
             </div>
             <div className="p-4">
               {selectedAttachment.fileType.startsWith('image/') ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={selectedAttachment.downloadUrl}
                   alt={selectedAttachment.fileName}

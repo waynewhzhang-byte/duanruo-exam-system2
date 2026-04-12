@@ -235,6 +235,10 @@ function AutoReviewRulesContent() {
                         : 'border-border hover:bg-accent'
                         }`}
                       onClick={() => setSelectedRuleIndex(index)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedRuleIndex(index); } }}
+                      aria-label={`规则 ${rule.name}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">

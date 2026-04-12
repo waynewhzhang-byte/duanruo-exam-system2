@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, Suspense, useEffect } from 'react'
+import { useState, Suspense, useEffect, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
@@ -9,11 +10,34 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LoginRequest, TenantRoleInfo } from '@/types/auth'
-import { apiPost, API_BASE } from '@/lib/api'
+import { apiPost, API_BASE, unwrapApiResult } from '@/lib/api'
 import { LogIn, AlertCircle, GraduationCap, Shield, Users, FileCheck, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
+/** 仅允许站内相对路径，防止 open redirect */
+function getSafeRedirectPath(raw: string | null): string | null {
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return null
+  return raw
+}
+
+/** 与 middleware 一致：受保护路由只认 httpOnly cookie；仅 localStorage 有 token 时不能视为已登录 */
+function clearStaleClientSession() {
+  try {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('tenantRoles')
+    localStorage.removeItem('tenant_id')
+    localStorage.removeItem('pendingTenantSelection')
+    sessionStorage.removeItem('token')
+  } catch {
+    /* ignore */
+  }
+}
+
 function getRedirectPath(tenantSlug: string | null, roles: string[]): string {
+  if (roles.includes('SUPER_ADMIN') || roles.includes('PLATFORM_ADMIN')) {
+    return '/super-admin/tenants'
+  }
   if (roles.includes('TENANT_ADMIN') || roles.includes('ADMIN') || roles.includes('EXAM_ADMIN')) {
     return tenantSlug ? `/${tenantSlug}/admin` : '/admin'
   }
@@ -26,11 +50,40 @@ function getRedirectPath(tenantSlug: string | null, roles: string[]): string {
   return '/'
 }
 
+const roleConfig = {
+  candidate: {
+    title: '考生入口',
+    description: '登录后可以报名考试、查看准考证和成绩',
+    icon: GraduationCap,
+    gradient: 'from-emerald-500 via-teal-500 to-cyan-500'
+  },
+  reviewer: {
+    title: '审核员入口',
+    description: '登录后可以处理报名审核任务',
+    icon: FileCheck,
+    gradient: 'from-amber-500 via-orange-500 to-red-500'
+  },
+  admin: {
+    title: '管理员入口',
+    description: '登录后可以管理考试和报名数据',
+    icon: Shield,
+    gradient: 'from-violet-500 via-purple-500 to-indigo-500'
+  },
+  default: {
+    title: '欢迎登录',
+    description: '智能招聘考试管理平台',
+    icon: Users,
+    gradient: 'from-slate-500 via-gray-500 to-zinc-500'
+  }
+}
+
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const role = searchParams.get('role')
+  const redirectParam = searchParams.get('redirect')
   const { login: authLogin } = useAuth()
+  const queryClient = useQueryClient()
 
   const [formData, setFormData] = useState<LoginRequest>({
     username: '',
@@ -40,12 +93,70 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
+  // 必须以 cookie 会话为准再自动跳转；仅 localStorage 会导致：replace → 中间件无 cookie → 回登录页 → 循环抖动
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      router.push('/')
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const res = await fetch('/api/session', { credentials: 'include' })
+        if (cancelled) return
+
+        if (!res.ok) {
+          clearStaleClientSession()
+          queryClient.setQueryData(['session'], { isAuthenticated: false })
+          return
+        }
+
+        const session = (await res.json()) as {
+          isAuthenticated?: boolean
+          user?: { roles?: string[] }
+          tenantRoles?: TenantRoleInfo[]
+        }
+
+        if (!session.isAuthenticated || !session.user) {
+          clearStaleClientSession()
+          queryClient.setQueryData(['session'], { isAuthenticated: false })
+          return
+        }
+
+        const tenantRoles = session.tenantRoles ?? []
+        const tenantCode =
+          tenantRoles.length > 0 ? tenantRoles[0].tenantCode : null
+        const safe = getSafeRedirectPath(redirectParam)
+        const fallback = getRedirectPath(
+          tenantCode,
+          session.user.roles || [],
+        )
+        const target = safe ?? (fallback !== '/' ? fallback : null)
+        if (target) {
+          router.replace(target)
+        }
+      } catch (e) {
+        console.error('[Login] Session probe failed', e)
+        clearStaleClientSession()
+        queryClient.setQueryData(['session'], { isAuthenticated: false })
+      }
+    })()
+
+    return () => {
+      cancelled = true
     }
-  }, [router])
+  }, [router, redirectParam, queryClient])
+
+  const handleUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, username: e.target.value }))
+    if (errors.username) {
+      setErrors(prev => ({ ...prev, username: '' }))
+    }
+  }, [errors.username])
+
+  const handlePasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, password: e.target.value }))
+    if (errors.password) {
+      setErrors(prev => ({ ...prev, password: '' }))
+    }
+  }, [errors.password])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,7 +170,9 @@ function LoginForm() {
         password: validatedData.password,
       }
 
-      const response = await apiPost<any>('/auth/login', payload)
+      // Pass token: null to prevent api() from auto-injecting old token from localStorage/cookies
+      // Login requests should NOT include any Authorization header
+      const response = await apiPost<any>('/auth/login', payload, { token: undefined })
 
       if (!response.token || !response.user) {
         throw new Error('登录响应格式错误：缺少 token 或 user 信息')
@@ -73,8 +186,14 @@ function LoginForm() {
 
       const userRoles = finalUser.roles || []
 
+      const safeAfterLogin = getSafeRedirectPath(redirectParam)
+      if (safeAfterLogin) {
+        router.replace(safeAfterLogin)
+        return
+      }
+
       if (userRoles.includes('SUPER_ADMIN')) {
-        router.push('/super-admin/tenants')
+        router.replace('/super-admin/tenants')
         return
       }
 
@@ -101,7 +220,13 @@ function LoginForm() {
           })
 
           if (selectResponse.ok) {
-            const data = await selectResponse.json()
+            const raw = await selectResponse.json()
+            const data =
+              unwrapApiResult<{
+                token: string
+                user: typeof finalUser
+                tenantRoles?: typeof tenantRoles
+              }>(raw) ?? (raw as { token?: string; user?: typeof finalUser; tenantRoles?: typeof tenantRoles })
             if (data.token && data.user) {
               finalToken = data.token
               finalUser = data.user
@@ -121,13 +246,8 @@ function LoginForm() {
         return
       }
 
-      if (userRoles.includes('TENANT_ADMIN')) {
-        router.push('/admin')
-      } else if (userRoles.includes('PRIMARY_REVIEWER') || userRoles.includes('SECONDARY_REVIEWER')) {
-        router.push('/reviewer')
-      } else {
-        router.push('/')
-      }
+      const redirectPath = getRedirectPath(null, userRoles)
+      router.push(redirectPath)
     } catch (error: any) {
       if (error.name === 'ZodError') {
         const fieldErrors: Record<string, string> = {}
@@ -146,50 +266,17 @@ function LoginForm() {
   }
 
   const storeSession = async (token: string, user: any, tenantRoles: TenantRoleInfo[] = []) => {
+    // First update React Query cache (synchronous, immediate effect)
     await authLogin(token, user, tenantRoles)
-    try {
-      window.localStorage.setItem('token', token)
-      window.sessionStorage.setItem('token', token)
-    } catch { }
+    
+    // Then store to localStorage synchronously to ensure data is available
+    // before the next page loads and checks it
+    window.localStorage.setItem('token', token)
+    window.sessionStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(user))
     if (tenantRoles.length > 0) {
+      window.localStorage.setItem('tenant_id', tenantRoles[0].tenantId)
       localStorage.setItem('tenantRoles', JSON.stringify(tenantRoles))
-    }
-  }
-
-  const handleInputChange = (field: keyof LoginRequest) => (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setFormData((prev: LoginRequest) => ({ ...prev, [field]: e.target.value }))
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }))
-    }
-  }
-
-  const roleConfig = {
-    candidate: { 
-      title: '考生入口', 
-      description: '登录后可以报名考试、查看准考证和成绩',
-      icon: GraduationCap,
-      gradient: 'from-emerald-500 via-teal-500 to-cyan-500'
-    },
-    reviewer: { 
-      title: '审核员入口', 
-      description: '登录后可以处理报名审核任务',
-      icon: FileCheck,
-      gradient: 'from-amber-500 via-orange-500 to-red-500'
-    },
-    admin: { 
-      title: '管理员入口', 
-      description: '登录后可以管理考试和报名数据',
-      icon: Shield,
-      gradient: 'from-violet-500 via-purple-500 to-indigo-500'
-    },
-    default: { 
-      title: '欢迎登录', 
-      description: '智能招聘考试管理平台',
-      icon: Users,
-      gradient: 'from-slate-500 via-gray-500 to-zinc-500'
     }
   }
 
@@ -202,8 +289,8 @@ function LoginForm() {
       <div className={`hidden lg:flex lg:w-1/2 bg-gradient-to-br ${config.gradient} p-12 flex-col justify-between relative overflow-hidden`}>
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl"></div>
         </div>
         
         <div className="relative z-10">
@@ -280,7 +367,7 @@ function LoginForm() {
                     required
                     placeholder="请输入用户名"
                     value={formData.username}
-                    onChange={handleInputChange('username')}
+                    onChange={handleUsernameChange}
                     className={`h-12 bg-slate-50 border-slate-200 focus:border-slate-400 focus:ring-slate-200 ${errors.username ? 'border-red-400' : ''}`}
                   />
                   {errors.username && (
@@ -299,7 +386,7 @@ function LoginForm() {
                       required
                       placeholder="请输入密码"
                       value={formData.password}
-                      onChange={handleInputChange('password')}
+                      onChange={handlePasswordChange}
                       className={`h-12 bg-slate-50 border-slate-200 focus:border-slate-400 focus:ring-slate-200 pr-12 ${errors.password ? 'border-red-400' : ''}`}
                     />
                     <button

@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label'
 import FormFileUpload from '@/components/ui/formfileupload'
 import { ApplicationForm, EDUCATION_LEVEL_LABELS, type ApplicationForm as ApplicationFormType } from '@/types/application'
 import { ArrowLeft, Save, Send, Plus, Trash2, AlertCircle } from 'lucide-react'
-import { useSubmitApplication, useExam, usePosition, useExams, useExamPositions, useSaveDraft, useApplication, useUpdateDraft } from '@/lib/api-hooks'
+import { useSubmitApplication, useExam, usePosition, useExams, useExamPositions, useSaveDraft, useApplication, useUpdateDraft, useUserProfileForApplication } from '@/lib/api-hooks'
 import { useToast } from '@/components/ui/use-toast'
 
 // 数据来源改为真实 API（exams、positions、application submit）
@@ -80,6 +80,9 @@ function NewApplicationForm() {
 
   // 如果有 draftId，拉取草稿详情用于回填
   const { data: draftDetail } = useApplication(draftId)
+
+  // 获取用户档案用于自动填充
+  const { data: userProfile } = useUserProfileForApplication()
 
   const { data: examsPaged } = useExams({})
   const examsOptions = examsPaged?.content ?? []
@@ -165,6 +168,25 @@ function NewApplicationForm() {
       if (Array.isArray(p.workExperiences)) form.setValue('workExperiences', p.workExperiences)
     } catch (e) { console.warn('fill draft failed', e) }
   }, [draftDetail, form])
+
+  useEffect(() => {
+    if (!userProfile || draftDetail) return
+    const currentValues = form.getValues()
+    const setValueIfEmpty = (field: string, value: string | undefined) => {
+      if (!currentValues[field as keyof typeof currentValues] && value) {
+        form.setValue(field as any, value)
+      }
+    }
+    setValueIfEmpty('gender', userProfile.gender || undefined)
+    if (userProfile.birthDate) {
+      const birthDate = userProfile.birthDate.split('T')[0]
+      setValueIfEmpty('birthDate', birthDate)
+    }
+    setValueIfEmpty('idNumber', userProfile.idNumber || undefined)
+    setValueIfEmpty('address', userProfile.address || undefined)
+    setValueIfEmpty('emergencyContactName', userProfile.emergencyContact || undefined)
+    setValueIfEmpty('emergencyContactPhone', userProfile.emergencyPhone || undefined)
+  }, [userProfile, draftDetail, form])
 
   useEffect(() => {
     if (!draftId) return

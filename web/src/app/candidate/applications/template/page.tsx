@@ -120,6 +120,10 @@ function TemplateApplicationPageContent() {
                         key={exam.id}
                         className="border border-gray-200 rounded-lg p-4 hover:border-primary-500 cursor-pointer transition-colors"
                         onClick={() => handleExamSelect(exam.id)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleExamSelect(exam.id); } }}
+                        aria-label={`选择考试 ${exam.title}`}
                       >
                         <div className="flex items-start justify-between mb-3">
                           <FileText className="h-6 w-6 text-primary-600" />
