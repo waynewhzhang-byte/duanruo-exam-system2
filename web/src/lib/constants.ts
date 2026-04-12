@@ -122,9 +122,12 @@ export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
 export const FILE_STATUS_LABELS: Record<z.infer<typeof FileStatus>, string> = {
   UPLOADING: '上传中',
   UPLOADED: '已上传',
+  AVAILABLE: '可用',
   CONFIRMED: '已确认',
   FAILED: '上传失败',
   DELETED: '已删除',
+  EXPIRED: '已过期',
+  QUARANTINED: '已隔离',
 }
 
 /**
@@ -133,9 +136,11 @@ export const FILE_STATUS_LABELS: Record<z.infer<typeof FileStatus>, string> = {
  */
 export const VIRUS_SCAN_STATUS_LABELS: Record<z.infer<typeof VirusScanStatus>, string> = {
   PENDING: '待扫描',
+  SCANNING: '扫描中',
   CLEAN: '安全',
   INFECTED: '发现病毒',
   FAILED: '扫描失败',
+  SKIPPED: '已跳过',
 }
 
 /**

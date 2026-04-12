@@ -108,11 +108,9 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
     }
 
     try {
-      if (retry) {
-        return await withRetry(fn, { ...retryOptions, ...customRetryOptions })
-      } else {
-        return await fn()
-      }
+      return retry
+        ? await withRetry(fn, { ...retryOptions, ...customRetryOptions })
+        : await fn()
     } catch (error) {
       handleErrorWithNotification(error)
       return null
@@ -214,12 +212,9 @@ export function useFormErrorHandler() {
       
       // Example: if backend returns field errors in a specific format
       // You might need to adjust this based on your backend's response
+      errors.general = appError.message
       if (appError.message.includes('field')) {
-        // Parse field-specific errors
-        // This is a simplified example
-        errors.general = appError.message
-      } else {
-        errors.general = appError.message
+        // Parse field-specific errors when backend returns field info (extend as needed)
       }
       
       setFieldErrors(errors)

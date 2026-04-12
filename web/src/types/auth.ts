@@ -74,7 +74,7 @@ export interface AuthState {
 }
 
 export interface AuthContextType extends AuthState {
-  login: (token: string, user: UserResponse, tenantRoles?: TenantRoleInfo[]) => void
+  login: (token: string, user: UserResponse, tenantRoles?: TenantRoleInfo[]) => Promise<void>
   logout: () => void
   refreshSession: () => Promise<void>
 }

@@ -23,16 +23,93 @@ export const ErrorResponse = z.object({
   time: data.timestamp,
 }))
 
-export const PaginationResponse = <T extends z.ZodTypeAny>(contentSchema: T) =>
-  z.object({
-    content: z.array(contentSchema),
-    totalElements: z.number(),
-    totalPages: z.number(),
-    currentPage: z.number(),
-    pageSize: z.number(),
-    hasNext: z.boolean(),
-    hasPrevious: z.boolean(),
-  })
+/** Normalized pagination shape used across the web app after parsing API responses */
+export type NormalizedPagination<T> = {
+  content: T[]
+  totalElements: number
+  totalPages: number
+  currentPage: number
+  pageSize: number
+  hasNext: boolean
+  hasPrevious: boolean
+}
+
+/**
+ * Accepts backend variants:
+ * - Nest `PaginationHelper`: `{ content, pagination: { totalItems, page, size, ... } }`
+ * - Legacy flat: `{ content, totalElements, currentPage, pageSize, ... }`
+ * - Admin list style: `{ content, total, page, size }`
+ */
+export function PaginationResponse<T extends z.ZodTypeAny>(contentSchema: T) {
+  const items = z.array(contentSchema)
+  return z
+    .union([
+      z.object({
+        content: items,
+        pagination: z.object({
+          totalItems: z.number(),
+          totalPages: z.number(),
+          page: z.number(),
+          size: z.number(),
+          hasNext: z.boolean(),
+          hasPrevious: z.boolean(),
+        }),
+      }),
+      z.object({
+        content: items,
+        totalElements: z.number(),
+        totalPages: z.number(),
+        currentPage: z.number(),
+        pageSize: z.number(),
+        hasNext: z.boolean(),
+        hasPrevious: z.boolean(),
+      }),
+      z.object({
+        content: items,
+        total: z.number(),
+        page: z.number(),
+        size: z.number(),
+      }),
+    ])
+    .transform((raw): NormalizedPagination<z.infer<T>> => {
+      if ('pagination' in raw) {
+        const { content, pagination: p } = raw
+        return {
+          content,
+          totalElements: p.totalItems,
+          totalPages: p.totalPages,
+          currentPage: p.page,
+          pageSize: p.size,
+          hasNext: p.hasNext,
+          hasPrevious: p.hasPrevious,
+        }
+      }
+      if ('totalElements' in raw) {
+        const r = raw
+        return {
+          content: r.content,
+          totalElements: r.totalElements,
+          totalPages: r.totalPages,
+          currentPage: r.currentPage,
+          pageSize: r.pageSize,
+          hasNext: r.hasNext,
+          hasPrevious: r.hasPrevious,
+        }
+      }
+      const { content, total, page, size } = raw
+      const totalPages =
+        size > 0 ? Math.ceil(total / size) : total > 0 ? 1 : 0
+      return {
+        content,
+        totalElements: total,
+        totalPages,
+        currentPage: page,
+        pageSize: size,
+        hasNext: totalPages > 0 ? page < totalPages - 1 : false,
+        hasPrevious: page > 0,
+      }
+    })
+}
 
 // Application Status enum (matching backend)
 export const ApplicationStatus = z.enum([
@@ -71,6 +148,7 @@ export const Tenant = z.object({
   deactivatedAt: DateTimeString.nullable().optional(),
 })
 
+/** Spring-style 分页（部分网关/旧接口） */
 export const TenantListResponse = z.object({
   content: z.array(Tenant),
   totalElements: z.number(),
@@ -78,6 +156,37 @@ export const TenantListResponse = z.object({
   size: z.number(),
   number: z.number(),
 })
+
+/** NestJS `PaginationHelper.createResponse` 形状（super-admin/tenants 等） */
+export const TenantListResponseNest = z.object({
+  content: z.array(Tenant),
+  pagination: z.object({
+    totalItems: z.number(),
+    totalPages: z.number(),
+    page: z.number(),
+    size: z.number(),
+    hasNext: z.boolean().optional(),
+    hasPrevious: z.boolean().optional(),
+  }),
+})
+
+export type TenantListResponseNestType = z.infer<typeof TenantListResponseNest>
+
+/** 将不同分页格式规范为 hooks 使用的统一结构 */
+export function parseTenantListResponse(data: unknown): TenantListResponseType {
+  const nest = TenantListResponseNest.safeParse(data)
+  if (nest.success) {
+    const { content, pagination } = nest.data
+    return {
+      content,
+      totalElements: pagination.totalItems,
+      totalPages: pagination.totalPages,
+      size: pagination.size,
+      number: pagination.page,
+    }
+  }
+  return TenantListResponse.parse(data)
+}
 
 export const CreateTenantRequest = z.object({
   name: z.string().min(2).max(100),
@@ -100,24 +209,76 @@ export type CreateTenantRequestType = z.infer<typeof CreateTenantRequest>
 export type UpdateTenantRequestType = z.infer<typeof UpdateTenantRequest>
 
 // File schemas
-export const FileStatus = z.enum(['UPLOADING', 'UPLOADED', 'CONFIRMED', 'FAILED', 'DELETED'])
-export const VirusScanStatus = z.enum(['PENDING', 'CLEAN', 'INFECTED', 'FAILED'])
+/** Aligns with Prisma FileRecord.status / virusScanStatus (superset of legacy UI names) */
+export const FileStatus = z.enum([
+  'UPLOADING',
+  'UPLOADED',
+  'AVAILABLE',
+  'CONFIRMED',
+  'FAILED',
+  'DELETED',
+  'EXPIRED',
+  'QUARANTINED',
+])
+export const VirusScanStatus = z.enum([
+  'PENDING',
+  'SCANNING',
+  'CLEAN',
+  'INFECTED',
+  'FAILED',
+  'SKIPPED',
+])
 
-export const FileInfoResponse = z.object({
-  fileId: UUID,
-  fileName: z.string(),
-  originalName: z.string(),
-  contentType: z.string(),
-  fileSize: z.number(),
-  status: FileStatus,
-  virusScanStatus: VirusScanStatus,
-  fieldKey: z.string(),
-  applicationId: UUID.optional(),
-  uploadedBy: z.string(),
-  uploadedAt: DateTimeString,
-  lastAccessedAt: DateTimeString.optional(),
-  accessCount: z.number().optional(),
-})
+const DateLike = z.union([DateTimeString, z.date()]).transform((v) =>
+  v instanceof Date ? v.toISOString() : v,
+)
+
+/** Backend returns `id` + `originalName`; UI expects `fileId` + `fileName` */
+export const FileInfoResponse = z
+  .object({
+    fileId: UUID.optional(),
+    id: UUID.optional(),
+    fileName: z.string().optional(),
+    originalName: z.string().optional(),
+    storedName: z.string().optional(),
+    objectKey: z.string().optional(),
+    contentType: z.string(),
+    fileSize: z.number(),
+    status: z.string(),
+    virusScanStatus: z.string(),
+    fieldKey: z.string().nullable().optional(),
+    applicationId: UUID.nullable().optional(),
+    uploadedBy: z.string().optional(),
+    uploadedAt: DateLike,
+    lastAccessedAt: DateTimeString.optional(),
+    accessCount: z.number().optional(),
+  })
+  .transform((d) => {
+    const fileId = d.fileId ?? d.id
+    if (!fileId) {
+      throw new Error('File info missing id')
+    }
+    const name = d.fileName ?? d.originalName ?? ''
+    const st = FileStatus.safeParse(d.status)
+    const vs = VirusScanStatus.safeParse(d.virusScanStatus)
+    return {
+      fileId,
+      fileName: name,
+      originalName: d.originalName ?? name,
+      contentType: d.contentType,
+      fileSize: d.fileSize,
+      status: (st.success ? st.data : (d.status as z.infer<typeof FileStatus>)),
+      virusScanStatus: (vs.success ? vs.data : (d.virusScanStatus as z.infer<typeof VirusScanStatus>)),
+      fieldKey: d.fieldKey ?? '',
+      applicationId: d.applicationId ?? undefined,
+      uploadedBy: d.uploadedBy ?? '',
+      uploadedAt: d.uploadedAt,
+      lastAccessedAt: d.lastAccessedAt,
+      accessCount: d.accessCount,
+      storedName: d.storedName,
+      objectKey: d.objectKey,
+    }
+  })
 
 export const FileUploadUrlRequest = z.object({
   fileName: z.string(),
@@ -139,26 +300,59 @@ export const FileUploadConfirmRequest = z.object({
   fileSize: z.number().optional(),
 })
 
-export const FileUploadConfirmResponse = z.object({
-  fileId: UUID,
-  status: FileStatus,
-  fileName: z.string(),
-  fileSize: z.number(),
-  contentType: z.string(),
-  virusScanStatus: VirusScanStatus,
-  uploadedAt: DateTimeString,
-  message: z.string(),
-})
+export const FileUploadConfirmResponse = z
+  .object({
+    fileId: UUID,
+    status: z.string(),
+    fileName: z.string().optional(),
+    originalName: z.string().optional(),
+    fileSize: z.number(),
+    contentType: z.string(),
+    virusScanStatus: z.string(),
+    uploadedAt: z.union([DateTimeString, z.date()]),
+    message: z.string(),
+  })
+  .transform((d) => {
+    const st = FileStatus.safeParse(d.status)
+    const vs = VirusScanStatus.safeParse(d.virusScanStatus)
+    return {
+      fileId: d.fileId,
+      status: st.success ? st.data : (d.status as z.infer<typeof FileStatus>),
+      fileName: d.fileName ?? d.originalName ?? '',
+      originalName: d.originalName ?? d.fileName ?? '',
+      fileSize: d.fileSize,
+      contentType: d.contentType,
+      virusScanStatus: vs.success
+        ? vs.data
+        : (d.virusScanStatus as z.infer<typeof VirusScanStatus>),
+      uploadedAt:
+        d.uploadedAt instanceof Date ? d.uploadedAt.toISOString() : d.uploadedAt,
+      message: d.message,
+    }
+  })
 
 export const FileListResponse = PaginationResponse(FileInfoResponse)
 export type FileListResponse = z.infer<typeof FileListResponse>
 
-export const FileBatchInfoResponse = z.object({
-  files: z.array(FileInfoResponse),
-  totalCount: z.number(),
-  requestedBy: z.string(),
-  requestedAt: DateTimeString,
-})
+export const FileBatchInfoResponse = z
+  .object({
+    files: z.array(z.any()),
+    totalCount: z.number().optional(),
+    total: z.number().optional(),
+    requestedBy: z.string(),
+    requestedAt: DateTimeString.optional(),
+    timestamp: z.union([DateTimeString, z.date()]).optional(),
+  })
+  .transform((d) => ({
+    files: d.files.map((f: unknown) => FileInfoResponse.parse(f)),
+    totalCount: d.totalCount ?? d.total ?? 0,
+    requestedBy: d.requestedBy,
+    requestedAt: (() => {
+      const t = d.requestedAt ?? d.timestamp
+      if (!t) return new Date().toISOString()
+      return t instanceof Date ? t.toISOString() : t
+    })(),
+  }))
 export type FileBatchInfoResponse = z.infer<typeof FileBatchInfoResponse>
 
 export const FileDeleteResponse = z.object({
@@ -216,7 +410,7 @@ export const ApplicationSubmitRequest = z.object({
   positionId: UUID,
   formVersion: z.number().default(1),
   payload: z.record(z.string(), z.any()),
-  attachments: z.array(AttachmentRef),
+  attachments: z.array(AttachmentRef).optional(),
 })
 
 export const ApplicationResponse = z.object({
@@ -257,6 +451,10 @@ export const ApplicationDetailResponse = z.object({
 
 export const ApplicationListResponse = PaginationResponse(ApplicationResponse)
 export type ApplicationListResponse = z.infer<typeof ApplicationListResponse>
+
+/** Backend GET /applications/my and /applications/drafts/my return a plain array (ApiResult.data) */
+export const ApplicationArrayResponse = z.array(ApplicationResponse)
+export type ApplicationArrayResponse = z.infer<typeof ApplicationArrayResponse>
 
 // User and Auth schemas
 export const UserRole = z.enum(['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN', 'CANDIDATE', 'PRIMARY_REVIEWER', 'SECONDARY_REVIEWER', 'EXAMINER'])
@@ -958,3 +1156,51 @@ export type FormFieldValidation = z.infer<typeof FormFieldValidation>
 export type FormFieldOption = z.infer<typeof FormFieldOption>
 export type FormField = z.infer<typeof FormField>
 export type FormTemplate = z.infer<typeof FormTemplate>
+
+// Profile schemas
+export const UserProfileResponse = z.object({
+  id: UUID,
+  userId: UUID,
+  gender: z.string().nullable().optional(),
+  birthDate: z.string().nullable().optional(),
+  idNumber: z.string().nullable().optional(),
+  politicalStatus: z.string().nullable().optional(),
+  hukouLocation: z.string().nullable().optional(),
+  workExperience: z.string().nullable().optional(),
+  photoId: UUID.nullable().optional(),
+  education: z.string().nullable().optional(),
+  major: z.string().nullable().optional(),
+  graduateYear: z.number().nullable().optional(),
+  university: z.string().nullable().optional(),
+  currentCompany: z.string().nullable().optional(),
+  currentPosition: z.string().nullable().optional(),
+  emergencyContact: z.string().nullable().optional(),
+  emergencyPhone: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  customFields: z.any().nullable().optional(),
+  createdAt: DateTimeString,
+  updatedAt: DateTimeString,
+})
+
+export const UpsertProfileRequest = z.object({
+  gender: z.string().optional(),
+  birthDate: z.string().optional(),
+  idNumber: z.string().optional(),
+  politicalStatus: z.string().optional(),
+  hukouLocation: z.string().optional(),
+  workExperience: z.string().optional(),
+  photoId: z.string().optional(),
+  education: z.string().optional(),
+  major: z.string().optional(),
+  graduateYear: z.number().optional(),
+  university: z.string().optional(),
+  currentCompany: z.string().optional(),
+  currentPosition: z.string().optional(),
+  emergencyContact: z.string().optional(),
+  emergencyPhone: z.string().optional(),
+  address: z.string().optional(),
+  customFields: z.any().optional(),
+})
+
+export type UserProfileResponseType = z.infer<typeof UserProfileResponse>
+export type UpsertProfileRequestType = z.infer<typeof UpsertProfileRequest>

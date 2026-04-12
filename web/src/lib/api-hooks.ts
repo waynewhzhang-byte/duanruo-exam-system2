@@ -13,6 +13,7 @@ import {
   ApplicationDetailResponse,
   ApplicationSubmitRequest,
   ApplicationListResponse,
+  ApplicationArrayResponse,
   FileInfoResponse,
   FileUploadUrlRequest,
   FileUploadUrlResponse,
@@ -41,7 +42,7 @@ import {
   CreateTenantRequestType,
   UpdateTenantRequestType,
   Tenant,
-  TenantListResponse,
+  parseTenantListResponse,
   CreatePositionRequestType,
   UpdatePositionRequestType,
   VenueListResponse,
@@ -52,6 +53,9 @@ import {
   ReviewerRole,
   AvailableReviewer,
   PublishedExamResponse,
+  UserProfileResponse,
+  UserProfileResponseType,
+  UpsertProfileRequestType,
 } from './schemas'
 import type {
   TicketTemplate,
@@ -65,6 +69,10 @@ import type {
   TicketVerificationResponse,
 } from '@/types/ticket'
 import {
+  DEFAULT_TICKET_TEMPLATE_STYLE,
+  TICKET_NUMBER_RULE_PRESETS,
+} from '@/types/ticket'
+import {
   TicketTemplateSchema,
   TicketSchema,
   BatchGenerateTicketsResponseSchema,
@@ -72,6 +80,28 @@ import {
   TicketValidationResponseSchema,
   TicketVerificationResponseSchema,
 } from '@/types/ticket'
+
+/** Maps Nest ticket batch endpoints to UI `BatchGenerateTicketsResponse`. */
+function normalizeTicketBatchResponse(
+  raw: unknown,
+): z.infer<typeof BatchGenerateTicketsResponseSchema> {
+  const r = raw as {
+    totalGenerated?: number
+    alreadyExisted?: number
+    failed?: number
+    count?: number
+  }
+  const successCount = r.totalGenerated ?? r.count ?? 0
+  const skippedCount = r.alreadyExisted ?? 0
+  const failureCount = r.failed ?? 0
+  return BatchGenerateTicketsResponseSchema.parse({
+    totalRequested: successCount + skippedCount + failureCount,
+    successCount,
+    failureCount,
+    skippedCount,
+    tickets: [],
+  })
+}
 
 // Query keys for cache management
 export const queryKeys = {
@@ -135,9 +165,9 @@ export const queryKeys = {
 // Application hooks
 
 export function useMyApplications(params?: { page?: number; size?: number; status?: string; examId?: string; positionId?: string; sort?: string }) {
-  return useQuery({
+  return useQuery<z.infer<typeof ApplicationListResponse>>({
     queryKey: ['applications', 'my', params || {}],
-    queryFn: () => {
+    queryFn: async () => {
       const sp = new URLSearchParams()
       if (params?.page !== undefined) sp.set('page', String(params.page))
       if (params?.size !== undefined) sp.set('size', String(params.size))
@@ -145,7 +175,19 @@ export function useMyApplications(params?: { page?: number; size?: number; statu
       if (params?.examId) sp.set('examId', params.examId)
       if (params?.positionId) sp.set('positionId', params.positionId)
       if (params?.sort) sp.set('sort', params.sort)
-      return apiGet<ApplicationListResponse>(`/applications/my?${sp}`, { schema: ApplicationListResponse })
+      const rows = await apiGet(`/applications/my?${sp}`, {
+        schema: ApplicationArrayResponse,
+      })
+      const list = rows as z.infer<typeof ApplicationArrayResponse>
+      return {
+        content: list,
+        totalElements: list.length,
+        totalPages: 1,
+        currentPage: 0,
+        pageSize: list.length,
+        hasNext: false,
+        hasPrevious: false,
+      }
     },
   })
 }
@@ -201,13 +243,25 @@ export function useUpdateDraft() {
 }
 
 export function useMyDrafts(params?: { page?: number; size?: number }) {
-  return useQuery({
+  return useQuery<z.infer<typeof ApplicationListResponse>>({
     queryKey: ['applications', 'drafts', 'my', params || {}],
-    queryFn: () => {
+    queryFn: async () => {
       const sp = new URLSearchParams()
       if (params?.page !== undefined) sp.set('page', String(params.page))
       if (params?.size !== undefined) sp.set('size', String(params.size))
-      return apiGet<ApplicationListResponse>(`/applications/drafts/my?${sp}`, { schema: ApplicationListResponse })
+      const rows = await apiGet(`/applications/drafts/my?${sp}`, {
+        schema: ApplicationArrayResponse,
+      })
+      const list = rows as z.infer<typeof ApplicationArrayResponse>
+      return {
+        content: list,
+        totalElements: list.length,
+        totalPages: 1,
+        currentPage: 0,
+        pageSize: list.length,
+        hasNext: false,
+        hasPrevious: false,
+      }
     },
   })
 }
@@ -541,6 +595,57 @@ export function useProfile() {
   })
 }
 
+export function useUserProfile() {
+  return useQuery({
+    queryKey: ['user', 'profile-detail'] as const,
+    queryFn: () => apiGet<UserProfileResponseType>('/profile', {
+      schema: UserProfileResponse,
+    }),
+  })
+}
+
+export function useUserProfileForApplication() {
+  return useQuery({
+    queryKey: ['user', 'profile-for-application'] as const,
+    queryFn: () => apiGet<Partial<UserProfileResponseType>>('/profile/for-application'),
+  })
+}
+
+export function useUpsertProfile() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: UpsertProfileRequestType) => 
+      apiPost<UserProfileResponseType>('/profile', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile-detail'] })
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile-for-application'] })
+    },
+  })
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: UpsertProfileRequestType) => 
+      apiPut<UserProfileResponseType>('/profile', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile-detail'] })
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile-for-application'] })
+    },
+  })
+}
+
+export function useDeleteProfile() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => apiDelete('/profile'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile-detail'] })
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile-for-application'] })
+    },
+  })
+}
+
 export function usePayApplication() {
   const queryClient = useQueryClient()
 
@@ -596,7 +701,8 @@ export function useWithdrawApplication() {
 export function useGenerateTicket() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (applicationId: string) => apiPost(`/tickets/application/${applicationId}/generate`, {}),
+    mutationFn: (applicationId: string) =>
+      apiPost(`/tickets`, { applicationId }),
     onSuccess: (_data, applicationId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tickets.byApplication(applicationId) })
     }
@@ -627,10 +733,14 @@ export function useTicketDownload() {
         : null
 
       // 使用fetch API获取PDF，传递租户ID
+      const slug = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : undefined
+      const tenantHeaders: HeadersInit = (slug && !['admin', 'login', 'candidate', 'api'].includes(slug))
+        ? { 'X-Tenant-ID': tenantId, 'X-Tenant-Slug': slug }
+        : { 'X-Tenant-ID': tenantId }
       const response = await fetch(`/api/v1/tickets/${ticketId}/download`, {
         headers: {
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          'X-Tenant-ID': tenantId,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...tenantHeaders,
         },
         credentials: 'include',
       })
@@ -672,7 +782,7 @@ export function useScoresByApplication(applicationId: string) {
 export function useScoreStatistics(examId: string) {
   return useQuery({
     queryKey: queryKeys.scores.statistics(examId),
-    queryFn: () => apiGet<ScoreStatisticsResponse>(`/scores/statistics/exam/${examId}`, {
+    queryFn: () => apiGet<ScoreStatisticsResponse>(`/scores/statistics/${examId}`, {
       schema: ScoreStatisticsResponse,
     }),
     enabled: !!examId,
@@ -731,7 +841,10 @@ export function useMarkAbsent() {
 
   return useMutation({
     mutationFn: async (data: { applicationId: string; subjectId: string; remarks?: string }) => {
-      return await apiPost('/scores/absent', data)
+      return await apiPost('/scores/record', {
+        ...data,
+        isAbsent: true,
+      })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scores'] })
@@ -752,22 +865,34 @@ export function useDeleteScore() {
   })
 }
 
-export function useBatchRecordScore() {
+export function useScoreImportTemplate(examId: string) {
+  return useQuery({
+    queryKey: ['scores', 'template', examId],
+    queryFn: async () => {
+      return apiGet<string>(`/scores/template/${examId}`)
+    },
+    enabled: !!examId,
+  })
+}
+
+export function useBatchImportScores() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (data: Array<{
-      ticketNo: string
-      subjectName: string
-      score?: number | null
-      isAbsent: boolean
-      remarks?: string
-    }>) => {
+    mutationFn: async (data: {
+      examId: string
+      scores: Array<{
+        applicationId: string
+        subjectId: string
+        score?: number | null
+        remarks?: string
+      }>
+    }) => {
       return await apiPost<{
-        successCount: number
-        failCount: number
-        errors?: Array<{ row: number; message: string }>
-      }>('/scores/batch-record', data)
+        success: number
+        failed: number
+        errors?: string[]
+      }>('/scores/batch-import', data)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scores'] })
@@ -878,7 +1003,7 @@ export function useTenants(params?: { page?: number; size?: number; activeOnly?:
       const query = sp.toString()
       const url = query ? `/super-admin/tenants?${query}` : '/super-admin/tenants'
       const data = await apiGet(url)
-      return TenantListResponse.parse(data)
+      return parseTenantListResponse(data)
     },
   })
 }
@@ -1689,8 +1814,32 @@ export function useTicketTemplate(examId: string, tenantId?: string) {
       if (!tenantId) {
         throw new Error('Tenant ID is required to fetch ticket template')
       }
-      const response = await apiGetWithTenant(`/tickets/exam/${examId}/template`, tenantId)
-      return TicketTemplateSchema.parse(response)
+      const response = (await apiGetWithTenant(`/tickets/exam/${examId}/template`, tenantId)) as {
+        prefix?: string
+        dateFormat?: string
+        sequenceLength?: number
+        separator?: string
+        example?: string
+      }
+      const base: TicketTemplate = {
+        examId,
+        ticketNumberRule: { ...TICKET_NUMBER_RULE_PRESETS.STANDARD },
+        qrCodeEnabled: true,
+        barcodeEnabled: false,
+        includePhoto: true,
+        includeExamInfo: true,
+        includeVenueInfo: true,
+        includeCandidateInfo: true,
+        templateStyle: DEFAULT_TICKET_TEMPLATE_STYLE,
+        customPrefix: response.prefix,
+      }
+      if (response.separator !== undefined) {
+        base.ticketNumberRule.separator = response.separator
+      }
+      if (response.example) {
+        base.ticketNumberRule.example = response.example
+      }
+      return TicketTemplateSchema.parse(base)
     },
     enabled: !!examId && !!tenantId,
   })
@@ -1740,8 +1889,13 @@ export function useBatchGenerateTickets() {
 
   return useMutation({
     mutationFn: async (request: BatchGenerateTicketsRequest) => {
-      const response = await apiPost('/tickets/batch-generate', request)
-      return BatchGenerateTicketsResponseSchema.parse(response)
+      const { examId, applicationIds } = request
+      if (applicationIds && applicationIds.length > 0) {
+        const response = await apiPost('/tickets/batch', { applicationIds })
+        return normalizeTicketBatchResponse(response)
+      }
+      const response = await apiPost(`/tickets/batch-generate/${examId}`, {})
+      return normalizeTicketBatchResponse(response)
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tickets.byExam(variables.examId) })

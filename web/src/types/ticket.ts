@@ -349,7 +349,7 @@ export const TicketValidationResponseSchema = z.object({
 })
 
 export const TicketVerificationRequestSchema = z.object({
-  ticketId: z.string(),
+  ticketId: z.string().uuid('无效的准考证 ID'),
   verificationCode: z.string().optional(),
 })
 
