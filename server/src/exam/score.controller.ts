@@ -1,11 +1,26 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Request, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ApiResult } from '../common/dto/api-result.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { TenantGuard } from '../auth/tenant.guard';
 import { Permissions } from '../auth/permissions.decorator';
 import { ScoreService } from './score.service';
-import { RecordScoreDto, BatchImportDto, UpdateInterviewResultDto } from './dto/score.dto';
+import {
+  RecordScoreDto,
+  BatchImportDto,
+  UpdateInterviewResultDto,
+} from './dto/score.dto';
 
 interface AuthenticatedRequest {
   user: {
@@ -20,12 +35,20 @@ interface AuthenticatedRequest {
 export class ScoreController {
   constructor(private readonly scoreService: ScoreService) {}
 
+  @Get('exam/:examId')
+  @Permissions('exam:view')
+  async getScoresByExam(@Param('examId', ParseUUIDPipe) examId: string) {
+    const scores = await this.scoreService.getScoresByExam(examId);
+    return ApiResult.ok(scores);
+  }
+
   @Get('application/:applicationId')
   @Permissions('exam:view')
   async getScoresByApplication(
     @Param('applicationId', ParseUUIDPipe) applicationId: string,
   ) {
-    const scores = await this.scoreService.getScoresByApplication(applicationId);
+    const scores =
+      await this.scoreService.getScoresByApplication(applicationId);
     return ApiResult.ok(scores);
   }
 
@@ -72,33 +95,47 @@ export class ScoreController {
     @Request() req: AuthenticatedRequest,
     @Body() dto: UpdateInterviewResultDto,
   ) {
-    const result = await this.scoreService.updateInterviewResult(req.user.userId, dto);
+    const result = await this.scoreService.updateInterviewResult(
+      req.user.userId,
+      dto,
+    );
     return ApiResult.ok(result, '面试结果更新成功');
   }
 
   @Get('statistics/:examId')
   @Permissions('exam:view')
-  async getStatistics(
-    @Param('examId', ParseUUIDPipe) examId: string,
-  ) {
+  async getStatistics(@Param('examId', ParseUUIDPipe) examId: string) {
     const stats = await this.scoreService.getStatistics(examId);
     return ApiResult.ok(stats);
   }
 
+  @Get('ranking/exam/:examId')
+  @Permissions('exam:view')
+  async getRanking(
+    @Param('examId', ParseUUIDPipe) examId: string,
+    @Query('positionId') positionId?: string,
+  ) {
+    const rows = await this.scoreService.getExamRanking(examId, positionId);
+    return ApiResult.ok(rows);
+  }
+
   @Get('export/:examId')
   @Permissions('exam:view')
-  async exportScores(
-    @Param('examId', ParseUUIDPipe) examId: string,
-  ) {
+  async exportScores(@Param('examId', ParseUUIDPipe) examId: string) {
     const data = await this.scoreService.exportScores(examId);
     return ApiResult.ok(data);
   }
 
+  @Get('template/:examId')
+  @Permissions('exam:edit')
+  async getImportTemplate(@Param('examId', ParseUUIDPipe) examId: string) {
+    const csv = await this.scoreService.generateImportTemplate(examId);
+    return ApiResult.ok(csv);
+  }
+
   @Delete(':scoreId')
   @Permissions('exam:edit')
-  async deleteScore(
-    @Param('scoreId', ParseUUIDPipe) scoreId: string,
-  ) {
+  async deleteScore(@Param('scoreId', ParseUUIDPipe) scoreId: string) {
     await this.scoreService['prisma'].examScore.delete({
       where: { id: scoreId },
     });

@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Position, Subject } from '@prisma/client';
+import { Position, Prisma, Subject } from '@prisma/client';
 import { PositionCreateRequest, PositionResponse } from './dto/position.dto';
 
 @Injectable()
@@ -30,6 +30,41 @@ export class PositionService {
     });
     if (!position) throw new NotFoundException('Position not found');
     return this.mapToResponse(position);
+  }
+
+  async listApplicationsForPosition(positionId: string) {
+    const position = await this.client.position.findUnique({
+      where: { id: positionId },
+      select: { id: true },
+    });
+    if (!position) throw new NotFoundException('Position not found');
+
+    return this.client.application.findMany({
+      where: { positionId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        exam: { select: { id: true, title: true } },
+        position: { select: { id: true, title: true } },
+      },
+    });
+  }
+
+  async getExamFormTemplateForPosition(
+    positionId: string,
+  ): Promise<{ templateJson: string }> {
+    const position = await this.client.position.findUnique({
+      where: { id: positionId },
+      select: { examId: true },
+    });
+    if (!position) throw new NotFoundException('Position not found');
+
+    const exam = await this.client.exam.findUnique({
+      where: { id: position.examId },
+      select: { formTemplate: true },
+    });
+    const templateJson =
+      exam?.formTemplate != null ? JSON.stringify(exam.formTemplate) : '{}';
+    return { templateJson };
   }
 
   async create(request: PositionCreateRequest): Promise<PositionResponse> {
@@ -98,19 +133,26 @@ export class PositionService {
     return position.subjects;
   }
 
-  async createSubject(positionId: string, data: {
-    name: string;
-    type: string;
-    durationMinutes?: number;
-    maxScore?: number;
-    passingScore?: number;
-    weight?: number;
-    ordering?: number;
-  }) {
+  async createSubject(
+    positionId: string,
+    data: {
+      name: string;
+      type: string;
+      durationMinutes?: number;
+      maxScore?: number;
+      passingScore?: number;
+      weight?: number;
+      ordering?: number;
+      schedule?: string;
+    },
+  ) {
     const position = await this.client.position.findUnique({
       where: { id: positionId },
     });
     if (!position) throw new NotFoundException('Position not found');
+
+    const scheduleValue: Prisma.InputJsonValue | undefined =
+      data.schedule != null && data.schedule !== '' ? data.schedule : undefined;
 
     return await this.client.subject.create({
       data: {
@@ -122,19 +164,24 @@ export class PositionService {
         passingScore: data.passingScore ?? 60,
         weight: data.weight ?? 1.0,
         ordering: data.ordering ?? 0,
+        ...(scheduleValue !== undefined ? { schedule: scheduleValue } : {}),
       },
     });
   }
 
-  async updateSubject(id: string, data: {
-    name?: string;
-    type?: string;
-    durationMinutes?: number;
-    maxScore?: number;
-    passingScore?: number;
-    weight?: number;
-    ordering?: number;
-  }) {
+  async updateSubject(
+    id: string,
+    data: {
+      name?: string;
+      type?: string;
+      durationMinutes?: number;
+      maxScore?: number;
+      passingScore?: number;
+      weight?: number;
+      ordering?: number;
+      schedule?: string;
+    },
+  ) {
     const subject = await this.client.subject.findUnique({ where: { id } });
     if (!subject) throw new NotFoundException('Subject not found');
 
@@ -148,6 +195,14 @@ export class PositionService {
         passingScore: data.passingScore ?? subject.passingScore,
         weight: data.weight ?? subject.weight,
         ordering: data.ordering ?? subject.ordering,
+        ...(data.schedule !== undefined
+          ? {
+              schedule:
+                data.schedule === ''
+                  ? Prisma.DbNull
+                  : (data.schedule as Prisma.InputJsonValue),
+            }
+          : {}),
       },
     });
   }
@@ -158,22 +213,34 @@ export class PositionService {
     await this.client.subject.delete({ where: { id } });
   }
 
-  async update(id: string, data: {
-    title?: string;
-    description?: string;
-    requirements?: any;
-    quota?: number;
-  }): Promise<PositionResponse> {
+  async update(
+    id: string,
+    data: {
+      title?: string;
+      description?: string;
+      requirements?: string | Record<string, unknown>;
+      quota?: number;
+      rulesConfig?: Prisma.InputJsonValue;
+    },
+  ): Promise<PositionResponse> {
     const position = await this.client.position.findUnique({ where: { id } });
     if (!position) throw new NotFoundException('Position not found');
+
+    const requirementsStored =
+      data.requirements === undefined
+        ? undefined
+        : typeof data.requirements === 'string'
+          ? data.requirements
+          : JSON.stringify(data.requirements);
 
     const updated = await this.client.position.update({
       where: { id },
       data: {
         title: data.title,
         description: data.description,
-        requirements: data.requirements,
+        requirements: requirementsStored,
         quota: data.quota,
+        rulesConfig: data.rulesConfig,
       },
       include: { subjects: true },
     });
@@ -192,6 +259,7 @@ export class PositionService {
       description: position.description || undefined,
       requirements: position.requirements || undefined,
       quota: position.quota || undefined,
+      rulesConfig: position.rulesConfig ?? undefined,
       subjects: position.subjects?.map((s) => ({
         id: s.id,
         name: s.name,

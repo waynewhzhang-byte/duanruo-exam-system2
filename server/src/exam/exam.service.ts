@@ -4,16 +4,32 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Exam } from '@prisma/client';
+import { UserService } from '../user/user.service';
+import { Exam, Prisma } from '@prisma/client';
 import {
   ExamCreateRequest,
   ExamUpdateRequest,
   ExamResponse,
+  ExamStatistics,
 } from './dto/exam.dto';
+import { UpdateExamRulesRequest } from './dto/exam-rules.dto';
+
+function jsonObjectFromTemplate(
+  v: Prisma.JsonValue | null | undefined,
+): Record<string, Prisma.JsonValue> {
+  if (v === null || v === undefined) return {};
+  if (typeof v === 'object' && !Array.isArray(v)) {
+    return { ...(v as Record<string, Prisma.JsonValue>) };
+  }
+  return {};
+}
 
 @Injectable()
 export class ExamService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly userService: UserService,
+  ) {}
 
   private get client() {
     return this.prisma.client;
@@ -152,21 +168,73 @@ export class ExamService {
   async updateFormTemplate(examId: string, templateId: string): Promise<void> {
     const exam = await this.client.exam.findUnique({ where: { id: examId } });
     if (!exam) throw new NotFoundException('Exam not found');
-    
-    const currentFormTemplate = (exam as any).formTemplate as Record<string, any> || {};
+
+    const currentFormTemplate = jsonObjectFromTemplate(exam.formTemplate);
     await this.client.exam.update({
       where: { id: examId },
-      data: { formTemplate: { ...currentFormTemplate, templateId } } as any,
+      data: {
+        formTemplate: {
+          ...currentFormTemplate,
+          templateId,
+        } as Prisma.InputJsonValue,
+      },
     });
   }
 
-  async updateFormTemplateData(examId: string, formTemplateData: Record<string, any>): Promise<void> {
+  async updateFormTemplateData(
+    examId: string,
+    formTemplateData: Prisma.InputJsonValue,
+  ): Promise<void> {
     const exam = await this.client.exam.findUnique({ where: { id: examId } });
     if (!exam) throw new NotFoundException('Exam not found');
-    
+
     await this.client.exam.update({
       where: { id: examId },
-      data: { formTemplate: formTemplateData } as any,
+      data: { formTemplate: formTemplateData },
+    });
+  }
+
+  /** Exam-level rules are stored under `formTemplate.examRules` (JSON). */
+  async getExamRulesConfig(examId: string): Promise<Record<string, unknown>> {
+    const exam = await this.client.exam.findUnique({
+      where: { id: examId },
+      select: { formTemplate: true },
+    });
+    if (!exam) throw new NotFoundException('Exam not found');
+    const ft = exam.formTemplate;
+    if (
+      ft &&
+      typeof ft === 'object' &&
+      !Array.isArray(ft) &&
+      'examRules' in ft
+    ) {
+      const er = (ft as Record<string, unknown>)['examRules'];
+      if (er && typeof er === 'object' && !Array.isArray(er)) {
+        return er as Record<string, unknown>;
+      }
+    }
+    return { rules: [] };
+  }
+
+  async updateExamRules(
+    examId: string,
+    request: UpdateExamRulesRequest,
+  ): Promise<void> {
+    const exam = await this.client.exam.findUnique({ where: { id: examId } });
+    if (!exam) throw new NotFoundException('Exam not found');
+    const cur = exam.formTemplate;
+    const base =
+      cur && typeof cur === 'object' && !Array.isArray(cur)
+        ? { ...(cur as Record<string, unknown>) }
+        : {};
+    await this.client.exam.update({
+      where: { id: examId },
+      data: {
+        formTemplate: {
+          ...base,
+          examRules: { rules: request.rules ?? [] },
+        } as Prisma.InputJsonValue,
+      },
     });
   }
 
@@ -184,14 +252,14 @@ export class ExamService {
       feeRequired: exam.feeRequired,
       feeAmount: exam.feeAmount ? Number(exam.feeAmount) : undefined,
       status: exam.status,
-      formTemplate: (exam as any).formTemplate || undefined,
+      formTemplate: exam.formTemplate ?? undefined,
       createdBy: exam.createdBy || undefined,
       createdAt: exam.createdAt,
       updatedAt: exam.updatedAt,
     };
   }
 
-  async getStatistics(id: string): Promise<any> {
+  async getStatistics(id: string): Promise<ExamStatistics> {
     const exam = await this.findById(id);
     const [applications, tickets, paymentOrders] = await Promise.all([
       this.client.application.findMany({
@@ -215,7 +283,9 @@ export class ExamService {
       }),
     ]);
 
-    const paidApplicationIds = new Set(paymentOrders.map((p) => p.applicationId));
+    const paidApplicationIds = new Set(
+      paymentOrders.map((p) => p.applicationId),
+    );
     const ticketApplicationIds = new Set(tickets.map((t) => t.applicationId));
 
     const counts = {
@@ -266,5 +336,107 @@ export class ExamService {
       overallApprovalRate:
         counts.total > 0 ? (counts.approved / counts.total) * 100 : 0,
     };
+  }
+
+  async listReviewers(examId: string) {
+    const rows = await this.client.examReviewer.findMany({
+      where: { examId },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (rows.length === 0) {
+      return [];
+    }
+
+    const userIds = [...new Set(rows.map((r) => r.reviewerId))];
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, username: true, fullName: true, email: true },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return rows.map((r) => ({
+      id: String(r.id),
+      examId: r.examId,
+      userId: r.reviewerId,
+      role:
+        r.stage === 'PRIMARY'
+          ? 'PRIMARY_REVIEWER'
+          : ('SECONDARY_REVIEWER' as const),
+      username: userMap.get(r.reviewerId)?.username,
+      fullName: userMap.get(r.reviewerId)?.fullName,
+      email: userMap.get(r.reviewerId)?.email,
+      assignedAt: r.createdAt.toISOString(),
+    }));
+  }
+
+  /**
+   * Users in the tenant who may be assigned as exam reviewers (tenant roles:
+   * PRIMARY_REVIEWER, SECONDARY_REVIEWER, TENANT_ADMIN per getTenantUsersCategorized).
+   */
+  async listAvailableReviewersForExam(examId: string, tenantId: string) {
+    await this.findById(examId);
+    const { reviewers } =
+      await this.userService.getTenantUsersCategorized(tenantId);
+    return reviewers.map((entry) => ({
+      id: entry.user.id,
+      username: entry.user.username,
+      fullName: entry.user.fullName ?? entry.user.username,
+      email: entry.user.email,
+      roles: entry.tenantRoles,
+    }));
+  }
+
+  async addExamReviewer(
+    examId: string,
+    tenantId: string,
+    userId: string,
+    role: 'PRIMARY_REVIEWER' | 'SECONDARY_REVIEWER',
+  ) {
+    await this.findById(examId);
+    const { reviewers } =
+      await this.userService.getTenantUsersCategorized(tenantId);
+    const allowed = reviewers.some((r) => r.user.id === userId);
+    if (!allowed) {
+      throw new BadRequestException(
+        'User is not a reviewer or admin in this tenant',
+      );
+    }
+
+    const stage = role === 'PRIMARY_REVIEWER' ? 'PRIMARY' : 'SECONDARY';
+    const existing = await this.client.examReviewer.findFirst({
+      where: { examId, reviewerId: userId, stage },
+    });
+    if (existing) {
+      throw new BadRequestException(
+        'This user is already assigned for this review stage',
+      );
+    }
+
+    await this.client.examReviewer.create({
+      data: { examId, reviewerId: userId, stage },
+    });
+
+    const list = await this.listReviewers(examId);
+    return (
+      list.find((r) => r.userId === userId && r.role === role) ??
+      list[list.length - 1]
+    );
+  }
+
+  async removeExamReviewerAssignment(examId: string, assignmentId: string) {
+    await this.findById(examId);
+    let rowId: bigint;
+    try {
+      rowId = BigInt(assignmentId);
+    } catch {
+      throw new BadRequestException('Invalid reviewer assignment id');
+    }
+    const row = await this.client.examReviewer.findFirst({
+      where: { id: rowId, examId },
+    });
+    if (!row) {
+      throw new NotFoundException('Reviewer assignment not found');
+    }
+    await this.client.examReviewer.delete({ where: { id: row.id } });
   }
 }

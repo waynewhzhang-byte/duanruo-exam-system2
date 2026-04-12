@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Put,
   Delete,
   Body,
@@ -11,12 +10,28 @@ import {
 import { PositionService } from './position.service';
 import { Permissions } from '../auth/permissions.decorator';
 import { PermissionsGuard } from '../auth/permissions.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { TenantGuard } from '../auth/tenant.guard';
 import { ApiResult } from '../common/dto/api-result.dto';
 
 @Controller('positions')
-@UseGuards(PermissionsGuard)
+@UseGuards(JwtAuthGuard, TenantGuard, PermissionsGuard)
 export class PositionController {
   constructor(private readonly positionService: PositionService) {}
+
+  @Get(':id/form-template')
+  @Permissions('position:view')
+  async getFormTemplate(@Param('id') id: string) {
+    const data = await this.positionService.getExamFormTemplateForPosition(id);
+    return ApiResult.ok(data);
+  }
+
+  @Get(':id/applications')
+  @Permissions('application:view:all')
+  async listApplications(@Param('id') id: string) {
+    const apps = await this.positionService.listApplicationsForPosition(id);
+    return ApiResult.ok(apps);
+  }
 
   @Get(':id')
   @Permissions('position:view')
@@ -29,10 +44,11 @@ export class PositionController {
   @Permissions('position:edit')
   async update(
     @Param('id') id: string,
-    @Body() request: {
+    @Body()
+    request: {
       title?: string;
       description?: string;
-      requirements?: any;
+      requirements?: string;
       quota?: number;
     },
   ) {

@@ -1,34 +1,104 @@
-import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationService } from '../common/notification/notification.service';
 import { NotificationChannel } from '../common/notification/notification.interface';
-import { RecordScoreDto, BatchScoreDto, UpdateInterviewResultDto } from './dto/score.dto';
+import { getErrorMessage } from '../common/utils/error.util';
+import type { Application, ExamScore } from '@prisma/client';
+import {
+  RecordScoreDto,
+  BatchScoreDto,
+  UpdateInterviewResultDto,
+  ScoreExamStatistics,
+} from './dto/score.dto';
 
 @Injectable()
 export class ScoreService {
   private readonly logger = new Logger(ScoreService.name);
 
   constructor(
-    private prisma: PrismaService,
-    private notificationService: NotificationService,
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
   ) {}
+
+  private get client() {
+    return this.prisma.client;
+  }
+
+  /**
+   * 生成导入模板 (CSV)
+   */
+  async generateImportTemplate(examId: string): Promise<string> {
+    const exam = await this.client.exam.findUnique({
+      where: { id: examId },
+      include: { positions: { include: { subjects: true } } },
+    });
+
+    if (!exam) {
+      throw new NotFoundException('考试不存在');
+    }
+
+    const applications = await this.client.application.findMany({
+      where: { examId, status: { in: ['APPROVED', 'TICKET_ISSUED'] } },
+      select: {
+        id: true,
+        payload: true,
+        candidateId: true,
+        positionId: true,
+      },
+    });
+
+    // 获取所有用户全名以增强模板可读性
+    const candidateIds = applications.map((a) => a.candidateId);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: candidateIds } },
+      select: { id: true, fullName: true },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u.fullName]));
+
+    // CSV 表头
+    let csv = '\ufeff报名ID,姓名,岗位,科目ID,科目名称,分数,备注\n';
+
+    for (const app of applications) {
+      const position = exam.positions.find((p) => p.id === app.positionId);
+      if (!position) continue;
+
+      const candidateName = userMap.get(app.candidateId) || '未知考生';
+
+      for (const subject of position.subjects) {
+        csv += `${app.id},${candidateName},${position.title},${subject.id},${subject.name},,\n`;
+      }
+    }
+
+    return csv;
+  }
 
   /**
    * 获取某报名者的所有成绩
    */
   async getScoresByApplication(applicationId: string) {
-    return this.prisma.examScore.findMany({
+    return this.client.examScore.findMany({
       where: { applicationId },
       orderBy: { subjectId: 'asc' },
+    });
+  }
+
+  /** 某场考试下全部成绩记录（管理端） */
+  async getScoresByExam(examId: string) {
+    return this.client.examScore.findMany({
+      where: { examId },
+      orderBy: [{ applicationId: 'asc' }, { subjectId: 'asc' }],
     });
   }
 
   /**
    * 录入成绩
    */
-  async recordScore(recorderId: string, dto: RecordScoreDto): Promise<any> {
+  async recordScore(
+    recorderId: string,
+    dto: RecordScoreDto,
+  ): Promise<ExamScore> {
     // 检查报名是否存在
-    const application = await this.prisma.application.findUnique({
+    const application = await this.client.application.findUnique({
       where: { id: dto.applicationId },
       include: { exam: true, position: true },
     });
@@ -37,8 +107,11 @@ export class ScoreService {
       throw new NotFoundException('报名不存在');
     }
 
-    // 检查是否已有该科目成绩
-    const existingScore = await this.prisma.examScore.findUnique({
+    const candidateId = dto.candidateId ?? application.candidateId;
+    const examId = dto.examId ?? application.examId;
+    const positionId = dto.positionId ?? application.positionId;
+
+    const existingScore = await this.client.examScore.findUnique({
       where: {
         applicationId_subjectId: {
           applicationId: dto.applicationId,
@@ -47,10 +120,9 @@ export class ScoreService {
       },
     });
 
-    let score;
+    let score: ExamScore;
     if (existingScore) {
-      // 更新成绩
-      score = await this.prisma.examScore.update({
+      score = await this.client.examScore.update({
         where: { id: existingScore.id },
         data: {
           score: dto.score ?? null,
@@ -60,14 +132,13 @@ export class ScoreService {
         },
       });
     } else {
-      // 创建成绩
-      score = await this.prisma.examScore.create({
+      score = await this.client.examScore.create({
         data: {
           applicationId: dto.applicationId,
           subjectId: dto.subjectId,
-          candidateId: dto.candidateId,
-          examId: dto.examId,
-          positionId: dto.positionId,
+          candidateId,
+          examId,
+          positionId,
           score: dto.score ?? null,
           isAbsent: dto.isAbsent ?? false,
           remarks: dto.remarks,
@@ -94,7 +165,7 @@ export class ScoreService {
     let success = 0;
 
     // 获取考试信息和岗位
-    const exam = await this.prisma.exam.findUnique({
+    const exam = await this.client.exam.findUnique({
       where: { id: examId },
       include: { positions: { include: { subjects: true } } },
     });
@@ -105,8 +176,7 @@ export class ScoreService {
 
     for (const dto of scores) {
       try {
-        // 获取报名信息
-        const application = await this.prisma.application.findUnique({
+        const application = await this.client.application.findUnique({
           where: { id: dto.applicationId },
         });
 
@@ -127,7 +197,7 @@ export class ScoreService {
         });
         success++;
       } catch (error) {
-        errors.push(`报名 ${dto.applicationId}: ${error.message}`);
+        errors.push(`报名 ${dto.applicationId}: ${getErrorMessage(error)}`);
       }
     }
 
@@ -138,7 +208,7 @@ export class ScoreService {
    * 计算面试资格 - 核心业务逻辑
    */
   async calculateInterviewEligibility(applicationId: string): Promise<void> {
-    const application = await this.prisma.application.findUnique({
+    const application = await this.client.application.findUnique({
       where: { id: applicationId },
       include: {
         exam: { include: { positions: { include: { subjects: true } } } },
@@ -150,15 +220,14 @@ export class ScoreService {
       throw new NotFoundException('Application not found');
     }
 
-    // 获取该考生所有科目成绩
-    const scores = await this.prisma.examScore.findMany({
+    const scores = await this.client.examScore.findMany({
       where: { applicationId },
     });
 
     // 计算笔试总分
-    const totalScore = scores.reduce((sum: number, s: any) => {
+    const totalScore = scores.reduce((sum: number, s: ExamScore) => {
       if (s.isAbsent) return sum;
-      return sum + Number(s.score || 0);
+      return sum + Number(s.score ?? 0);
     }, 0);
 
     // 获取该岗位的合格线（默认60分）
@@ -171,7 +240,7 @@ export class ScoreService {
     if (scores.length === 0) {
       writtenPassStatus = 'PENDING';
       interviewEligibility = 'PENDING';
-    } else if (scores.some((s: any) => s.isAbsent)) {
+    } else if (scores.some((s: ExamScore) => s.isAbsent)) {
       // 有缺考科目，视为不通过
       writtenPassStatus = 'FAIL';
       interviewEligibility = 'INELIGIBLE';
@@ -183,17 +252,16 @@ export class ScoreService {
       interviewEligibility = 'INELIGIBLE';
     }
 
-    // 保存旧的面试资格状态（用于判断是否需要发送通知）
     const oldEligibility = application.interviewEligibility;
 
-    // 更新报名表的面试资格
-    await this.prisma.application.update({
+    await this.client.application.update({
       where: { id: applicationId },
       data: {
         totalWrittenScore: totalScore,
         writtenPassStatus,
         interviewEligibility,
-        finalResult: interviewEligibility === 'ELIGIBLE' ? '进入面试' : '笔试未通过',
+        finalResult:
+          interviewEligibility === 'ELIGIBLE' ? '进入面试' : '笔试未通过',
       },
     });
 
@@ -203,24 +271,20 @@ export class ScoreService {
     }
   }
 
-  /**
-   * 批量计算所有报名者的面试资格
-   */
   async batchCalculateEligibility(
     examId: string,
     passScore?: number,
   ): Promise<{ processed: number; passed: number; failed: number }> {
-    // 先更新合格线
     if (passScore) {
-      await this.prisma.application.updateMany({
+      await this.client.application.updateMany({
         where: { examId },
         data: { writtenPassScore: passScore },
       });
     }
 
-    const applications = await this.prisma.application.findMany({
-      where: { 
-        examId, 
+    const applications = await this.client.application.findMany({
+      where: {
+        examId,
         status: { in: ['APPROVED', 'TICKET_ISSUED'] },
       },
     });
@@ -231,7 +295,7 @@ export class ScoreService {
     for (const app of applications) {
       try {
         await this.calculateInterviewEligibility(app.id);
-        const updated = await this.prisma.application.findUnique({
+        const updated = await this.client.application.findUnique({
           where: { id: app.id },
         });
         if (updated?.interviewEligibility === 'ELIGIBLE') {
@@ -240,7 +304,9 @@ export class ScoreService {
           failed++;
         }
       } catch (error) {
-        this.logger.error(`计算报名 ${app.id} 面试资格失败: ${error.message}`);
+        this.logger.error(
+          `计算报名 ${app.id} 面试资格失败: ${getErrorMessage(error)}`,
+        );
         failed++;
       }
     }
@@ -248,14 +314,11 @@ export class ScoreService {
     return { processed: applications.length, passed, failed };
   }
 
-  /**
-   * 更新面试结果
-   */
   async updateInterviewResult(
-    updaterId: string,
+    _updaterId: string,
     dto: UpdateInterviewResultDto,
-  ): Promise<any> {
-    const application = await this.prisma.application.findUnique({
+  ): Promise<Application> {
+    const application = await this.client.application.findUnique({
       where: { id: dto.applicationId },
       include: { exam: true, position: true },
     });
@@ -264,8 +327,7 @@ export class ScoreService {
       throw new NotFoundException('报名不存在');
     }
 
-    // 更新面试结果 - 存储在 Application 表中
-    const updated = await this.prisma.application.update({
+    const updated = await this.client.application.update({
       where: { id: dto.applicationId },
       data: {
         finalResult: dto.finalResult,
@@ -283,44 +345,146 @@ export class ScoreService {
     return updated;
   }
 
-  /**
-   * 获取成绩统计
-   */
-  async getStatistics(examId: string): Promise<any> {
-    const applications = await this.prisma.application.findMany({
+  async getStatistics(examId: string): Promise<ScoreExamStatistics> {
+    const applications = (await this.client.application.findMany({
       where: { examId, status: { in: ['APPROVED', 'TICKET_ISSUED'] } },
       include: { scores: true },
-    });
+    })) as Array<Application & { scores: ExamScore[] }>;
 
-    const scores = applications.flatMap((app: any) => app.scores.filter((s: any) => !s.isAbsent));
+    const scores = applications.flatMap((app) =>
+      app.scores.filter((s) => !s.isAbsent),
+    );
     const totalCandidates = applications.length;
-    const scoredCandidates = new Set(scores.map((s: any) => s.applicationId)).size;
-    
-    const totalScoreSum = scores.reduce((sum: number, s: any) => sum + Number(s.score || 0), 0);
-    const averageScore = scoredCandidates > 0 ? totalScoreSum / scoredCandidates : 0;
-    
-    const passCount = applications.filter((app: any) => app.writtenPassStatus === 'PASS').length;
-    const failCount = applications.filter((app: any) => app.writtenPassStatus === 'FAIL').length;
-    const pendingCount = applications.filter((app: any) => app.writtenPassStatus === 'PENDING').length;
+    const scoredCandidates = new Set(scores.map((s) => s.applicationId)).size;
+
+    const totalScoreSum = scores.reduce(
+      (sum: number, s: ExamScore) => sum + Number(s.score ?? 0),
+      0,
+    );
+    const averageScore =
+      scoredCandidates > 0 ? totalScoreSum / scoredCandidates : 0;
+
+    const passCount = applications.filter(
+      (app) => app.writtenPassStatus === 'PASS',
+    ).length;
+    const failCount = applications.filter(
+      (app) => app.writtenPassStatus === 'FAIL',
+    ).length;
+    const pendingCount = applications.filter(
+      (app) => app.writtenPassStatus === 'PENDING',
+    ).length;
 
     return {
       totalCandidates,
       scoredCandidates,
       averageScore: Math.round(averageScore * 100) / 100,
-      highestScore: scores.length > 0 ? Math.max(...scores.map((s: any) => Number(s.score || 0))) : 0,
-      lowestScore: scores.length > 0 ? Math.min(...scores.filter((s: any) => s.score).map((s: any) => Number(s.score))) : 0,
+      highestScore:
+        scores.length > 0
+          ? Math.max(...scores.map((s) => Number(s.score ?? 0)))
+          : 0,
+      lowestScore:
+        scores.length > 0
+          ? Math.min(
+              ...scores
+                .filter((s) => s.score != null)
+                .map((s) => Number(s.score)),
+            )
+          : 0,
       passCount,
       failCount,
       pendingCount,
-      passRate: totalCandidates > 0 ? Math.round(passCount / totalCandidates * 10000) / 100 : 0,
+      passRate:
+        totalCandidates > 0
+          ? Math.round((passCount / totalCandidates) * 10000) / 100
+          : 0,
     };
   }
 
   /**
-   * 导出成绩单
+   * Rankings for an exam (total written score per application), optional position filter.
+   * Shape aligned with web `ScoreRankingResponse`.
    */
+  async getExamRanking(examId: string, positionId?: string) {
+    const applications = await this.client.application.findMany({
+      where: {
+        examId,
+        ...(positionId ? { positionId } : {}),
+      },
+      include: {
+        position: true,
+        scores: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const userIds = [...new Set(applications.map((a) => a.candidateId))];
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      include: { profile: true },
+    });
+    const userMap = new Map(
+      users.map((u) => [
+        u.id,
+        {
+          fullName: u.fullName,
+          idCard: u.profile?.idNumber ?? '',
+        },
+      ]),
+    );
+
+    const tickets = await this.client.ticket.findMany({
+      where: { examId },
+      select: { applicationId: true, ticketNo: true },
+    });
+    const ticketMap = new Map(
+      tickets.map((t) => [t.applicationId, t.ticketNo]),
+    );
+
+    const totalCandidates = applications.length;
+
+    const rows = applications.map((app) => {
+      const totalScore = app.scores.reduce((sum, s) => {
+        if (s.isAbsent) return sum;
+        return sum + Number(s.score ?? 0);
+      }, 0);
+      const u = userMap.get(app.candidateId);
+      return {
+        applicationId: app.id,
+        candidateName: u?.fullName ?? '',
+        idCard: u?.idCard ?? '',
+        ticketNo: ticketMap.get(app.id) ?? null,
+        positionId: app.positionId,
+        positionName: app.position.title,
+        totalScore,
+        rank: 0,
+        isTied: false,
+        isInterviewEligible: app.interviewEligibility === 'ELIGIBLE',
+        totalCandidates,
+      };
+    });
+
+    rows.sort(
+      (a, b) =>
+        b.totalScore - a.totalScore ||
+        a.applicationId.localeCompare(b.applicationId),
+    );
+
+    for (let i = 0; i < rows.length; i++) {
+      if (i === 0) {
+        rows[i].rank = 1;
+      } else if (rows[i].totalScore === rows[i - 1].totalScore) {
+        rows[i].rank = rows[i - 1].rank;
+      } else {
+        rows[i].rank = i + 1;
+      }
+      rows[i].isTied = i > 0 && rows[i].totalScore === rows[i - 1].totalScore;
+    }
+
+    return rows;
+  }
+
   async exportScores(examId: string): Promise<{ downloadUrl: string }> {
-    const applications = await this.prisma.application.findMany({
+    const _applications = await this.client.application.findMany({
       where: { examId },
       include: {
         exam: true,
@@ -328,7 +492,6 @@ export class ScoreService {
         scores: true,
       },
     });
-
     // 这里可以生成 Excel/CSV，实际实现可以使用 xlsx 库
     // 返回下载链接（模拟）
     return {
@@ -336,11 +499,10 @@ export class ScoreService {
     };
   }
 
-  /**
-   * 发送面试资格通知
-   */
-  private async notifyInterviewEligibility(applicationId: string): Promise<void> {
-    const application = await this.prisma.application.findUnique({
+  private async notifyInterviewEligibility(
+    applicationId: string,
+  ): Promise<void> {
+    const application = await this.client.application.findUnique({
       where: { id: applicationId },
       include: {
         exam: true,
@@ -350,14 +512,12 @@ export class ScoreService {
 
     if (!application) return;
 
-    // 获取考生用户信息
     const user = await this.prisma.user.findUnique({
       where: { id: application.candidateId },
     });
 
     if (!user) return;
 
-    // 发送邮件通知
     try {
       await this.notificationService.send(NotificationChannel.EMAIL, {
         to: user.email,
@@ -372,10 +532,9 @@ export class ScoreService {
         },
       });
     } catch (error) {
-      this.logger.error(`发送邮件通知失败: ${error.message}`);
+      this.logger.error(`发送邮件通知失败: ${getErrorMessage(error)}`);
     }
 
-    // 记录通知到数据库
     await this.prisma.notification.create({
       data: {
         userId: user.id,
@@ -391,14 +550,11 @@ export class ScoreService {
     });
   }
 
-  /**
-   * 发送面试结果通知
-   */
   private async notifyInterviewResult(
     applicationId: string,
     finalResult: string,
   ): Promise<void> {
-    const application = await this.prisma.application.findUnique({
+    const application = await this.client.application.findUnique({
       where: { id: applicationId },
       include: {
         exam: true,
@@ -431,7 +587,7 @@ export class ScoreService {
         },
       });
     } catch (error) {
-      this.logger.error(`发送邮件通知失败: ${error.message}`);
+      this.logger.error(`发送邮件通知失败: ${getErrorMessage(error)}`);
     }
 
     await this.prisma.notification.create({

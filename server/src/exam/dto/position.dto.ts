@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import {
   IsString,
   IsOptional,
@@ -84,6 +85,7 @@ export class PositionResponse {
   description?: string;
   requirements?: string;
   quota?: number;
+  rulesConfig?: Prisma.JsonValue | null;
   subjects?: SubjectResponse[];
   createdAt: Date;
 }

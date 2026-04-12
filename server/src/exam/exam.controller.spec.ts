@@ -1,10 +1,12 @@
 import { ExamController } from './exam.controller';
 import { ExamService } from './exam.service';
 import { PrismaService } from '../prisma/prisma.service';
+import type { ApplicationService } from '../application/application.service';
+import type { TicketService } from '../ticket/ticket.service';
+import type { ScoreService } from './score.service';
 
 describe('ExamController', () => {
   let controller: ExamController;
-  let service: ExamService;
 
   const mockExamService = {
     findAll: jest.fn().mockResolvedValue({ data: [], total: 0 }),
@@ -16,14 +18,19 @@ describe('ExamController', () => {
 
   const mockPositionService = {};
   const mockPrismaService = {};
+  const mockApplicationService = {};
+  const mockTicketService = {};
+  const mockScoreService = {};
 
   beforeEach(() => {
     controller = new ExamController(
       mockExamService as unknown as ExamService,
       mockPositionService as never,
       mockPrismaService as unknown as PrismaService,
+      mockApplicationService as unknown as ApplicationService,
+      mockTicketService as unknown as TicketService,
+      mockScoreService as unknown as ScoreService,
     );
-    service = mockExamService as unknown as ExamService;
   });
 
   it('should be defined', () => {

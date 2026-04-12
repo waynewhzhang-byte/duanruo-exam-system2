@@ -1,4 +1,13 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, IsArray, ValidateNested, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  ValidateNested,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class RecordScoreDto {
@@ -8,14 +17,18 @@ export class RecordScoreDto {
   @IsString()
   subjectId: string;
 
+  /** Filled from application when omitted (candidate UI / thin clients). */
+  @IsOptional()
   @IsString()
-  candidateId: string;
+  candidateId?: string;
 
+  @IsOptional()
   @IsString()
-  examId: string;
+  examId?: string;
 
+  @IsOptional()
   @IsString()
-  positionId: string;
+  positionId?: string;
 
   @IsOptional()
   @IsNumber()
@@ -93,4 +106,17 @@ export class UpdateInterviewResultDto {
   @IsOptional()
   @IsString()
   interviewRoom?: string;
+}
+
+/** Aggregated score stats for an exam (admin). */
+export interface ScoreExamStatistics {
+  totalCandidates: number;
+  scoredCandidates: number;
+  averageScore: number;
+  highestScore: number;
+  lowestScore: number;
+  passCount: number;
+  failCount: number;
+  pendingCount: number;
+  passRate: number;
 }
