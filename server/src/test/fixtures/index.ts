@@ -1,4 +1,11 @@
-import { User, Tenant, Exam, Application, Position, Review } from '@prisma/client';
+import {
+  User,
+  Tenant,
+  Exam,
+  Application,
+  Position,
+  Prisma,
+} from '@prisma/client';
 
 export const testUsers = {
   superAdmin: {
@@ -70,7 +77,7 @@ export const testExams = {
     description: '付费考试',
     status: 'REGISTRATION_OPEN',
     feeRequired: true,
-    feeAmount: 100 as any,
+    feeAmount: new Prisma.Decimal(100),
     createdAt: new Date(),
     updatedAt: new Date(),
     announcement: null,
