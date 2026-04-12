@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { Application } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { AllocateSeatsRequest, SeatAssignmentDetail } from './dto/seating.dto';
+import {
+  AllocateSeatsRequest,
+  SeatAssignmentDetail,
+  SEAT_MAP_CELL_STATUSES,
+} from './dto/seating.dto';
 import { v4 as uuidv4 } from 'uuid';
 
 interface SeatAssignmentData {
@@ -291,6 +295,133 @@ export class SeatingService {
     };
   }
 
+  /** Grid seat map JSON shape used by web SeatMapEditor */
+  async createSeatMapGrid(venueId: string, rows: number, columns: number) {
+    if (
+      !Number.isFinite(rows) ||
+      !Number.isFinite(columns) ||
+      rows < 1 ||
+      rows > 50 ||
+      columns < 1 ||
+      columns > 50
+    ) {
+      throw new BadRequestException('rows 与 columns 须在 1–50 之间');
+    }
+
+    const venue = await this.client.venue.findUnique({
+      where: { id: venueId },
+    });
+    if (!venue) {
+      throw new NotFoundException(`Venue not found: ${venueId}`);
+    }
+
+    const seats: Array<{
+      row: number;
+      col: number;
+      status: string;
+      label?: string;
+    }> = [];
+    for (let r = 1; r <= rows; r++) {
+      for (let c = 1; c <= columns; c++) {
+        seats.push({ row: r, col: c, status: 'AVAILABLE' });
+      }
+    }
+
+    const data = { rows, columns, seats };
+
+    await this.client.venue.update({
+      where: { id: venueId },
+      data: { seatMapJson: data as object },
+    });
+
+    return data;
+  }
+
+  private parseSeatMapJson(raw: unknown) {
+    if (!raw || typeof raw !== 'object') {
+      throw new BadRequestException('考场尚未创建座位地图');
+    }
+    const map = raw as {
+      rows: number;
+      columns: number;
+      seats: Array<{
+        row: number;
+        col: number;
+        status: string;
+        label?: string;
+      }>;
+    };
+    if (
+      !Array.isArray(map.seats) ||
+      typeof map.rows !== 'number' ||
+      typeof map.columns !== 'number'
+    ) {
+      throw new BadRequestException('座位地图数据格式无效');
+    }
+    return map;
+  }
+
+  async updateSeatMapSeatStatus(
+    venueId: string,
+    row: number,
+    col: number,
+    status: string,
+  ) {
+    const allowed = new Set<string>(SEAT_MAP_CELL_STATUSES);
+    if (!allowed.has(status)) {
+      throw new BadRequestException(`无效的座位状态: ${status}`);
+    }
+
+    const venue = await this.client.venue.findUnique({
+      where: { id: venueId },
+    });
+    if (!venue) {
+      throw new NotFoundException(`Venue not found: ${venueId}`);
+    }
+
+    const map = this.parseSeatMapJson(venue.seatMapJson);
+    const idx = map.seats.findIndex((s) => s.row === row && s.col === col);
+    if (idx === -1) {
+      throw new BadRequestException('座位不存在');
+    }
+    map.seats[idx] = { ...map.seats[idx], status };
+
+    await this.client.venue.update({
+      where: { id: venueId },
+      data: { seatMapJson: map as object },
+    });
+
+    return map;
+  }
+
+  async updateSeatMapSeatLabel(
+    venueId: string,
+    row: number,
+    col: number,
+    label: string,
+  ) {
+    const venue = await this.client.venue.findUnique({
+      where: { id: venueId },
+    });
+    if (!venue) {
+      throw new NotFoundException(`Venue not found: ${venueId}`);
+    }
+
+    const map = this.parseSeatMapJson(venue.seatMapJson);
+    const idx = map.seats.findIndex((s) => s.row === row && s.col === col);
+    if (idx === -1) {
+      throw new BadRequestException('座位不存在');
+    }
+    map.seats[idx] = { ...map.seats[idx], label };
+
+    await this.client.venue.update({
+      where: { id: venueId },
+      data: { seatMapJson: map as object },
+    });
+
+    return map;
+  }
+
   /**
    * Create a new venue
    */
@@ -352,6 +483,50 @@ export class SeatingService {
         floor: r.floor,
       })),
     };
+  }
+
+  async updateVenue(
+    venueId: string,
+    data: { name?: string; capacity?: number },
+  ) {
+    const existing = await this.client.venue.findUnique({
+      where: { id: venueId },
+    });
+    if (!existing) {
+      throw new NotFoundException(`Venue not found: ${venueId}`);
+    }
+    const venue = await this.client.venue.update({
+      where: { id: venueId },
+      data: {
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.capacity !== undefined ? { capacity: data.capacity } : {}),
+      },
+      include: { rooms: { orderBy: { code: 'asc' } } },
+    });
+    return {
+      id: venue.id,
+      name: venue.name,
+      capacity: venue.capacity,
+      examId: venue.examId,
+      rooms: venue.rooms.map((r) => ({
+        id: r.id,
+        name: r.name,
+        code: r.code,
+        capacity: r.capacity,
+        floor: r.floor,
+      })),
+    };
+  }
+
+  async deleteVenue(venueId: string) {
+    const n = await this.client.seatAssignment.count({
+      where: { venueId },
+    });
+    if (n > 0) {
+      throw new BadRequestException('无法删除已有座位分配的考场，请先取消分配');
+    }
+    await this.client.room.deleteMany({ where: { venueId } });
+    await this.client.venue.delete({ where: { id: venueId } });
   }
 
   /**
@@ -433,7 +608,16 @@ export class SeatingService {
   /**
    * Create a room
    */
-  async createRoom(venueId: string, data: { name: string; code: string; capacity: number; floor?: number; description?: string }) {
+  async createRoom(
+    venueId: string,
+    data: {
+      name: string;
+      code: string;
+      capacity: number;
+      floor?: number;
+      description?: string;
+    },
+  ) {
     const venue = await this.client.venue.findUnique({
       where: { id: venueId },
     });
@@ -466,7 +650,16 @@ export class SeatingService {
   /**
    * Update a room
    */
-  async updateRoom(roomId: string, data: { name?: string; code?: string; capacity?: number; floor?: number; description?: string }) {
+  async updateRoom(
+    roomId: string,
+    data: {
+      name?: string;
+      code?: string;
+      capacity?: number;
+      floor?: number;
+      description?: string;
+    },
+  ) {
     const room = await this.client.room.findUnique({
       where: { id: roomId },
     });
