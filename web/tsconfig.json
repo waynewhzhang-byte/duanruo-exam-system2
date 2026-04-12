@@ -1,8 +1,11 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "es6"],
-    "allowJs": true,
+    "target": "ES2022",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "ES2022"
+    ],
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
@@ -21,15 +24,20 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "allowJs": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
-    "scripts/**/*.ts",
-    "src/app/candidate/applications/new/page_old.tsx",
-    "src/app/candidate/applications/page_old.tsx",
-    "src/app/reviewer/queue/page_old.tsx"
+    "scripts/**/*.ts"
   ]
 }
