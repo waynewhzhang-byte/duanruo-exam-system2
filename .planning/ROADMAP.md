@@ -12,7 +12,7 @@
 
 - [ ] **Phase 1: API Foundation** - 修复前后端接口对接的横切问题，使所有 API 调用可靠工作
 - [x] **Phase 2: Admin Backend** - 修复租户管理员后台全部核心功能模块 (completed 2026-03-04)
-- [ ] **Phase 3: Candidate Portal** - 修复候选人完整报名流程（报名→缴费→准考证）
+- [x] **Phase 3: Candidate Portal** - 修复候选人完整报名流程（报名→缴费→准考证）(completed 2026-03-05)
 - [ ] **Phase 4: Reviewer Workflow** - 修复审核员端审核操作和详情展示
 - [ ] **Phase 5: Super Admin** - 修复超级管理员平台管理功能
 
@@ -64,9 +64,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Fix candidate applications list to use apiGetWithTenant and display correct status
-- [ ] 03-02-PLAN.md — Fix application form (remove @ts-nocheck, clean corrupted code, verify submission)
-- [ ] 03-03-PLAN.md — Fix ticket download and payment flow tenant context
+- [x] 03-01-PLAN.md — Fix candidate applications list to use apiGetWithTenant and display correct status
+- [x] 03-02-PLAN.md — Fix application form (remove @ts-nocheck, clean corrupted code, verify submission)
+- [x] 03-03-PLAN.md — Fix ticket download and payment flow tenant context
 
 ### Phase 4: Reviewer Workflow
 **Goal**: 审核员可以查看分配给自己的申请列表，完整查看申请详情，并执行审核操作
@@ -76,7 +76,12 @@ Plans:
   1. 审核员登录后，审核列表正确加载分配给当前角色（初审/复审）的申请数据
   2. 点击任意申请进入详情页，候选人的全部资料（文件、表单信息）完整展示
   3. 通过/退回/要求补材料按钮可点击，操作执行后申请状态正确流转并在列表中更新
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [x] 04-01-PLAN.md — Remove deprecated non-tenant reviewer pages, verify tenant-scoped pages use apiGetWithTenant
+- [x] 04-02-PLAN.md — Verify review queue API and list display with correct data fields
+- [x] 04-03-PLAN.md — Verify review detail page and approve/reject actions
 
 ### Phase 5: Super Admin
 **Goal**: 超级管理员可以在平台层面管理租户（查看、创建）和平台用户
@@ -86,7 +91,11 @@ Plans:
   1. 超管进入租户列表页，已有租户数据正确显示
   2. 超管通过创建租户表单完整填写信息并提交，新租户成功创建并出现在列表中
   3. 超管进入平台用户管理页，用户列表正确加载并可执行基本管理操作
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [x] 05-01-PLAN.md — Verify super admin tenant management (list, create, activate, deactivate, delete)
+- [x] 05-02-PLAN.md — Verify super admin user management (list, create - update/delete not implemented)
 
 ## Progress
 
@@ -99,6 +108,6 @@ Note: Phase 3 and Phase 5 both depend only on Phase 1, so they can be executed i
 |-------|----------------|--------|-----------|
 | 1. API Foundation | 2/2 | Complete | 2026-03-04 |
 | 2. Admin Backend | 5/5 | Complete | 2026-03-05 |
-| 3. Candidate Portal | 0/3 | In progress | - |
-| 4. Reviewer Workflow | 0/TBD | Not started | - |
-| 5. Super Admin | 0/TBD | Not started | - |
+| 3. Candidate Portal | 3/3 | Complete | 2026-03-05 |
+| 4. Reviewer Workflow | 3/3 | Complete (gaps) | 2026-03-05 |
+| 5. Super Admin | 2/2 | Complete (gaps) | 2026-03-06 |
