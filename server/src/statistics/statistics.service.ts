@@ -27,33 +27,159 @@ export interface ReviewStatistics {
   averageReviewTime: number;
 }
 
+export interface FunnelStep {
+  name: string;
+  value: number;
+  fill: string;
+}
+
+export interface PositionScoreAnalysis {
+  positionId: string;
+  positionTitle: string;
+  averageScore: number;
+  maxScore: number;
+  minScore: number;
+  totalCandidates: number;
+  scoredCandidates: number;
+  passCount: number;
+  passRate: number;
+}
+
 @Injectable()
 export class StatisticsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   private get client() {
     return this.prisma.client;
   }
 
   /**
+   * 获取招聘流程漏斗数据
+   */
+  async getFunnelStatistics(examId?: string): Promise<FunnelStep[]> {
+    const where: { examId?: string } = {};
+    if (examId) where.examId = examId;
+
+    const [total, submitted, primaryPassed, approved, paid, ticketIssued] =
+      await Promise.all([
+        this.client.application.count({ where }),
+        this.client.application.count({
+          where: { ...where, status: { notIn: ['DRAFT'] } },
+        }),
+        this.client.application.count({
+          where: {
+            ...where,
+            status: {
+              in: [
+                'PRIMARY_PASSED',
+                'PENDING_SECONDARY_REVIEW',
+                'APPROVED',
+                'PAID',
+                'TICKET_ISSUED',
+              ],
+            },
+          },
+        }),
+        this.client.application.count({
+          where: {
+            ...where,
+            status: { in: ['APPROVED', 'PAID', 'TICKET_ISSUED'] },
+          },
+        }),
+        this.client.application.count({
+          where: { ...where, status: { in: ['PAID', 'TICKET_ISSUED'] } },
+        }),
+        this.client.application.count({
+          where: { ...where, status: 'TICKET_ISSUED' },
+        }),
+      ]);
+
+    return [
+      { name: '全部报名', value: total, fill: '#8884d8' },
+      { name: '已提交', value: submitted, fill: '#83a6ed' },
+      { name: '一审通过', value: primaryPassed, fill: '#8dd1e1' },
+      { name: '二审通过', value: approved, fill: '#82ca9d' },
+      { name: '已支付', value: paid, fill: '#a4de6c' },
+      { name: '已发证', value: ticketIssued, fill: '#d0ed57' },
+    ];
+  }
+
+  /**
+   * 获取成绩深度分析数据
+   */
+  async getScoreAnalysis(examId: string): Promise<PositionScoreAnalysis[]> {
+    const positions = await this.client.position.findMany({
+      where: { examId },
+      include: {
+        _count: {
+          select: { applications: true },
+        },
+      },
+    });
+
+    const analysis = await Promise.all(
+      positions.map(async (pos) => {
+        const stats = await this.client.application.aggregate({
+          where: {
+            positionId: pos.id,
+            status: { in: ['APPROVED', 'TICKET_ISSUED'] },
+          },
+          _avg: { totalWrittenScore: true },
+          _max: { totalWrittenScore: true },
+          _min: { totalWrittenScore: true },
+          _count: { totalWrittenScore: true },
+        });
+
+        const passCount = await this.client.application.count({
+          where: { positionId: pos.id, writtenPassStatus: 'PASS' },
+        });
+
+        return {
+          positionId: pos.id,
+          positionTitle: pos.title,
+          averageScore: stats._avg.totalWrittenScore
+            ? Number(stats._avg.totalWrittenScore.toFixed(2))
+            : 0,
+          maxScore: stats._max.totalWrittenScore
+            ? Number(stats._max.totalWrittenScore)
+            : 0,
+          minScore: stats._min.totalWrittenScore
+            ? Number(stats._min.totalWrittenScore)
+            : 0,
+          totalCandidates: pos._count.applications,
+          scoredCandidates: stats._count.totalWrittenScore,
+          passCount,
+          passRate:
+            pos._count.applications > 0
+              ? Number(((passCount / pos._count.applications) * 100).toFixed(2))
+              : 0,
+        };
+      }),
+    );
+
+    return analysis;
+  }
+
+  /**
    * Tenant-level statistics (current tenant)
    */
   async getTenantStatistics() {
-    const [totalExams, totalApplications, totalUsers, recentExams] = await Promise.all([
-      this.client.exam.count(),
-      this.client.application.count(),
-      this.client.user.count(),
-      this.client.exam.findMany({
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          title: true,
-          examStart: true,
-          _count: { select: { applications: true } },
-        },
-      }),
-    ]);
+    const [totalExams, totalApplications, totalUsers, recentExams] =
+      await Promise.all([
+        this.client.exam.count(),
+        this.client.application.count(),
+        this.client.user.count(),
+        this.client.exam.findMany({
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            title: true,
+            examStart: true,
+            _count: { select: { applications: true } },
+          },
+        }),
+      ]);
 
     const approvedApplications = await this.client.application.count({
       where: { status: 'APPROVED' },
@@ -72,7 +198,8 @@ export class StatisticsService {
       totalApplications,
       approvedApplications,
       rejectedApplications,
-      pendingApplications: totalApplications - approvedApplications - rejectedApplications,
+      pendingApplications:
+        totalApplications - approvedApplications - rejectedApplications,
       paidApplications,
       totalUsers,
       activeUsers: totalUsers,
@@ -214,7 +341,10 @@ export class StatisticsService {
       this.client.reviewTask.groupBy({
         by: ['stage'],
         where: where.applicationId
-          ? { status: { in: ['OPEN', 'ASSIGNED'] }, applicationId: where.applicationId }
+          ? {
+              status: { in: ['OPEN', 'ASSIGNED'] },
+              applicationId: where.applicationId,
+            }
           : { status: { in: ['OPEN', 'ASSIGNED'] } },
         _count: { stage: true },
       }),
@@ -234,12 +364,11 @@ export class StatisticsService {
     const averageReviewTime =
       reviewedWithTime.length > 0
         ? reviewedWithTime.reduce(
-          (sum, r) =>
-            sum +
-            (r.reviewedAt.getTime() - r.createdAt.getTime()) /
-            (1000 * 60),
-          0,
-        ) / reviewedWithTime.length
+            (sum, r) =>
+              sum +
+              (r.reviewedAt.getTime() - r.createdAt.getTime()) / (1000 * 60),
+            0,
+          ) / reviewedWithTime.length
         : 0;
 
     return {

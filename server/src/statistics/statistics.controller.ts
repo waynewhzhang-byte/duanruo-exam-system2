@@ -9,13 +9,12 @@ import { Permissions } from '../auth/permissions.decorator';
 @Controller('statistics')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class StatisticsController {
-  constructor(private readonly statisticsService: StatisticsService) { }
+  constructor(private readonly statisticsService: StatisticsService) {}
 
   @Get('platform')
   @Permissions('statistics:system:view')
   async getPlatformStatistics() {
-    const data =
-      await this.statisticsService.getPlatformStatistics();
+    const data = await this.statisticsService.getPlatformStatistics();
     return ApiResult.ok(data);
   }
 
@@ -52,6 +51,22 @@ export class StatisticsController {
       examId,
       reviewerId,
     );
+    return ApiResult.ok(data);
+  }
+
+  @Get('funnel')
+  @UseGuards(TenantGuard)
+  @Permissions('statistics:tenant:view')
+  async getFunnelStatistics(@Query('examId') examId?: string) {
+    const data = await this.statisticsService.getFunnelStatistics(examId);
+    return ApiResult.ok(data);
+  }
+
+  @Get('score-analysis')
+  @UseGuards(TenantGuard)
+  @Permissions('statistics:tenant:view')
+  async getScoreAnalysis(@Query('examId') examId: string) {
+    const data = await this.statisticsService.getScoreAnalysis(examId);
     return ApiResult.ok(data);
   }
 }
