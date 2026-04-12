@@ -40,10 +40,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
         code = this.getErrorCodeFromStatus(status);
-      } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+      } else if (
+        typeof exceptionResponse === 'object' &&
+        exceptionResponse !== null
+      ) {
         const responseObj = exceptionResponse as Record<string, unknown>;
         message = (responseObj.message as string) || exception.message;
-        code = (responseObj.error as string) || this.getErrorCodeFromStatus(status);
+        code =
+          (responseObj.error as string) || this.getErrorCodeFromStatus(status);
         details = responseObj.details;
       } else {
         message = exception.message;
@@ -53,7 +57,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       code = 'INTERNAL_ERROR';
       message = 'An unexpected error occurred';
-      this.logger.error(`Unexpected error: ${exception.message}`, exception.stack);
+      this.logger.error(
+        `Unexpected error: ${exception.message}`,
+        exception.stack,
+      );
     } else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       code = 'UNKNOWN_ERROR';

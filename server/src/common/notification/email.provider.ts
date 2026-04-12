@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { NotificationChannel, NotificationPayload, NotificationProvider } from './notification.interface';
+import {
+  NotificationChannel,
+  NotificationPayload,
+  NotificationProvider,
+} from './notification.interface';
 
 @Injectable()
 export class MockEmailProvider implements NotificationProvider {
@@ -9,13 +13,13 @@ export class MockEmailProvider implements NotificationProvider {
     return NotificationChannel.EMAIL;
   }
 
-  async send(payload: NotificationPayload): Promise<boolean> {
+  send(payload: NotificationPayload): Promise<boolean> {
     this.logger.log(`[MOCK EMAIL SENT]
       To: ${payload.to}
       Subject: ${payload.subject || 'System Notification'}
       Body: ${JSON.stringify(payload.data)}
     `);
     // In production, use nodemailer or a service like SendGrid
-    return true;
+    return Promise.resolve(true);
   }
 }

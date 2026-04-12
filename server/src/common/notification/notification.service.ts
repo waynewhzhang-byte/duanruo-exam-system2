@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { NotificationChannel, NotificationPayload, NotificationProvider } from './notification.interface';
+import { getErrorMessage } from '../utils/error.util';
+import {
+  NotificationChannel,
+  NotificationPayload,
+  NotificationProvider,
+} from './notification.interface';
 import { MockEmailProvider } from './email.provider';
 
 @Injectable()
@@ -14,7 +19,10 @@ export class NotificationService {
   /**
    * Send notification to a specific channel
    */
-  async send(channel: NotificationChannel, payload: NotificationPayload): Promise<boolean> {
+  async send(
+    channel: NotificationChannel,
+    payload: NotificationPayload,
+  ): Promise<boolean> {
     const provider = this.providers.get(channel);
     if (!provider) {
       this.logger.error(`No provider found for channel: ${channel}`);
@@ -24,7 +32,9 @@ export class NotificationService {
     try {
       return await provider.send(payload);
     } catch (error) {
-      this.logger.error(`Failed to send notification via ${channel}: ${error.message}`);
+      this.logger.error(
+        `Failed to send notification via ${channel}: ${getErrorMessage(error)}`,
+      );
       return false;
     }
   }
@@ -32,7 +42,12 @@ export class NotificationService {
   /**
    * Helper for commonly used notifications
    */
-  async notifyReviewResult(email: string, fullName: string, examTitle: string, status: string) {
+  async notifyReviewResult(
+    email: string,
+    fullName: string,
+    examTitle: string,
+    status: string,
+  ) {
     const isApproved = status === 'APPROVED' || status === 'PRIMARY_PASSED';
     await this.send(NotificationChannel.EMAIL, {
       to: email,
@@ -41,14 +56,19 @@ export class NotificationService {
         fullName,
         examTitle,
         result: isApproved ? '通过' : '驳回',
-        message: isApproved 
-          ? '恭喜您，您的报名申请已通过审核。' 
+        message: isApproved
+          ? '恭喜您，您的报名申请已通过审核。'
           : '抱歉，您的报名申请未通过审核，请登录平台查看详情。',
       },
     });
   }
 
-  async notifyTicketGenerated(email: string, fullName: string, examTitle: string, ticketNo: string) {
+  async notifyTicketGenerated(
+    email: string,
+    fullName: string,
+    examTitle: string,
+    ticketNo: string,
+  ) {
     await this.send(NotificationChannel.EMAIL, {
       to: email,
       subject: `准考证发放通知 - ${examTitle}`,

@@ -60,7 +60,7 @@ export const ApiResponse = {
     };
   },
 
-  fail<T = never>(message: string, code: string, details?: ApiErrorDetail[]): ApiFailure {
+  fail(message: string, code: string, details?: ApiErrorDetail[]): ApiFailure {
     return {
       success: false,
       error: { code, message, details },
@@ -71,7 +71,12 @@ export const ApiResponse = {
     };
   },
 
-  paginated<T>(items: T[], page: number, size: number, total: number): PaginatedApiResponse<T> {
+  paginated<T>(
+    items: T[],
+    page: number,
+    size: number,
+    total: number,
+  ): PaginatedApiResponse<T> {
     const totalPages = Math.ceil(total / size);
     return {
       success: true,

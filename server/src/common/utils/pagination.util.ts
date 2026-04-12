@@ -1,5 +1,3 @@
-import { Prisma } from '@prisma/client';
-
 export interface PaginationParams {
   page: number;
   size: number;
@@ -71,5 +69,5 @@ export async function paginateWithPrisma<T extends Record<string, unknown>>(
     }),
   ]);
 
-  return createPaginationResult(items as T[], total, page, size);
+  return createPaginationResult(items, total, page, size);
 }

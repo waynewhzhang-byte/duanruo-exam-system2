@@ -8,7 +8,7 @@ export interface NotificationPayload {
   to: string;
   subject?: string;
   template?: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 export interface NotificationProvider {
