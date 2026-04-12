@@ -145,6 +145,10 @@ export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSub
                   <div
                     className="cursor-pointer"
                     onClick={() => setSelectedPositionId(position.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedPositionId(position.id); } }}
+                    aria-label={`岗位 ${position.title || position.name}`}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <h3 className="font-semibold">{position.title || position.name}</h3>
@@ -157,8 +161,8 @@ export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSub
                         {position.description}
                       </p>
                     )}
-                    {position.quota && (
-                      <p className="text-xs text-muted-foreground mb-3">
+{position.quota != null && (
+                        <p className="text-xs text-muted-foreground mb-3">
                         招聘人数: {position.quota}人
                       </p>
                     )}

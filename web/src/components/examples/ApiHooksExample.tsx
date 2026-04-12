@@ -181,11 +181,15 @@ export default function ApiHooksExample() {
           ) : applications ? (
             <div className="space-y-2">
               <p>Total: {applications.totalElements} applications</p>
-              {applications.content.map((app: any) => (
+              {applications.content.map((app) => (
                 <div
                   key={app.id}
                   className="p-2 border rounded cursor-pointer hover:bg-gray-50"
                   onClick={() => setSelectedApplicationId(app.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedApplicationId(app.id); } }}
+                  aria-label={`Application ${app.id}`}
                 >
                   <p className="font-medium">Application {app.id}</p>
                   <p className="text-sm text-gray-600">Status: {app.status}</p>

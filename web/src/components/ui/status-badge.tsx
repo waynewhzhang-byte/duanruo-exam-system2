@@ -121,9 +121,12 @@ export function FileStatusBadge({ status, className }: FileStatusBadgeProps) {
   const colorMap: Record<z.infer<typeof FileStatus>, string> = {
     UPLOADING: 'bg-blue-100 text-blue-800',
     UPLOADED: 'bg-green-100 text-green-800',
+    AVAILABLE: 'bg-green-100 text-green-800',
     CONFIRMED: 'bg-green-100 text-green-800',
     FAILED: 'bg-red-100 text-red-800',
     DELETED: 'bg-gray-100 text-gray-800',
+    EXPIRED: 'bg-gray-100 text-gray-800',
+    QUARANTINED: 'bg-amber-100 text-amber-900',
   }
 
   const colorClass = colorMap[status] || 'bg-gray-100 text-gray-800'

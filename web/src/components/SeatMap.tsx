@@ -161,6 +161,12 @@ export default function SeatMap({ data, onSeatClick, editable = false }: SeatMap
                       ${isClickable ? 'cursor-pointer' : ''}
                     `}
                     onClick={() => handleSeatClick(seat)}
+                    {...(isClickable && {
+                      role: 'button' as const,
+                      tabIndex: 0,
+                      onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSeatClick(seat); } },
+                      'aria-label': seat.candidateName ? `座位 ${seat.candidateName}` : (seat.label || `座位 ${rowIndex + 1}-${colIndex + 1}`)
+                    })}
                     title={
                       seat.candidateName
                         ? `${seat.candidateName} - ${seat.positionTitle || ''}`

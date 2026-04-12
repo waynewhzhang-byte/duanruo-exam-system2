@@ -147,6 +147,10 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
           onClick={() => setSidebarOpen(false)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSidebarOpen(false); } }}
+          aria-label="关闭侧栏"
         />
       )}
 

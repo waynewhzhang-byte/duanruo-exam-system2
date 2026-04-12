@@ -13,7 +13,7 @@ function handleGlobalError(error: unknown) {
   if (!(error instanceof APIError)) return
 
   if (error.isUnauthorized) {
-    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
       const redirect = encodeURIComponent(window.location.pathname + window.location.search)
       window.location.href = `/login?redirect=${redirect}`
     }

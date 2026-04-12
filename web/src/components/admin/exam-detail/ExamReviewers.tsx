@@ -2,11 +2,10 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPost, apiDelete, apiGetWithTenant } from '@/lib/api'
+import { apiPostWithTenant, apiDeleteWithTenant, apiGetWithTenant } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -55,19 +54,32 @@ export default function ExamReviewers({ examId }: ExamReviewersProps) {
     enabled: !!tenant?.id,
   })
 
-  // 获取可用用户列表（用于添加审核员）
+  // 获取可用用户列表（租户内具备审核员/租户管理员角色的用户）
   const { data: availableUsers } = useQuery<User[]>({
-    queryKey: ['available-reviewers'],
-    queryFn: () => apiGet<User[]>('/users?role=REVIEWER'),
-    enabled: addDialogOpen,
+    queryKey: ['available-reviewers', examId],
+    queryFn: () => {
+      if (!tenant?.id) {
+        throw new Error('Tenant ID is required')
+      }
+      return apiGetWithTenant<User[]>(
+        `/exams/${examId}/reviewers/available`,
+        tenant.id,
+      )
+    },
+    enabled: addDialogOpen && !!tenant?.id,
   })
 
   // 添加审核员
   const addReviewerMutation = useMutation({
-    mutationFn: (data: { userId: string; role: string }) =>
-      apiPost(`/exams/${examId}/reviewers`, data),
+    mutationFn: (data: { userId: string; role: string }) => {
+      if (!tenant?.id) {
+        throw new Error('Tenant ID is required')
+      }
+      return apiPostWithTenant(`/exams/${examId}/reviewers`, tenant.id, data)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exam-reviewers', examId] })
+      queryClient.invalidateQueries({ queryKey: ['available-reviewers', examId] })
       toast.success('审核员添加成功')
       setAddDialogOpen(false)
       setSelectedUserId('')
@@ -80,10 +92,18 @@ export default function ExamReviewers({ examId }: ExamReviewersProps) {
 
   // 移除审核员
   const removeReviewerMutation = useMutation({
-    mutationFn: (reviewerId: string) =>
-      apiDelete(`/exams/${examId}/reviewers/${reviewerId}`),
+    mutationFn: (assignmentId: string) => {
+      if (!tenant?.id) {
+        throw new Error('Tenant ID is required')
+      }
+      return apiDeleteWithTenant(
+        `/exams/${examId}/reviewers/${assignmentId}`,
+        tenant.id,
+      )
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exam-reviewers', examId] })
+      queryClient.invalidateQueries({ queryKey: ['available-reviewers', examId] })
       toast.success('审核员移除成功')
     },
     onError: (error: any) => {

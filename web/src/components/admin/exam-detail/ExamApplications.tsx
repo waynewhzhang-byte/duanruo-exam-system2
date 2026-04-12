@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPost, apiGetWithTenant } from '@/lib/api'
+import { apiGet, apiPost, apiGetWithTenant, getTenantHeaders } from '@/lib/api'
+import { normalizePaginatedOrArray } from '@/lib/normalize-paginated-or-array'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -72,7 +73,11 @@ export default function ExamApplications({ examId }: ExamApplicationsProps) {
       if (statusFilter !== 'ALL') params.append('status', statusFilter)
       if (positionFilter !== 'ALL') params.append('positionId', positionFilter)
 
-      return apiGetWithTenant<Application[]>(`/exams/${examId}/applications?${params.toString()}`, tenant.id)
+      const raw = await apiGetWithTenant<unknown>(
+        `/exams/${examId}/applications?${params.toString()}`,
+        tenant.id,
+      )
+      return normalizePaginatedOrArray<Application>(raw)
     },
     enabled: !!tenant?.id,
   })
@@ -96,9 +101,12 @@ export default function ExamApplications({ examId }: ExamApplicationsProps) {
       if (statusFilter !== 'ALL') params.append('status', statusFilter)
       if (positionFilter !== 'ALL') params.append('positionId', positionFilter)
       
+      if (!tenant?.id) throw new Error('租户信息缺失')
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token')
       const response = await fetch(`/api/v1/exams/${examId}/applications/export?${params.toString()}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...getTenantHeaders(tenant.id, tenant.slug || tenant.code),
         },
       })
       

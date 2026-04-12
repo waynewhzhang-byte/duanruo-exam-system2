@@ -46,7 +46,11 @@ export default function EditVenueDialog({ open, onOpenChange, venue, tenantId, o
 
   const onSubmit = async (data: UpdateVenueRequestType) => {
     try {
-      await updateMutation.mutateAsync({ venueId: venue.venueId, data, tenantId })
+      await updateMutation.mutateAsync({
+        venueId: venue.id ?? venue.venueId,
+        data,
+        tenantId,
+      })
       toast.success('考场更新成功')
       onSuccess()
     } catch (error: any) {

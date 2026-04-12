@@ -59,11 +59,15 @@ export default function AppNavigation({ user, onSignOut }: AppNavigationProps) {
   // 获取主角色（优先级最高的角色）
   const getPrimaryRole = (roles: string[]) => {
     if (!roles || roles.length === 0) return 'CANDIDATE';
-    return roles.reduce((prev, curr) => {
-      const prevPriority = ROLE_PRIORITY[prev] || 100;
-      const currPriority = ROLE_PRIORITY[curr] || 100;
-      return prevPriority < currPriority ? prev : curr;
-    });
+    const initialRole: string = roles[0] ?? 'CANDIDATE';
+    return roles.reduce<string>(
+      (prev, curr) => {
+        const prevPriority = ROLE_PRIORITY[prev] || 100;
+        const currPriority = ROLE_PRIORITY[curr] || 100;
+        return prevPriority < currPriority ? prev : curr;
+      },
+      initialRole,
+    );
   };
 
   const primaryRole = getPrimaryRole(user.roles);

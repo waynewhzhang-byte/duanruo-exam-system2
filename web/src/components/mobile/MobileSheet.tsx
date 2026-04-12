@@ -115,6 +115,10 @@ export default function MobileSheet({
       <div
         className="fixed inset-0 bg-black/50 z-50 animate-fade-in"
         onClick={onClose}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }}
+        aria-label="关闭"
       />
       
       {/* 抽屉内容 */}
@@ -209,6 +213,10 @@ export function MobileActionSheet({
       <div
         className="fixed inset-0 bg-black/50 z-50 animate-fade-in"
         onClick={onClose}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }}
+        aria-label="关闭"
       />
       
       {/* 操作表单 */}

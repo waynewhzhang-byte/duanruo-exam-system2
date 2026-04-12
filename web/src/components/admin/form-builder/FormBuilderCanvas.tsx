@@ -98,7 +98,7 @@ export default function FormBuilderCanvas({
                             <GripVertical className="h-5 w-5 text-muted-foreground mt-0.5 cursor-move" />
                             <div className="flex-1">
                               {editingSection === section.id ? (
-                                <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                                <div className="space-y-2" onClick={(e) => e.stopPropagation()} role="group" aria-label="编辑分区" onKeyDown={(e) => e.stopPropagation()}>
                                   <Input
                                     value={section.title}
                                     onChange={(e) =>
@@ -129,7 +129,7 @@ export default function FormBuilderCanvas({
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()} role="group" aria-label="分区操作" onKeyDown={(e) => e.stopPropagation()}>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -161,12 +161,16 @@ export default function FormBuilderCanvas({
                             {section.fields.map((field) => (
                               <div
                                 key={field.id}
-                                className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                                  selectedField === field.id
+className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                                    selectedField === field.id
                                     ? 'bg-primary/5 border-primary'
                                     : 'hover:bg-accent'
                                 }`}
                                 onClick={(e) => handleFieldClick(section.id, field.id, e)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectSection(section.id); onSelectField(field.id); } }}
+                                aria-label={`选择字段 ${field.label || field.id}`}
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2 flex-1">

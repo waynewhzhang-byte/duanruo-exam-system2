@@ -80,6 +80,12 @@ export default function MobileCard({
         className
       )}
       onClick={onClick}
+      {...(isClickable && {
+        role: 'button' as const,
+        tabIndex: 0,
+        onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } },
+        'aria-label': title || '卡片'
+      })}
     >
       {/* 头部 */}
       {(title || description || icon) && (
@@ -189,6 +195,12 @@ export function MobileListItem({
         className
       )}
       onClick={onClick}
+      {...(onClick && {
+        role: 'button' as const,
+        tabIndex: 0,
+        onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } },
+        'aria-label': title
+      })}
     >
       <div className="flex items-center flex-1 min-w-0">
         {icon && (

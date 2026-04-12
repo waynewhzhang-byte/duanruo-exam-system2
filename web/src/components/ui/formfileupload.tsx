@@ -421,11 +421,19 @@ export default function FormFileUpload<T extends FieldValues>({
       <div
         className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center"
         onClick={() => setPreviewUrl(null)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPreviewUrl(null); } }}
+        aria-label="关闭预览"
       >
         <div
           className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 flex flex-col"
           style={{ height: '90vh' }}
           onClick={(e) => e.stopPropagation()}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
+          aria-label="预览内容"
         >
           <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
             <span className="font-medium text-gray-900 truncate max-w-xs">{previewFileName}</span>

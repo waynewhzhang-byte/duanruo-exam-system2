@@ -75,6 +75,10 @@ export function DateRangePicker({
               setIsOpen(false)
               setShowCustom(false)
             }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsOpen(false); setShowCustom(false); } }}
+            aria-label="关闭"
           />
           
           {/* Dropdown */}

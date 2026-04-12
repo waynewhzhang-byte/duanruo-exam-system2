@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import SeatMap, { Seat, SeatMapData, SeatStatus } from './SeatMap';
+import { useTenant } from '@/hooks/useTenant';
+import { apiPostWithTenant, apiPutWithTenant } from '@/lib/api';
 
 /**
  * 座位地图编辑器组件属性
@@ -27,6 +29,7 @@ enum EditMode {
  * 座位地图编辑器组件
  */
 export default function SeatMapEditor({ venueId, initialData, onSave }: SeatMapEditorProps) {
+  const { tenant } = useTenant();
   const [seatMapData, setSeatMapData] = useState<SeatMapData | null>(initialData || null);
   const [editMode, setEditMode] = useState<EditMode>(EditMode.NONE);
   const [rows, setRows] = useState<number>(10);
@@ -35,19 +38,17 @@ export default function SeatMapEditor({ venueId, initialData, onSave }: SeatMapE
 
   // 创建新的座位地图
   const handleCreateSeatMap = async () => {
+    if (!tenant?.id) {
+      alert('租户信息缺失，无法创建座位地图');
+      return;
+    }
     try {
-      const response = await fetch(`/api/v1/venues/${venueId}/seat-map?rows=${rows}&columns=${columns}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const data = await apiPostWithTenant<SeatMapData>(
+        `/seating/venues/${venueId}/seat-map?rows=${rows}&columns=${columns}`,
+        tenant.id,
+        {},
+      );
 
-      if (!response.ok) {
-        throw new Error('Failed to create seat map');
-      }
-
-      const data = await response.json();
       setSeatMapData(data);
     } catch (error) {
       console.error('Error creating seat map:', error);
@@ -71,12 +72,13 @@ export default function SeatMapEditor({ venueId, initialData, onSave }: SeatMapE
       case EditMode.SET_AISLE:
         newStatus = SeatStatus.AISLE;
         break;
-      case EditMode.SET_LABEL:
+      case EditMode.SET_LABEL: {
         const label = prompt('请输入座位标签:', seat.label || '');
         if (label !== null) {
           await updateSeatLabel(seat.row, seat.col, label);
         }
         return;
+      }
       default:
         return;
     }
@@ -88,25 +90,18 @@ export default function SeatMapEditor({ venueId, initialData, onSave }: SeatMapE
 
   // 更新座位状态
   const updateSeatStatus = async (row: number, col: number, status: SeatStatus) => {
+    if (!tenant?.id) return;
     try {
-      const response = await fetch(
-        `/api/v1/venues/${venueId}/seat-map/seats/${row}/${col}/status?status=${status}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+      await apiPutWithTenant<SeatMapData>(
+        `/seating/venues/${venueId}/seat-map/seats/${row}/${col}/status?status=${status}`,
+        tenant.id,
+        {},
       );
-
-      if (!response.ok) {
-        throw new Error('Failed to update seat status');
-      }
 
       // 更新本地状态
       if (seatMapData) {
         const updatedSeats = seatMapData.seats.map((s) =>
-          s.row === row && s.col === col ? { ...s, status } : s
+          s.row === row && s.col === col ? { ...s, status } : s,
         );
         setSeatMapData({ ...seatMapData, seats: updatedSeats });
       }
@@ -118,25 +113,18 @@ export default function SeatMapEditor({ venueId, initialData, onSave }: SeatMapE
 
   // 更新座位标签
   const updateSeatLabel = async (row: number, col: number, label: string) => {
+    if (!tenant?.id) return;
     try {
-      const response = await fetch(
-        `/api/v1/venues/${venueId}/seat-map/seats/${row}/${col}/label?label=${encodeURIComponent(label)}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+      await apiPutWithTenant<SeatMapData>(
+        `/seating/venues/${venueId}/seat-map/seats/${row}/${col}/label?label=${encodeURIComponent(label)}`,
+        tenant.id,
+        {},
       );
-
-      if (!response.ok) {
-        throw new Error('Failed to update seat label');
-      }
 
       // 更新本地状态
       if (seatMapData) {
         const updatedSeats = seatMapData.seats.map((s) =>
-          s.row === row && s.col === col ? { ...s, label } : s
+          s.row === row && s.col === col ? { ...s, label } : s,
         );
         setSeatMapData({ ...seatMapData, seats: updatedSeats });
       }
@@ -284,4 +272,3 @@ export default function SeatMapEditor({ venueId, initialData, onSave }: SeatMapE
     </div>
   );
 }
-

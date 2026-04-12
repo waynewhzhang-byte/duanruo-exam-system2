@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -50,14 +50,22 @@ interface NavItem {
 // Admin roles that can access the admin panel
 const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN', 'TENANT_ADMIN', 'EXAM_ADMIN'];
 
+type AdminAccess = 'loading' | 'unauthenticated' | 'forbidden' | 'allowed';
+
 export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps & { tenantSlug?: string }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedItems, setExpandedItems] = useState<string[]>(['系统管理']);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
+
+  const adminAccess = useMemo((): AdminAccess => {
+    if (isLoading) return 'loading';
+    if (!isAuthenticated || !user) return 'unauthenticated';
+    const userRoles = user.roles || [];
+    if (!userRoles.some((role: string) => ADMIN_ROLES.includes(role))) return 'forbidden';
+    return 'allowed';
+  }, [isLoading, isAuthenticated, user]);
 
   // Generate navigation items based on context
   const getNavigationItems = (): NavItem[] => {
@@ -164,35 +172,23 @@ export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps &
 
   const navigationItems = getNavigationItems();
 
-  // 权限检查：验证用户是否有管理员角色
+  // 权限检查：未登录或非管理员时重定向（使用派生状态，避免 useState + Strict Mode 下反复回到「验证中」造成页面抖动）
   useEffect(() => {
-    if (isLoading) return;
+    if (adminAccess === 'loading') return;
 
-    if (!isAuthenticated || !user) {
-      // 未登录，重定向到登录页
-      router.push('/login?redirect=' + encodeURIComponent(pathname));
+    if (adminAccess === 'unauthenticated') {
+      const loginBase = tenantSlug ? `/${tenantSlug}/login` : '/login';
+      router.replace(`${loginBase}?redirect=` + encodeURIComponent(pathname));
       return;
     }
 
-    // 检查用户是否有管理员角色
-    const userRoles = user.roles || [];
-    const hasAdminRole = userRoles.some((role: string) => ADMIN_ROLES.includes(role));
-
-    if (!hasAdminRole) {
-      // 没有管理员权限，重定向到候选人首页
+    if (adminAccess === 'forbidden') {
       console.warn('User does not have admin role, redirecting to candidate page');
-      setIsAuthorized(false);
-      const redirectPath = tenantSlug ? `/${tenantSlug}/candidate` : '/';
-      router.push(redirectPath);
-      return;
+      router.replace(tenantSlug ? `/${tenantSlug}/candidate` : '/');
     }
+  }, [adminAccess, pathname, tenantSlug, router]);
 
-    setIsAuthorized(true);
-    setCurrentUser(user);
-  }, [isLoading, isAuthenticated, user, router, pathname, tenantSlug]);
-
-  // 显示加载状态
-  if (isLoading || isAuthorized === null) {
+  if (adminAccess === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-100">
         <div className="text-center">
@@ -203,29 +199,35 @@ export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps &
     );
   }
 
-  // 显示未授权状态（在重定向发生前短暂显示）
-  if (!isAuthorized) {
+  if (adminAccess === 'unauthenticated' || adminAccess === 'forbidden') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-100">
         <div className="text-center">
           <ShieldAlert className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-semibold text-slate-800 mb-2">访问被拒绝</h1>
-          <p className="text-slate-600">您没有权限访问管理后台，正在跳转...</p>
+          <h1 className="text-xl font-semibold text-slate-800 mb-2">
+            {adminAccess === 'forbidden' ? '访问被拒绝' : '需要登录'}
+          </h1>
+          <p className="text-slate-600">正在跳转...</p>
         </div>
       </div>
     );
   }
 
-  // 退出登录
-  const handleLogout = () => {
-    // 清除本地存储
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('tenantId');
-    sessionStorage.clear();
-
-    // 跳转到登录页
-    router.push('/login');
+  // 退出登录：必须清除 httpOnly 会话 cookie（/api/session DELETE），否则 /login 会探测到旧会话并自动跳回管理端
+  const handleLogout = async () => {
+    await logout();
+    try {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('tenantId');
+      localStorage.removeItem('tenant_id');
+      localStorage.removeItem('tenantRoles');
+      localStorage.removeItem('pendingTenantSelection');
+      sessionStorage.removeItem('token');
+      sessionStorage.clear();
+    } catch {
+      /* ignore */
+    }
   };
 
   const isActive = (href: string) => {
@@ -378,23 +380,23 @@ export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps &
               <Bell className="h-5 w-5" />
             </Button>
 
-            {currentUser && (
+            {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2 px-2 hover:bg-slate-50">
                     <div className="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center">
                       <User className="h-4 w-4 text-white" />
                     </div>
-                    <span className="text-sm font-medium text-slate-700 hidden md:inline">{currentUser.username}</span>
+                    <span className="text-sm font-medium text-slate-700 hidden md:inline">{user.username}</span>
                     <ChevronDown className="h-4 w-4 text-slate-400" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{currentUser.username}</p>
+                      <p className="text-sm font-medium">{user.username}</p>
                       <p className="text-xs text-slate-500">
-                        {currentUser.roles?.join(', ') || '未知角色'}
+                        {user.roles?.join(', ') || '未知角色'}
                       </p>
                     </div>
                   </DropdownMenuLabel>
@@ -408,7 +410,12 @@ export default function AdminLayout({ children, tenantSlug }: AdminLayoutProps &
                     <span>系统设置</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      void handleLogout();
+                    }}
+                    className="text-red-600 cursor-pointer"
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>退出登录</span>
                   </DropdownMenuItem>

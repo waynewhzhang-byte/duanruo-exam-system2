@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGetWithTenant, apiPostWithTenant } from '@/lib/api'
+import { normalizePaginatedOrArray } from '@/lib/normalize-paginated-or-array'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -93,11 +94,15 @@ export default function ExamScores({ examId }: ExamScoresProps) {
   // 获取考试的所有报名
   const { data: allApplications, isLoading: applicationsLoading } = useQuery<Application[]>({
     queryKey: ['exam-applications', examId],
-    queryFn: () => {
+    queryFn: async () => {
       if (!tenant?.id) {
         throw new Error('Tenant ID is required')
       }
-      return apiGetWithTenant<Application[]>(`/exams/${examId}/applications`, tenant.id)
+      const raw = await apiGetWithTenant<unknown>(
+        `/exams/${examId}/applications?size=500`,
+        tenant.id,
+      )
+      return normalizePaginatedOrArray<Application>(raw)
     },
     enabled: !!tenant?.id,
   })
@@ -227,7 +232,10 @@ export default function ExamScores({ examId }: ExamScoresProps) {
   const markAbsentMutation = useMutation({
     mutationFn: (data: { applicationId: string; subjectId: string; remarks?: string }) => {
       if (!tenant?.id) throw new Error('Tenant ID is required')
-      return apiPostWithTenant('/scores/absent', tenant.id, data)
+      return apiPostWithTenant('/scores/record', tenant.id, {
+        ...data,
+        isAbsent: true,
+      })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exam-applications', examId] })

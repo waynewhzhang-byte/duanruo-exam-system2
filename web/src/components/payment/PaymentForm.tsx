@@ -76,6 +76,10 @@ export function PaymentForm({
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => onMethodChange(method.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onMethodChange(method.id); } }}
+                aria-label={`支付方式 ${method.name}`}
               >
                 <RadioGroupItem value={method.id} id={method.id} />
                 <Label

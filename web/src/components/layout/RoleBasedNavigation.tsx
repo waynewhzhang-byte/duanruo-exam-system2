@@ -49,7 +49,8 @@ export default function RoleBasedNavigation() {
   }
 
   const primaryRole = getPrimaryRole()
-  const navigation = getNavigationForRole(primaryRole || 'CANDIDATE', tenant?.slug)
+  const tenantSlug = tenant?.slug || tenant?.code
+  const navigation = getNavigationForRole(primaryRole || 'CANDIDATE', tenantSlug ?? undefined)
 
   const handleSignOut = async () => {
     await logout()
@@ -63,7 +64,7 @@ export default function RoleBasedNavigation() {
           {/* Logo */}
           <div className="flex items-center">
             <Link
-              href={primaryRole === 'SUPER_ADMIN' ? '/super-admin/tenants' : `/${tenant?.slug || 'default'}/exams`}
+              href={primaryRole === 'SUPER_ADMIN' ? '/super-admin/tenants' : (tenant?.slug || tenant?.code ? `/${tenant.slug || tenant.code}/exams` : '/tenants')}
               className="text-xl font-bold text-gray-900 hover:text-primary transition-colors"
             >
               考试报名系统
