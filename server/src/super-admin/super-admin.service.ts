@@ -1,11 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TenantService } from '../tenant/tenant.service';
-import type { Tenant } from '@prisma/client';
+import { UserService } from '../user/user.service';
+import { AuditService } from '../common/security/audit.service';
+import type { Tenant, User } from '@prisma/client';
 import {
   PaginatedResponse,
   PaginationHelper,
 } from '../common/dto/paginated-response.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 export interface CreateTenantInput {
   id: string;
@@ -17,10 +21,26 @@ export interface CreateTenantInput {
 
 @Injectable()
 export class SuperAdminService {
+  private readonly logger = new Logger(SuperAdminService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantService: TenantService,
-  ) { }
+    private readonly userService: UserService,
+    private readonly auditService: AuditService,
+  ) {}
+
+  async createUser(dto: CreateUserDto) {
+    try {
+      return await this.userService.createUser(dto);
+    } catch (error) {
+      this.logger.error(
+        `createUser failed: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
+  }
 
   async getAllTenants(
     page: number,
@@ -78,6 +98,7 @@ export class SuperAdminService {
       username: string;
       email: string;
       fullName: string;
+      phoneNumber: string | null;
       status: string;
       roles: string;
       createdAt: Date;
@@ -95,6 +116,7 @@ export class SuperAdminService {
           username: true,
           email: true,
           fullName: true,
+          phoneNumber: true,
           status: true,
           roles: true,
           createdAt: true,
@@ -104,5 +126,23 @@ export class SuperAdminService {
     ]);
 
     return PaginationHelper.createResponse(users, total, page, size);
+  }
+
+  async updateUser(id: string, dto: UpdateUserDto): Promise<User> {
+    return this.userService.updateUser(id, dto);
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!existingUser) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    await this.prisma.user.delete({
+      where: { id },
+    });
   }
 }
