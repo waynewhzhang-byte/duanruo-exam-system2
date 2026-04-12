@@ -345,3 +345,21 @@ jconsole.log
 TEST-*.xml
 dist
 .gstack/
+
+# --- Local-only / scratch (keep out of git) ---
+# Claude Code machine-specific overrides
+.claude/settings.local.json
+
+# Web root: one-off browser QA captures and ad-hoc scripts
+web/gstack-browse-*.png
+web/audit-*.jpg
+web/scene-*.jpg
+web/ui-diagnostic*.js
+web/debug-logic.js
+web/force-fix-exam-form.js
+web/run-chrome-devtools-test.js
+web/verify-pages.js
+web/tenant-admin-users-audit.js
+
+# Typo / junk path (empty or experimental)
+web/tests/bBDdd/
