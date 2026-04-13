@@ -29,11 +29,6 @@ async function resolveAuthToken(provided?: string): Promise<string | null> {
       }
       const readable = getCookie('auth-token-readable') || getCookie('auth-token')
       if (readable) return readable
-
-      const ls = window.localStorage?.getItem('token')
-      if (ls) return ls
-      const ss = window.sessionStorage?.getItem('token')
-      if (ss) return ss
     } catch { /* ignore */ }
     return null
   }
@@ -64,7 +59,6 @@ async function resolveTenantContext(providedId?: string): Promise<{
   if (typeof window !== 'undefined') {
     try {
       const pathname = window.location.pathname
-      // 平台超管后台必须走 public schema；勿附带残留 tenant_id，否则 Nest TenantMiddleware 会切错 schema 导致创建用户等失败
       if (pathname.startsWith('/super-admin')) {
         return { tenantId: null, tenantSlug: null }
       }
@@ -72,20 +66,31 @@ async function resolveTenantContext(providedId?: string): Promise<{
       const slug = parts[0]
 
       if (slug && !RESERVED_TOP_LEVELS.includes(slug)) {
-        const tenantRolesStr = window.localStorage?.getItem('tenantRoles')
+        const raw = document.cookie || ''
+        const getCookie = (name: string) => {
+          const part = raw.split('; ').find((row) => row.startsWith(`${name}=`))
+          return part ? decodeURIComponent(part.split('=')[1]) : null
+        }
+        const tenantRolesStr = getCookie('tenant-roles')
         if (tenantRolesStr) {
           const tenantRoles: Array<{ tenantId: string; tenantCode: string }> = JSON.parse(tenantRolesStr)
           const matched = tenantRoles.find((r) => r.tenantCode === slug)
           if (matched?.tenantId) {
-            window.localStorage.setItem('tenant_id', matched.tenantId)
             return { tenantId: matched.tenantId, tenantSlug: slug }
           }
         }
       }
 
-      const storedId = window.localStorage?.getItem('tenant_id')
-      if (storedId) {
-        return { tenantId: storedId, tenantSlug: slug && !RESERVED_TOP_LEVELS.includes(slug) ? slug : null }
+      const userInfoStr = (() => {
+        const raw = document.cookie || ''
+        const part = raw.split('; ').find((row) => row.startsWith('user-info='))
+        return part ? decodeURIComponent(part.split('=')[1]) : null
+      })()
+      if (userInfoStr) {
+        const userInfo = JSON.parse(userInfoStr)
+        if (userInfo.tenantId) {
+          return { tenantId: userInfo.tenantId, tenantSlug: slug && !RESERVED_TOP_LEVELS.includes(slug) ? slug : null }
+        }
       }
 
       if (slug && !RESERVED_TOP_LEVELS.includes(slug)) {
