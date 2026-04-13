@@ -360,6 +360,38 @@ web/force-fix-exam-form.js
 web/run-chrome-devtools-test.js
 web/verify-pages.js
 web/tenant-admin-users-audit.js
+web/test-backend-api.js
+web/token.txt
+web/ts_errors.txt
+web/ts_errors_final.txt
+web/type_errors_new.txt
 
 # Typo / junk path (empty or experimental)
 web/tests/bBDdd/
+
+# Root-level debug artifacts and scripts
+debug-login.js
+debug-login.ps1
+debug-tenant-admin.js
+diagnose-auth-issue.js
+bdd-test-execution.js
+assign-role.js
+chrome-console.jpg
+chrome-devtools-ui-test.ps1
+decode-new-token.ps1
+fix-file-casing-direct.ps1
+prepare-ui-test-data.ps1
+run-chrome-devtools-test.ps1
+run-ui-bdd-test.ps1
+ticket_*.pdf
+build-output.txt
+compile-warnings.txt
+login.json
+mappings.json
+openapi.json
+api-docs.json
+tenant_code.txt
+tenant_id.txt
+
+# Web bundles (framework artifacts)
+web-bundles/
