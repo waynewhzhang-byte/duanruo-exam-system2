@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TenantService } from './tenant.service';
 import { TenantController } from './tenant.controller';
 import { TenantBucketService } from './tenant-bucket.service';
+import { TenantSchemaMigrationService } from './tenant-schema-migration.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { UserModule } from '../user/user.module';
 import * as Minio from 'minio';
@@ -34,8 +35,9 @@ const MINIO_CLIENT = 'MINIO_CLIENT';
     },
     TenantService,
     TenantBucketService,
+    TenantSchemaMigrationService,
   ],
   controllers: [TenantController],
-  exports: [TenantService, TenantBucketService],
+  exports: [TenantService, TenantBucketService, TenantSchemaMigrationService],
 })
 export class TenantModule {}

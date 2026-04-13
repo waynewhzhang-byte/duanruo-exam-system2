@@ -8,6 +8,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["public", "tenant"]
 }
 
 // --- Public Schema Tables ---
@@ -34,11 +35,8 @@ model User {
   tenantRoles       UserTenantRole[]
   profile           UserProfile?
 
-  // In the tenant schema, candidates will refer to this id.
-  // Prisma doesn't natively support cross-schema relations perfectly in a single client,
-  // but we can manage them by ID.
-
   @@map("users")
+  @@schema("public")
 }
 
 model UserProfile {
@@ -68,6 +66,7 @@ model UserProfile {
   user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_profiles")
+  @@schema("public")
 }
 
 model Tenant {
@@ -87,6 +86,7 @@ model Tenant {
   userRoles     UserTenantRole[]
 
   @@map("tenants")
+  @@schema("public")
 }
 
 model UserTenantRole {
@@ -105,6 +105,7 @@ model UserTenantRole {
 
   @@unique([userId, tenantId, role])
   @@map("user_tenant_roles")
+  @@schema("public")
 }
 
 model SecurityAuditLog {
@@ -125,12 +126,14 @@ model SecurityAuditLog {
   @@index([userId], map: "security_audit_logs_user_id_idx")
   @@index([createdAt], map: "security_audit_logs_created_at_idx")
   @@map("security_audit_logs")
+  @@schema("public")
 }
 
-// --- Tenant Schema Tables (Template) ---
-// Note: These will be duplicated/managed in individual schemas.
-// Prisma's multi-schema support (preview) is evolving, but here we define them
-// as models. In execution, we'll set the search_path.
+// --- Tenant Schema Tables ---
+// These models use @@schema("tenant") to route to tenant schemas.
+// Prisma generates fully-qualified SQL: "tenant"."exams" etc.
+// At runtime, TenantPoolWrapper rewrites "tenant"."table" → "tenant_{code}"."table"
+// while queries to "public"."users" etc. pass through unchanged.
 
 model Exam {
   id                String    @id @default(uuid()) @db.Uuid
@@ -156,6 +159,7 @@ model Exam {
   applications      Application[]
 
   @@map("exams")
+  @@schema("tenant")
 }
 
 model Position {
@@ -175,6 +179,7 @@ model Position {
 
   @@unique([examId, code])
   @@map("positions")
+  @@schema("tenant")
 }
 
 model Subject {
@@ -193,6 +198,7 @@ model Subject {
   position        Position  @relation(fields: [positionId], references: [id], onDelete: Cascade)
 
   @@map("subjects")
+  @@schema("tenant")
 }
 
 model Application {
@@ -226,6 +232,7 @@ model Application {
 
   @@unique([examId, candidateId])
   @@map("applications")
+  @@schema("tenant")
 }
 
 model ApplicationAuditLog {
@@ -239,6 +246,7 @@ model ApplicationAuditLog {
   createdAt     DateTime  @default(now()) @map("created_at")
 
   @@map("application_audit_logs")
+  @@schema("tenant")
 }
 
 model ReviewTask {
@@ -254,6 +262,7 @@ model ReviewTask {
   @@index([applicationId, stage])
   @@index([assignedTo, status])
   @@map("review_tasks")
+  @@schema("tenant")
 }
 
 model Review {
@@ -272,6 +281,7 @@ model Review {
   @@index([decision])
   @@index([reviewedAt])
   @@map("reviews")
+  @@schema("tenant")
 }
 
 model ExamReviewer {
@@ -285,6 +295,7 @@ model ExamReviewer {
   @@index([examId])
   @@index([reviewerId])
   @@map("exam_reviewers")
+  @@schema("tenant")
 }
 
 model PaymentOrder {
@@ -308,6 +319,7 @@ model PaymentOrder {
   @@index([transactionId])
   @@index([status])
   @@map("payment_orders")
+  @@schema("tenant")
 }
 
 model Ticket {
@@ -339,6 +351,7 @@ model Ticket {
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   @@map("tickets")
+  @@schema("tenant")
 }
 
 model SeatAssignment {
@@ -356,6 +369,7 @@ model SeatAssignment {
   @@index([examId])
   @@index([batchId])
   @@map("seat_assignments")
+  @@schema("tenant")
 }
 
 model TicketNumberRule {
@@ -375,6 +389,7 @@ model TicketNumberRule {
   updatedAt           DateTime @updatedAt @map("updated_at")
 
   @@map("ticket_number_rules")
+  @@schema("tenant")
 }
 
 model TicketSequence {
@@ -385,6 +400,7 @@ model TicketSequence {
 
   @@id([examId, scope, counterDate])
   @@map("ticket_sequences")
+  @@schema("tenant")
 }
 
 model Venue {
@@ -399,6 +415,7 @@ model Venue {
 
   @@index([examId])
   @@map("venues")
+  @@schema("tenant")
 }
 
 model Room {
@@ -415,6 +432,7 @@ model Room {
 
   @@index([venueId])
   @@map("rooms")
+  @@schema("tenant")
 }
 
 model AllocationBatch {
@@ -429,6 +447,7 @@ model AllocationBatch {
 
   @@index([examId])
   @@map("allocation_batches")
+  @@schema("tenant")
 }
 
 model FileRecord {
@@ -453,6 +472,7 @@ model FileRecord {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("files")
+  @@schema("tenant")
 }
 
 // ===== 成绩模型 =====
@@ -486,6 +506,7 @@ model ExamScore {
   @@index([candidateId])
   @@index([interviewEligibility])
   @@map("exam_scores")
+  @@schema("tenant")
 }
 
 // ===== 通知记录模型 =====
@@ -514,4 +535,5 @@ model Notification {
   @@index([userId, status])
   @@index([createdAt])
   @@map("notifications")
+  @@schema("public")
 }

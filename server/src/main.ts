@@ -1,11 +1,4 @@
 import 'dotenv/config';
-// Prisma maps User.version to BigInt; JSON.stringify throws without this.
-Object.defineProperty(BigInt.prototype, 'toJSON', {
-  value(this: bigint) {
-    return this.toString();
-  },
-  configurable: true,
-});
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe, Logger } from '@nestjs/common';

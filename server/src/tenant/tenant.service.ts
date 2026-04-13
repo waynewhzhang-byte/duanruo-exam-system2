@@ -8,34 +8,32 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { TenantBucketService } from './tenant-bucket.service';
 import { getErrorMessage, getErrorStack } from '../common/utils/error.util';
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
 
-let cachedSchemaSql: string | null = null;
+const TEMPLATE_SCHEMA = 'tenant';
 
-/**
- * Resolve init-tables.sql. Nest compiles to dist/src/* so __dirname/../../prisma
- * points at dist/prisma (wrong). Prefer process.cwd() when server is started from repo server/.
- */
-function resolveInitTablesSqlPath(): string {
-  const candidates = [
-    join(process.cwd(), 'prisma', 'tenant-schema', 'init-tables.sql'),
-    join(__dirname, '../../../prisma/tenant-schema/init-tables.sql'),
-    join(__dirname, '../../prisma/tenant-schema/init-tables.sql'),
-  ];
-  for (const p of candidates) {
-    if (existsSync(p)) return p;
-  }
-  throw new InternalServerErrorException(
-    `init-tables.sql not found. Tried: ${candidates.join(' | ')}`,
-  );
-}
+const CRITICAL_TABLES = [
+  'exams',
+  'positions',
+  'subjects',
+  'applications',
+  'application_audit_logs',
+  'review_tasks',
+  'reviews',
+  'exam_reviewers',
+  'payment_orders',
+  'tickets',
+  'ticket_number_rules',
+  'ticket_sequences',
+  'venues',
+  'rooms',
+  'seat_assignments',
+  'allocation_batches',
+  'files',
+  'exam_scores',
+] as const;
 
-function getTenantSchemaSql(): string {
-  if (cachedSchemaSql) return cachedSchemaSql;
-  const sqlPath = resolveInitTablesSqlPath();
-  cachedSchemaSql = readFileSync(sqlPath, 'utf-8');
-  return cachedSchemaSql;
+function escapeIdentifier(id: string): string {
+  return id.replace(/"/g, '""');
 }
 
 @Injectable()
@@ -54,9 +52,6 @@ export class TenantService {
     schemaName: string;
     contactEmail: string;
   }) {
-    const uuidSchema = await this.resolveUuidExtensionSchema();
-
-    // 1. Create tenant record + schema in transaction (DDL in tx can cause connection issues)
     let tenant;
     try {
       tenant = await this.prisma.$transaction(async (tx) => {
@@ -70,9 +65,7 @@ export class TenantService {
             status: 'ACTIVE',
           },
         });
-        await tx.$executeRawUnsafe(
-          `CREATE SCHEMA IF NOT EXISTS "${data.schemaName}"`,
-        );
+        await tx.$executeRaw`CREATE SCHEMA IF NOT EXISTS ${Prisma.raw(`"${escapeIdentifier(data.schemaName)}"`)}`;
         return t;
       });
     } catch (e) {
@@ -91,22 +84,19 @@ export class TenantService {
       throw e;
     }
 
-    // 2. Initialize schema tables OUTSIDE transaction - Prisma tx + DDL can fail
     try {
-      await this.initializeTenantSchemaStandalone(data.schemaName, uuidSchema);
+      await this.cloneSchemaFromTemplate(data.schemaName);
     } catch (e) {
       await this.compensateFailedTenantInit(tenant.id, data.schemaName);
       throw e;
     }
 
-    // 3. Create MinIO bucket
     await this.createTenantStorage(data.code);
 
     this.logger.log(`Tenant schema initialized: ${data.schemaName}`);
     return tenant;
   }
 
-  /** Remove DB row + schema if DDL/init failed so retries do not hit unique(code). */
   private async compensateFailedTenantInit(
     tenantId: string,
     schemaName: string,
@@ -115,9 +105,8 @@ export class TenantService {
       `Rolling back tenant after failed schema init: ${tenantId} schema=${schemaName}`,
     );
     try {
-      await this.prisma.$executeRawUnsafe(
-        `DROP SCHEMA IF EXISTS "${schemaName.replace(/"/g, '""')}" CASCADE`,
-      );
+      await this.prisma
+        .$executeRaw`DROP SCHEMA IF EXISTS ${Prisma.raw(`"${escapeIdentifier(schemaName)}"`)} CASCADE`;
     } catch (err) {
       this.logger.error(
         `Failed to DROP SCHEMA ${schemaName}`,
@@ -134,22 +123,6 @@ export class TenantService {
     }
   }
 
-  /** Resolve schema where uuid-ossp is installed. Run outside transaction to avoid connection/tx issues. */
-  private async resolveUuidExtensionSchema(): Promise<string> {
-    const rows = await this.prisma.$queryRawUnsafe<
-      { nspname: string }[]
-    >(`SELECT n.nspname::text as nspname FROM pg_extension e
-       JOIN pg_namespace n ON e.extnamespace = n.oid
-       WHERE e.extname = 'uuid-ossp' LIMIT 1`);
-    const schema = rows[0]?.nspname ?? 'public';
-    this.logger.log(`[Tenant] uuid-ossp found in schema: ${schema}`);
-    return schema;
-  }
-
-  /**
-   * Create MinIO bucket for tenant
-   * Called after database transaction succeeds
-   */
   private async createTenantStorage(tenantCode: string): Promise<void> {
     try {
       await this.tenantBucketService.createTenantBucket(tenantCode);
@@ -165,193 +138,65 @@ export class TenantService {
   }
 
   /**
-   * Initialize tenant schema with all required tables.
-   * Runs OUTSIDE Prisma transaction - DDL in tx can cause connection/abort issues.
+   * Clone all tables from the "tenant" template schema into the target tenant schema.
+   * The template schema is maintained by Prisma migrations and always has the latest
+   * table structure. Each new tenant gets a LIKE ... INCLUDING ALL copy.
    */
-  private async initializeTenantSchemaStandalone(
-    schemaName: string,
-    uuidSchema: string,
-  ) {
+  private async cloneSchemaFromTemplate(targetSchema: string): Promise<void> {
+    const safeSchema = escapeIdentifier(targetSchema);
+
     try {
-      this.logger.log(
-        `Initializing schema: ${schemaName} (uuid from ${uuidSchema})`,
-      );
+      const templateTables = await this.prisma.$queryRaw<
+        { tablename: string }[]
+      >`SELECT tablename FROM pg_tables WHERE schemaname = ${TEMPLATE_SCHEMA} ORDER BY tablename`;
 
-      const qualified = this.qualifySchemaInSql(
-        getTenantSchemaSql(),
-        schemaName,
-        uuidSchema,
-      );
-
-      const rawStatements = qualified.split(';');
-      let stmtCount = 0;
-
-      for (const statement of rawStatements) {
-        const trimmed = statement.trim();
-        if (trimmed.length > 2) {
-          if (trimmed.toUpperCase().includes('CREATE EXTENSION')) continue;
-
-          const strippedForCheck = this.stripLeadingComments(trimmed);
-          if (!strippedForCheck) continue;
-
-          const firstWord = strippedForCheck.split(/\s+/)[0].toUpperCase();
-          if (
-            firstWord === 'CREATE' ||
-            firstWord === 'ALTER' ||
-            firstWord === 'DROP' ||
-            firstWord === 'INSERT' ||
-            firstWord === 'UPDATE' ||
-            firstWord === 'DELETE' ||
-            firstWord === 'SET' ||
-            firstWord === 'GRANT' ||
-            firstWord === 'REVOKE'
-          ) {
-            if (strippedForCheck.toUpperCase().includes('CREATE TABLE')) {
-              this.logger.log(
-                `Creating TABLE: ${strippedForCheck.substring(0, 60)}...`,
-              );
-            }
-            try {
-              await this.prisma.$executeRawUnsafe(trimmed);
-              stmtCount++;
-            } catch (error) {
-              const msg = (error as Error).message;
-              this.logger.error(
-                `Schema init statement failed: ${trimmed.substring(0, 80)}... Error: ${msg}`,
-              );
-              throw new InternalServerErrorException(
-                `Tenant schema init failed: ${msg}`,
-              );
-            }
-          }
-        }
+      if (templateTables.length === 0) {
+        throw new InternalServerErrorException(
+          `Template schema "${TEMPLATE_SCHEMA}" is empty. Run Prisma migrations first to populate it.`,
+        );
       }
 
-      this.logger.log(`Executed ${stmtCount} SQL statements`);
+      for (const { tablename } of templateTables) {
+        const safeTable = escapeIdentifier(tablename);
+        await this.prisma
+          .$executeRaw`CREATE TABLE IF NOT EXISTS ${Prisma.raw(`"${safeSchema}"."${safeTable}"`)} (LIKE ${Prisma.raw(`"${TEMPLATE_SCHEMA}"."${safeTable}"`)} INCLUDING ALL)`;
+        this.logger.debug(`Cloned table: ${targetSchema}.${tablename}`);
+      }
 
-      await this.verifySchemaInitializationStandalone(schemaName);
+      const templateSequences = await this.prisma.$queryRaw<
+        { sequencename: string }[]
+      >`SELECT sequencename FROM pg_sequences WHERE schemaname = ${TEMPLATE_SCHEMA}`;
 
-      this.logger.log(`Schema initialization completed: ${schemaName}`);
+      for (const { sequencename } of templateSequences) {
+        const safeSeq = escapeIdentifier(sequencename);
+        await this.prisma
+          .$executeRaw`CREATE SEQUENCE IF NOT EXISTS ${Prisma.raw(`"${safeSchema}"."${safeSeq}"`)}`;
+      }
+
+      await this.verifySchemaInitialization(targetSchema);
+
+      this.logger.log(
+        `Cloned ${templateTables.length} tables from "${TEMPLATE_SCHEMA}" to "${targetSchema}"`,
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to create schema ${schemaName}`,
+        `Failed to clone schema from template: ${getErrorMessage(error)}`,
         getErrorStack(error),
       );
       throw new InternalServerErrorException(
-        `Failed to initialize schema ${schemaName}: ${getErrorMessage(error)}`,
+        `Failed to initialize tenant schema ${targetSchema}: ${getErrorMessage(error)}`,
       );
     }
   }
 
-  private stripLeadingComments(sql: string): string {
-    let result = sql;
-
-    while (true) {
-      result = result.trimStart();
-      if (result.startsWith('--')) {
-        const newlineIndex = result.indexOf('\n');
-        if (newlineIndex === -1) {
-          return '';
-        }
-        result = result.substring(newlineIndex + 1);
-      } else if (result.startsWith('/*')) {
-        const endIndex = result.indexOf('*/');
-        if (endIndex === -1) {
-          return '';
-        }
-        result = result.substring(endIndex + 2);
-      } else {
-        break;
-      }
-    }
-
-    return result.trimStart();
-  }
-
-  /**
-   * Qualify table names and uuid_generate_v4 with schema prefix so DDL works without relying on search_path.
-   * Prisma connection pooling may not preserve SET search_path across queries.
-   */
-  private qualifySchemaInSql(
-    sql: string,
-    schemaName: string,
-    uuidSchema: string,
-  ): string {
-    const quoted = `"${schemaName}".`;
-    const uuidFn = `"${uuidSchema}".uuid_generate_v4`;
-    let out = sql.replace(/\buuid_generate_v4\s*\(\s*\)/g, `${uuidFn}()`);
-    const tables = [
-      'application_audit_logs',
-      'ticket_number_rules',
-      'ticket_sequences',
-      'seat_assignments',
-      'allocation_batches',
-      'exam_reviewers',
-      'exam_scores',
-      'exam_admins',
-      'applications',
-      'review_tasks',
-      'positions',
-      'subjects',
-      'exams',
-      'reviews',
-      'payment_orders',
-      'tickets',
-      'venues',
-      'rooms',
-      'files',
-    ];
-    for (const t of tables) {
-      out = out.replace(
-        new RegExp(`CREATE TABLE IF NOT EXISTS \\b${t}\\b `, 'gi'),
-        `CREATE TABLE IF NOT EXISTS ${quoted}${t} `,
-      );
-      out = out.replace(
-        new RegExp(`ON \\b${t}\\b\\(`, 'gi'),
-        `ON ${quoted}${t}(`,
-      );
-      out = out.replace(
-        new RegExp(`REFERENCES \\b${t}\\b\\(`, 'gi'),
-        `REFERENCES ${quoted}${t}(`,
-      );
-    }
-    return out;
-  }
-
-  /** Verify that critical tables exist (standalone - no tx) */
-  private async verifySchemaInitializationStandalone(
-    schemaName: string,
-  ): Promise<void> {
-    // Must match tables created in prisma/tenant-schema/init-tables.sql
-    const criticalTables = [
-      'exams',
-      'positions',
-      'subjects',
-      'applications',
-      'application_audit_logs',
-      'review_tasks',
-      'reviews',
-      'exam_reviewers',
-      'payment_orders',
-      'tickets',
-      'ticket_number_rules',
-      'ticket_sequences',
-      'venues',
-      'rooms',
-      'seat_assignments',
-      'allocation_batches',
-      'files',
-    ];
-
-    const safeSchema = schemaName.replace(/'/g, "''");
-    for (const tableName of criticalTables) {
-      const result = await this.prisma.$queryRawUnsafe<{ exists: boolean }[]>(
-        `SELECT EXISTS (
+  private async verifySchemaInitialization(schemaName: string): Promise<void> {
+    for (const tableName of CRITICAL_TABLES) {
+      const result = await this.prisma.$queryRaw<{ exists: boolean }[]>`
+        SELECT EXISTS (
           SELECT FROM information_schema.tables
-          WHERE table_schema = '${safeSchema}'
-          AND table_name = '${tableName}'
-        ) as exists`,
-      );
+          WHERE table_schema = ${schemaName}
+          AND table_name = ${tableName}
+        ) as exists`;
 
       if (!result[0]?.exists) {
         throw new Error(
@@ -361,7 +206,7 @@ export class TenantService {
     }
 
     this.logger.debug(
-      `All ${criticalTables.length} critical tables verified in ${schemaName}`,
+      `All ${CRITICAL_TABLES.length} critical tables verified in ${schemaName}`,
     );
   }
 

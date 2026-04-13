@@ -1,8 +1,15 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { AsyncLocalStorage } from 'async_hooks';
-
-type TenantExtendedClient = PrismaClient;
+import { ConfigService } from '@nestjs/config';
+import { createTenantPool, setTenantSchemaGetter } from './tenant-pool.wrapper';
 
 @Injectable()
 export class PrismaService
@@ -10,41 +17,52 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   private static readonly als = new AsyncLocalStorage<{ schema: string }>();
-  private static readonly extendedClients = new Map<
-    string,
-    TenantExtendedClient
-  >();
+  private readonly logger = new Logger(PrismaService.name);
+  private _publicClient: PrismaClient | null = null;
 
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
+    const databaseUrl = configService.get<string>('DATABASE_URL');
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+
+    const tenantPool = createTenantPool(databaseUrl);
+    setTenantSchemaGetter(() => PrismaService.getTenantSchema());
+
+    const adapter = new PrismaPg(tenantPool as unknown as import('pg').Pool);
+
     super({
-      log: ['info', 'warn', 'error'],
+      adapter,
+      log: [
+        { emit: 'event', level: 'query' },
+        { emit: 'stdout', level: 'info' },
+        { emit: 'stdout', level: 'warn' },
+        { emit: 'stdout', level: 'error' },
+      ],
     });
-    // PrismaClient + TS subclass: `client` / `publicClient` / `baseClient` can become own
-    // properties with value `undefined`, shadowing getters and breaking `this.prisma.client.exam`.
-    // Re-bind them to the full Prisma API (this) via closure — Prisma's internal `this.client`
-    // uses a different `this` in getters, so we must not use `get client() { return this; }` alone.
-    const self = this as PrismaService & PrismaClient;
-    for (const key of ['client', 'publicClient', 'baseClient'] as const) {
-      if (Object.prototype.hasOwnProperty.call(self, key)) {
-        Reflect.deleteProperty(self, key);
-      }
-      Object.defineProperty(self, key, {
-        configurable: true,
-        enumerable: false,
-        get(): TenantExtendedClient {
-          return self;
-        },
+
+    if (process.env.NODE_ENV === 'development') {
+      (
+        this as unknown as {
+          $on: (
+            event: string,
+            cb: (e: { query: string; duration: number }) => void,
+          ) => void;
+        }
+      ).$on('query', (e: { query: string; duration: number }) => {
+        this.logger.debug(`Query: ${e.query} — ${e.duration}ms`);
       });
     }
   }
 
   async onModuleInit() {
     await this.$connect();
+    this.logger.log('PrismaClient connected with tenant-aware pool adapter');
   }
 
   async onModuleDestroy() {
     await this.$disconnect();
-    PrismaService.extendedClients.clear();
+    this.logger.log('PrismaClient disconnected');
   }
 
   static runInTenantContext<T>(schema: string, callback: () => T): T {
@@ -55,8 +73,30 @@ export class PrismaService
     return this.als.getStore()?.schema;
   }
 
-  /** Use {@link PrismaService} instance after constructor fix; prefer `this.prisma` in new code. */
-  declare client: TenantExtendedClient;
-  declare publicClient: TenantExtendedClient;
-  declare baseClient: PrismaClient;
+  get client(): PrismaClient {
+    return this;
+  }
+
+  /**
+   * Returns a PrismaClient that always operates in the `public` schema,
+   * bypassing any tenant context set by TenantMiddleware.
+   * Uses a Proxy to wrap every method call in runInTenantContext('public').
+   */
+  get publicClient(): PrismaClient {
+    if (!this._publicClient) {
+      this._publicClient = new Proxy(this, {
+        get(target: PrismaService, prop: string | symbol): unknown {
+          const value = (target as any)[prop];
+          if (typeof value !== 'function') {
+            return value;
+          }
+          return (...args: unknown[]): Promise<unknown> =>
+            PrismaService.runInTenantContext('public', () =>
+              value.apply(target, args),
+            );
+        },
+      }) as any as PrismaClient;
+    }
+    return this._publicClient;
+  }
 }

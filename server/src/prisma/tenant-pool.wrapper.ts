@@ -1,52 +1,30 @@
 import { Pool, PoolClient, QueryConfig, QueryResult } from 'pg';
 
-const TENANT_TABLES = new Set([
-  'exams',
-  'positions',
-  'subjects',
-  'applications',
-  'review_tasks',
-  'reviews',
-  'exam_reviewers',
-  'exam_scores',
-  'payment_orders',
-  'tickets',
-  'ticket_number_rules',
-  'ticket_sequences',
-  'venues',
-  'rooms',
-  'seat_assignments',
-  'allocation_batches',
-  'files',
-  'application_audit_logs',
-]);
-
-let getTenantSchemaFn: () => string | undefined = () => undefined;
+let _getTenantSchema: () => string | undefined = () => undefined;
 
 export function setTenantSchemaGetter(fn: () => string | undefined): void {
-  getTenantSchemaFn = fn;
+  _getTenantSchema = fn;
+}
+
+function getCurrentTenantSchema(): string | undefined {
+  return _getTenantSchema();
 }
 
 function rewriteSqlSchema(sql: string, targetSchema: string): string {
-  if (targetSchema === 'public' || !sql.includes('"public".')) {
+  if (targetSchema === 'public' || targetSchema === 'tenant') {
     return sql;
   }
 
   return sql.replace(
-    /"public"\.("[^"]+")/g,
-    (match: string, quotedTable: string): string => {
-      const name = quotedTable.slice(1, -1);
-      if (TENANT_TABLES.has(name)) {
-        return `"${targetSchema}".${quotedTable}`;
-      }
-      return match;
+    /"tenant"\.("[^"]+")/g,
+    (_match: string, quotedTable: string) => {
+      return `"${targetSchema}".${quotedTable}`;
     },
   );
 }
 
 type QueryCallback = (err: Error, result: QueryResult) => void;
 
-/** Narrowed pg `query` shape used by this wrapper (Pool + PoolClient). */
 type PgQueryFn = {
   (queryText: string, callback?: QueryCallback): Promise<QueryResult>;
   (
@@ -67,7 +45,7 @@ function createWrappedQuery(originalQuery: PgQueryFn): PgQueryFn {
     arg2?: unknown[] | QueryCallback,
     arg3?: QueryCallback,
   ): Promise<QueryResult> => {
-    const schema = getTenantSchemaFn() || 'public';
+    const schema = getCurrentTenantSchema() || 'public';
 
     if (typeof sqlOrConfig === 'string') {
       const modifiedSql = rewriteSqlSchema(sqlOrConfig, schema);
