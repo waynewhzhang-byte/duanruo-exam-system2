@@ -13,6 +13,26 @@ export interface ApiResponse<T> {
   timestamp: string;
 }
 
+function deepConvertBigInt(value: unknown): unknown {
+  if (value === null || value === undefined) {
+    return value;
+  }
+  if (typeof value === 'bigint') {
+    return value.toString();
+  }
+  if (Array.isArray(value)) {
+    return value.map(deepConvertBigInt);
+  }
+  if (typeof value === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(value)) {
+      result[key] = deepConvertBigInt(val);
+    }
+    return result;
+  }
+  return value;
+}
+
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<
   T,
@@ -24,18 +44,19 @@ export class TransformInterceptor<T> implements NestInterceptor<
   ): Observable<ApiResponse<T>> {
     return next.handle().pipe(
       map((data: unknown): ApiResponse<T> => {
-        // 防止双重包装：如果数据已经是 ApiResult 格式（包含 success 和 data 字段），则直接返回
+        const converted = deepConvertBigInt(data);
+
         if (
-          data !== null &&
-          typeof data === 'object' &&
-          'success' in data &&
-          'data' in data
+          converted !== null &&
+          typeof converted === 'object' &&
+          'success' in (converted as Record<string, unknown>) &&
+          'data' in (converted as Record<string, unknown>)
         ) {
-          return data as ApiResponse<T>;
+          return converted as ApiResponse<T>;
         }
         return {
           success: true as const,
-          data: data as T,
+          data: converted as T,
           timestamp: new Date().toISOString(),
         };
       }),
