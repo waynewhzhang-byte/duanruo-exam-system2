@@ -1,17 +1,14 @@
 'use client'
 
-import { use } from 'react'
 import { NotificationTemplatesPanel } from '@/components/notifications/notification-templates-panel'
 
 interface NotificationTemplatesPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
-  }>
+  }
 }
 
 export default function NotificationTemplatesPage({ params }: NotificationTemplatesPageProps) {
-  use(params)
-
   return (
     <div className="space-y-6">
       <div>

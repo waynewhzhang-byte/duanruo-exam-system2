@@ -13,6 +13,10 @@ import {
 } from './dto/review.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from '../common/notification/notification.service';
+import {
+  ApplicationStatus,
+  ReviewStatus,
+} from '../common/enums';
 
 interface QueueTaskRaw {
   id: string;
@@ -84,9 +88,9 @@ export class ReviewService {
 
     let targetStatus: string[];
     if (stage === ReviewStage.PRIMARY) {
-      targetStatus = ['PENDING_PRIMARY_REVIEW', 'SUBMITTED'];
+      targetStatus = [ApplicationStatus.PENDING_PRIMARY_REVIEW, ApplicationStatus.SUBMITTED];
     } else {
-      targetStatus = ['PENDING_SECONDARY_REVIEW', 'PRIMARY_PASSED'];
+      targetStatus = [ApplicationStatus.PENDING_SECONDARY_REVIEW, ApplicationStatus.PRIMARY_PASSED];
     }
 
     const applications = await this.client.application.findMany({
@@ -163,15 +167,43 @@ export class ReviewService {
       where: { id: taskId },
     });
 
-    if (!task || task.assignedTo !== reviewerId || task.status !== 'ASSIGNED') {
-      throw new BadRequestException('Task not found or not assigned to you');
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    if (task.status === 'COMPLETED') {
+      throw new BadRequestException('This review task is already completed');
+    }
+
+    if (task.assignedTo && task.assignedTo !== reviewerId) {
+      throw new BadRequestException('Task is assigned to another reviewer');
+    }
+
+    let taskForDecide: typeof task;
+
+    if (task.status === 'OPEN') {
+      const now = new Date();
+      // 领取未分配任务，便于管理端批量审核、二审任务在「拉取」前即出现在队列中
+      taskForDecide = await this.client.reviewTask.update({
+        where: { id: taskId },
+        data: {
+          status: 'ASSIGNED',
+          assignedTo: reviewerId,
+          lockedAt: now,
+          lastHeartbeatAt: now,
+        },
+      });
+    } else if (task.status === 'ASSIGNED' && task.assignedTo === reviewerId) {
+      taskForDecide = task;
+    } else {
+      throw new BadRequestException('Task not in a decidable state');
     }
 
     const lockThreshold = new Date();
     lockThreshold.setMinutes(
       lockThreshold.getMinutes() - this.LOCK_TTL_MINUTES,
     );
-    if (!task.lockedAt || task.lockedAt < lockThreshold) {
+    if (!taskForDecide.lockedAt || taskForDecide.lockedAt < lockThreshold) {
       throw new BadRequestException('Task lock expired');
     }
 
@@ -226,21 +258,39 @@ export class ReviewService {
         data: { status: 'COMPLETED' },
       });
 
-      if (toStatus === 'PRIMARY_PASSED') {
+      if (toStatus === ApplicationStatus.PRIMARY_PASSED) {
         await tx.application.update({
           where: { id: app.id },
-          data: { status: 'PENDING_SECONDARY_REVIEW' },
+          data: { status: ApplicationStatus.PENDING_SECONDARY_REVIEW },
         });
         await tx.applicationAuditLog.create({
           data: {
             id: uuidv4(),
             applicationId: app.id,
-            fromStatus: 'PRIMARY_PASSED',
-            toStatus: 'PENDING_SECONDARY_REVIEW',
+            fromStatus: ApplicationStatus.PRIMARY_PASSED,
+            toStatus: ApplicationStatus.PENDING_SECONDARY_REVIEW,
             actor: 'SYSTEM',
             reason: 'Auto-enter secondary review',
           },
         });
+        // 预创建二审任务（OPEN），管理端/二审「待审」列表可见，且可不经 pull 直接 batch decide
+        const existingSecondary = await tx.reviewTask.findFirst({
+          where: {
+            applicationId: app.id,
+            stage: 'SECONDARY',
+            status: { in: ['OPEN', 'ASSIGNED'] },
+          },
+        });
+        if (!existingSecondary) {
+          await tx.reviewTask.create({
+            data: {
+              id: uuidv4(),
+              applicationId: app.id,
+              stage: 'SECONDARY',
+              status: 'OPEN',
+            },
+          });
+        }
       }
 
       // 异步发送通知 (Async notification)

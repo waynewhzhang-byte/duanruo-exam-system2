@@ -41,6 +41,7 @@ import type { AuthenticatedRequest } from '../auth/interfaces/authenticated-requ
 import { ApplicationService } from '../application/application.service';
 import { TicketService } from '../ticket/ticket.service';
 import { ScoreService } from './score.service';
+import { ExamStatus } from '../common/enums';
 
 function resolveTenantIdFromRequest(req: AuthenticatedRequest): string {
   const header = req.headers['x-tenant-id'];
@@ -269,14 +270,14 @@ export class ExamController {
   @Post(':id/open')
   @Permissions('exam:open')
   async open(@Param('id') id: string) {
-    const exam = await this.examService.updateStatus(id, 'OPEN');
+    const exam = await this.examService.updateStatus(id, ExamStatus.OPEN);
     return ApiResult.ok(exam, 'Exam registration opened');
   }
 
   @Post(':id/close')
   @Permissions('exam:close')
   async close(@Param('id') id: string) {
-    const exam = await this.examService.updateStatus(id, 'CLOSED');
+    const exam = await this.examService.updateStatus(id, ExamStatus.CLOSED);
     return ApiResult.ok(exam, 'Exam registration closed');
   }
 

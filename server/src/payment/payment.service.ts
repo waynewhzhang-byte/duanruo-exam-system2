@@ -15,6 +15,7 @@ import {
   PaymentCallbackRequest,
 } from './dto/payment.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { ApplicationStatus, PaymentStatus } from '../common/enums';
 
 @Injectable()
 export class PaymentService {
@@ -60,7 +61,7 @@ export class PaymentService {
     const existingOrder = await this.client.paymentOrder.findFirst({
       where: {
         applicationId,
-        status: { in: ['PENDING', 'SUCCESS'] },
+        status: { in: [PaymentStatus.PENDING, 'SUCCESS'] },
       },
     });
 
@@ -95,7 +96,7 @@ export class PaymentService {
         amount,
         currency: 'CNY',
         channel,
-        status: 'PENDING',
+        status: PaymentStatus.PENDING,
         expiredAt,
       },
     });
@@ -164,16 +165,16 @@ export class PaymentService {
           // 只更新状态，不触发审核或准考证生成
           await tx.application.update({
             where: { id: app.id },
-            data: { status: 'PAID' },
-          });
+          data: { status: ApplicationStatus.PAID },
+        });
 
-          // 记录审计日志
-          await tx.applicationAuditLog.create({
-            data: {
-              id: uuidv4(),
-              applicationId: app.id,
-              fromStatus: app.status,
-              toStatus: 'PAID',
+        // 记录审计日志
+        await tx.applicationAuditLog.create({
+          data: {
+            id: uuidv4(),
+            applicationId: app.id,
+            fromStatus: app.status,
+            toStatus: ApplicationStatus.PAID,
               actor: 'SYSTEM',
               reason: 'Payment successful',
               metadata: {

@@ -5,7 +5,7 @@
 
 'use client'
 
-import { use, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -74,10 +74,10 @@ import {
 } from '@/types/ticket'
 
 interface TicketsPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     examId: string
-  }>
+  }
 }
 
 export default function TicketsPage({ params }: TicketsPageProps) {
@@ -89,7 +89,7 @@ export default function TicketsPage({ params }: TicketsPageProps) {
 }
 
 function TicketTemplateContent({ params }: TicketsPageProps) {
-  const { tenantSlug, examId } = use(params)
+  const { tenantSlug, examId } = params
   const router = useRouter()
   const { tenant } = useTenant()
 

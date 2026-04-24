@@ -1,23 +1,24 @@
-﻿'use client'
+'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { apiGetWithTenant } from '@/lib/api'
+import { apiGetWithTenant, apiGetBlob } from '@/lib/api'
 import { useTenant } from '@/hooks/useTenant'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Search, Download, FileText, AlertCircle, Eye, Printer, MapPin, Clock, User } from 'lucide-react'
+import { Search, Download, FileText, AlertCircle, Eye, Printer, MapPin, Clock, User, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Spinner } from '@/components/ui/loading'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { RouteGuard } from '@/components/auth/RouteGuard'
 
 interface TicketsPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
-  }>
+  }
 }
 
 interface Ticket {
@@ -38,7 +39,7 @@ interface Ticket {
 }
 
 export default function TicketsPage({ params }: TicketsPageProps) {
-  const { tenantSlug } = use(params)
+  const { tenantSlug } = params
   const { tenant, isLoading: tenantLoading } = useTenant()
 
   const [searchTerm, setSearchTerm] = useState('')
@@ -56,23 +57,38 @@ export default function TicketsPage({ params }: TicketsPageProps) {
 
   const isLoading = tenantLoading || ticketsLoading
 
-  const handleDownloadTicket = (ticket: Ticket) => {
-    // Download ticket PDF via API
-    const downloadUrl = `/api/v1/tickets/${ticket.id}/download`
-    const link = document.createElement('a')
-    link.href = downloadUrl
-    link.download = `准考证_${ticket.ticketNo}.pdf`
-    link.click()
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
+
+  const handleDownloadTicket = async (ticket: Ticket) => {
+    if (downloadingId) return
+    setDownloadingId(ticket.id)
+    try {
+      const blob = await apiGetBlob(`/tickets/${ticket.id}/download`, { tenantId: tenant?.id })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `准考证_${ticket.ticketNo}.pdf`
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '下载失败')
+    } finally {
+      setDownloadingId(null)
+    }
   }
 
-  const handlePrintTicket = (ticket: Ticket) => {
-    // Open ticket PDF in new window for printing
-    const viewUrl = `/api/v1/tickets/${ticket.id}/view`
-    const printWindow = window.open(viewUrl, '_blank')
-    if (printWindow) {
-      printWindow.onload = () => {
-        printWindow.print()
+  const handlePrintTicket = async (ticket: Ticket) => {
+    try {
+      const blob = await apiGetBlob(`/tickets/${ticket.id}/download`, { tenantId: tenant?.id })
+      const url = URL.createObjectURL(blob)
+      const printWindow = window.open(url, '_blank')
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print()
+        }
       }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '打印加载失败')
     }
   }
 
@@ -223,9 +239,14 @@ export default function TicketsPage({ params }: TicketsPageProps) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDownloadTicket(ticket)}
+                      disabled={downloadingId === ticket.id}
                     >
-                      <Download className="h-4 w-4 mr-2" />
-                      下载
+                      {downloadingId === ticket.id ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4 mr-2" />
+                      )}
+                      {downloadingId === ticket.id ? '下载中...' : '下载'}
                     </Button>
                     <Button
                       variant="outline"

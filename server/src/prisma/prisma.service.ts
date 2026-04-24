@@ -7,9 +7,34 @@ import {
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { AsyncLocalStorage } from 'async_hooks';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { ConfigService } from '@nestjs/config';
 import { createTenantPool, setTenantSchemaGetter } from './tenant-pool.wrapper';
+
+function applyPgEnvFromDatabaseUrl(databaseUrl: string): void {
+  try {
+    const parsed = new URL(databaseUrl);
+    const database = decodeURIComponent(parsed.pathname.replace(/^\/+/, ''));
+
+    if (database) {
+      process.env.PGDATABASE = database;
+    }
+    if (parsed.hostname) {
+      process.env.PGHOST = parsed.hostname;
+    }
+    if (parsed.port) {
+      process.env.PGPORT = parsed.port;
+    }
+    if (parsed.username) {
+      process.env.PGUSER = decodeURIComponent(parsed.username);
+    }
+    if (parsed.password) {
+      process.env.PGPASSWORD = decodeURIComponent(parsed.password);
+    }
+  } catch {
+    // Ignore parsing errors and let downstream connection validation fail normally.
+  }
+}
 
 @Injectable()
 export class PrismaService
@@ -20,11 +45,20 @@ export class PrismaService
   private readonly logger = new Logger(PrismaService.name);
   private _publicClient: PrismaClient | null = null;
 
+  /**
+   * Always reads the `public` schema. Implemented on the instance in the
+   * constructor via `defineProperty` because Prisma's engine client with a
+   * driver adapter does not keep the subclass prototype chain, so a class
+   * getter on `PrismaService` would never run.
+   */
+  declare public readonly publicClient: PrismaClient;
+
   constructor(private readonly configService: ConfigService) {
     const databaseUrl = configService.get<string>('DATABASE_URL');
     if (!databaseUrl) {
       throw new Error('DATABASE_URL environment variable is not set');
     }
+    applyPgEnvFromDatabaseUrl(databaseUrl);
 
     const tenantPool = createTenantPool(databaseUrl);
     setTenantSchemaGetter(() => PrismaService.getTenantSchema());
@@ -39,6 +73,41 @@ export class PrismaService
         { emit: 'stdout', level: 'warn' },
         { emit: 'stdout', level: 'error' },
       ],
+    });
+
+    // PrismaClient instances expose an own `client` property with `undefined` value.
+    // Our services rely on `prisma.client.<model>` access. Redefine the instance
+    // property so it returns this PrismaService instance consistently.
+    Object.defineProperty(this, 'client', {
+      configurable: true,
+      enumerable: false,
+      get: () => this,
+    });
+
+    // PrismaClient can leave an own `publicClient` slot (often `undefined`).
+    // Replace it with a getter that returns the public-schema proxy (see class
+    // comment on `declare publicClient`).
+    delete (this as Record<string, unknown>)['publicClient'];
+
+    Object.defineProperty(this, 'publicClient', {
+      configurable: true,
+      enumerable: false,
+      get: (): PrismaClient => {
+        const self = this as PrismaService;
+        self._publicClient ??= new Proxy(self, {
+          get(target: PrismaService, prop: string | symbol): unknown {
+            const value = (target as any)[prop];
+            if (typeof value !== 'function') {
+              return value;
+            }
+            return (...args: unknown[]): Promise<unknown> =>
+              PrismaService.runInTenantContext('public', () =>
+                value.apply(target, args),
+              );
+          },
+        }) as any as PrismaClient;
+        return self._publicClient;
+      },
     });
 
     if (process.env.NODE_ENV === 'development') {
@@ -75,28 +144,5 @@ export class PrismaService
 
   get client(): PrismaClient {
     return this;
-  }
-
-  /**
-   * Returns a PrismaClient that always operates in the `public` schema,
-   * bypassing any tenant context set by TenantMiddleware.
-   * Uses a Proxy to wrap every method call in runInTenantContext('public').
-   */
-  get publicClient(): PrismaClient {
-    if (!this._publicClient) {
-      this._publicClient = new Proxy(this, {
-        get(target: PrismaService, prop: string | symbol): unknown {
-          const value = (target as any)[prop];
-          if (typeof value !== 'function') {
-            return value;
-          }
-          return (...args: unknown[]): Promise<unknown> =>
-            PrismaService.runInTenantContext('public', () =>
-              value.apply(target, args),
-            );
-        },
-      }) as any as PrismaClient;
-    }
-    return this._publicClient;
   }
 }

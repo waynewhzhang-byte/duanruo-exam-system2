@@ -12,6 +12,21 @@ const PUBLIC_ROUTES = [
   '/favicon.ico',
 ]
 
+function isPublicRoute(pathname: string): boolean {
+  for (const route of PUBLIC_ROUTES) {
+    if (route === '/') {
+      if (pathname === '/') return true
+      continue
+    }
+
+    if (pathname === route || pathname.startsWith(`${route}/`)) {
+      return true
+    }
+  }
+
+  return false
+}
+
 // Route prefixes that map to user role dashboards for redirect when
 // a user lacks permissions. Used only for friendly redirects, NOT for
 // authorization decisions. Authorization is enforced by backend guards.
@@ -49,7 +64,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Skip middleware for public routes and static assets
-  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
+  if (isPublicRoute(pathname)) {
     return NextResponse.next()
   }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
@@ -17,10 +17,10 @@ import { PaymentQRCode } from '@/components/payment/PaymentQRCode'
 import { PaymentStatus } from '@/components/payment/PaymentStatus'
 
 interface PaymentPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     id: string
-  }>
+  }
 }
 
 interface PaymentInitiateResponse {
@@ -34,7 +34,7 @@ interface PaymentInitiateResponse {
 type PaymentMethod = 'ALIPAY' | 'WECHAT' | 'MOCK'
 
 export default function PaymentPage({ params }: PaymentPageProps) {
-  const resolvedParams = use(params)
+  const resolvedParams = params
   const { tenantSlug, id } = resolvedParams
   const router = useRouter()
   const { toast } = useToast()

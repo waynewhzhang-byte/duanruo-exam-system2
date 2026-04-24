@@ -44,7 +44,7 @@ async function resolveAuthToken(provided?: string): Promise<string | null> {
 
 const RESERVED_TOP_LEVELS = [
   'admin', 'login', 'register', 'tenants', 'super-admin', 'profile',
-  'candidate', 'reviewer', 'exams', 'my-applications', 'api', '_next',
+  'candidate', 'reviewer', 'exams', 'exam', 'my-applications', 'api', '_next',
 ]
 
 async function resolveTenantContext(providedId?: string): Promise<{
@@ -287,3 +287,25 @@ export const apiPutWithTenant = <T>(endpoint: string, tenantId: string, data?: u
 
 export const apiDeleteWithTenant = <T>(endpoint: string, tenantId: string, options?: Omit<RequestOptions, 'method' | 'tenantId'>) =>
   api<T>(endpoint, { ...options, method: 'DELETE', tenantId })
+
+export async function apiGetBlob(
+  endpoint: string,
+  options?: Omit<RequestOptions, 'method'>,
+): Promise<Blob> {
+  const { schema: _schema, token, tenantId, ...fetchOptions } = options || {}
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`
+  const headers: Record<string, string> = {
+    ...(fetchOptions.headers as Record<string, string> | undefined),
+  }
+  const { tenantId: resolvedTenantId, tenantSlug } = await resolveTenantContext(tenantId)
+  if (resolvedTenantId) headers['X-Tenant-ID'] = resolvedTenantId
+  if (tenantSlug) headers['X-Tenant-Slug'] = tenantSlug
+  const resolvedToken = await resolveAuthToken(token)
+  if (resolvedToken) headers.Authorization = `Bearer ${resolvedToken}`
+  const response = await fetch(url, { ...fetchOptions, headers, credentials: 'include', method: 'GET' })
+  if (!response.ok) {
+    const text = await response.text()
+    throw new APIError('HTTP_ERROR', text || response.statusText, response.status)
+  }
+  return response.blob()
+}

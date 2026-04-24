@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,14 +12,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPut, apiDelete } from '@/lib/api'
 
 interface NotificationsPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
-  }>
+  }
 }
 
 export default function NotificationsPage({ params }: NotificationsPageProps) {
-  use(params)
-  
   const [selectedNotification, setSelectedNotification] = useState<any>(null)
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all')
   const { toast } = useToast()

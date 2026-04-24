@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react'
 import { TenantType, TenantContextType, Tenant } from '@/types/tenant'
 import { apiGet } from '@/lib/api'
 
@@ -14,7 +14,10 @@ interface TenantProviderProps {
 }
 
 // Provider component
-export function TenantProvider({ children, tenantSlug }: TenantProviderProps) {
+export function TenantProvider({
+  children,
+  tenantSlug,
+}: Readonly<TenantProviderProps>) {
   const [tenant, setTenant] = useState<TenantType | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
@@ -33,12 +36,39 @@ export function TenantProvider({ children, tenantSlug }: TenantProviderProps) {
       setError(null)
 
       try {
-        // Call backend API to get tenant by slug (backend uses code field)
-        const data = await apiGet<TenantType>(`/tenants/slug/${tenantSlug}`, {
-          schema: Tenant
-        })
+        // NOTE:
+        // Some backend environments may serialize date fields as non-string objects
+        // (e.g. "{}"), which would fail strict zod parsing. We only need stable
+        // tenant identity fields here, so normalize defensively.
+        const raw = await apiGet<any>(`/tenants/slug/${tenantSlug}`)
+        const data = Tenant.partial().passthrough().parse(raw)
+
         // Ensure slug is set (backend returns code, frontend uses slug for URLs)
-        setTenant({ ...data, slug: data.slug || data.code || tenantSlug })
+        // and normalize date-like fields to strings to satisfy TenantType.
+        const normalizedTenant: TenantType = {
+          id: data.id as string,
+          name: data.name as string,
+          code: data.code,
+          slug: data.slug || data.code || tenantSlug,
+          schemaName: data.schemaName,
+          description: data.description ?? null,
+          status: (data.status as TenantType['status']) || 'ACTIVE',
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone ?? null,
+          createdAt:
+            typeof data.createdAt === 'string'
+              ? data.createdAt
+              : new Date().toISOString(),
+          updatedAt:
+            typeof data.updatedAt === 'string'
+              ? data.updatedAt
+              : new Date().toISOString(),
+          activatedAt:
+            typeof data.activatedAt === 'string' ? data.activatedAt : null,
+          deactivatedAt:
+            typeof data.deactivatedAt === 'string' ? data.deactivatedAt : null,
+        }
+        setTenant(normalizedTenant)
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Failed to fetch tenant')
         setError(error)
@@ -51,13 +81,16 @@ export function TenantProvider({ children, tenantSlug }: TenantProviderProps) {
     fetchTenant()
   }, [tenantSlug])
 
-  const value: TenantContextType = {
-    tenant,
-    tenantSlug: tenantSlug || null,
-    isLoading,
-    error,
-    setTenant,
-  }
+  const value: TenantContextType = useMemo(
+    () => ({
+      tenant,
+      tenantSlug: tenantSlug || null,
+      isLoading,
+      error,
+      setTenant,
+    }),
+    [tenant, tenantSlug, isLoading, error],
+  )
 
   return (
     <TenantContext.Provider value={value}>

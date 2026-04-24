@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { apiGetWithTenant } from '@/lib/api'
@@ -24,10 +24,10 @@ const ChartsContainer = dynamic(() => import('@/components/admin/exams/statistic
 })
 
 interface StatisticsPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     examId: string
-  }>
+  }
 }
 
 interface Exam {
@@ -71,7 +71,7 @@ interface ScoreStatistics {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
 export default function StatisticsPage({ params }: StatisticsPageProps) {
-  const { tenantSlug, examId } = use(params)
+  const { tenantSlug, examId } = params
   const router = useRouter()
   const { tenant } = useTenant()
 

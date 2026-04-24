@@ -156,6 +156,9 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'review:view:assigned',
     'review:perform',
     'application:view:assigned',
+    // 审核队列：OPEN 考试列表、报名表模板、附件下载
+    'exam:view',
+    'file:view',
   ],
   SECONDARY_REVIEWER: [
     'review:secondary',
@@ -163,6 +166,8 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'review:view:assigned',
     'review:perform',
     'application:view:assigned',
+    'exam:view',
+    'file:view',
   ],
 };
 

@@ -14,6 +14,7 @@ import {
   ApplicationResponse,
   ApplicationListItemResponse,
 } from './dto/application.dto';
+import { ApplicationStatus } from '../common/enums';
 
 function toJsonValue(val: Record<string, unknown>): Prisma.InputJsonValue {
   return val as Prisma.InputJsonValue;
@@ -60,7 +61,7 @@ export class ApplicationService {
       update: {
         positionId: request.positionId,
         payload: toJsonValue(request.payload),
-        status: 'SUBMITTED',
+        status: ApplicationStatus.SUBMITTED,
         submittedAt: new Date(),
       },
       create: {
@@ -68,7 +69,7 @@ export class ApplicationService {
         examId: request.examId,
         positionId: request.positionId,
         payload: toJsonValue(request.payload),
-        status: 'SUBMITTED',
+        status: ApplicationStatus.SUBMITTED,
         submittedAt: new Date(),
       },
     });
@@ -171,7 +172,7 @@ export class ApplicationService {
     request: ApplicationSubmitRequest,
   ): Promise<ApplicationResponse> {
     const existing = await this.client.application.findFirst({
-      where: { id: draftId, candidateId, status: 'DRAFT' },
+      where: { id: draftId, candidateId, status: ApplicationStatus.DRAFT },
     });
     if (!existing) {
       throw new NotFoundException('Draft not found');
@@ -276,7 +277,7 @@ export class ApplicationService {
     candidateId: string,
   ): Promise<ApplicationListItemResponse[]> {
     const apps = await this.client.application.findMany({
-      where: { candidateId, status: 'DRAFT' },
+      where: { candidateId, status: ApplicationStatus.DRAFT },
       include: {
         exam: true,
         position: true,

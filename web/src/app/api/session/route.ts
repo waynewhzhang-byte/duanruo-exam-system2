@@ -60,10 +60,7 @@ export async function GET(request: NextRequest) {
     const tenantRolesInfo = request.cookies.get('tenant-roles')?.value
 
     if (!token || !userInfo) {
-      return NextResponse.json(
-        { isAuthenticated: false },
-        { status: 401 }
-      )
+      return NextResponse.json({ isAuthenticated: false })
     }
 
     return NextResponse.json({

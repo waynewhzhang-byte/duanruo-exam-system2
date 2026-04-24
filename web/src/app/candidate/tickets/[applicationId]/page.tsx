@@ -9,28 +9,28 @@ import { Button } from '@/components/ui/button'
 import { Spinner, EmptyState } from '@/components/ui/loading'
 import { useApplication, useTicketByApplication, useGenerateTicket, useTicketDownload } from '@/lib/api-hooks'
 import { apiGet } from '@/lib/api'
+import { parseTenantListResponse } from '@/lib/schemas'
+import type { TenantListResponseType } from '@/lib/schemas'
 import { ArrowLeft, Ticket as TicketIcon, Download, Eye, AlertTriangle, MapPin, Clock, User, CheckCircle2 } from 'lucide-react'
 import Image from 'next/image'
-
 
 export default function CandidateTicketPage() {
   const params = useParams()
   const router = useRouter()
-  const applicationId = (params as any)?.applicationId as string
+  const applicationId = String(params?.applicationId ?? '')
   const [selectedTenantId, setSelectedTenantId] = useState<string>('')
 
-  // 获取用户关联的租户列表
-  const { data: tenants } = useQuery<any[]>({
+  const { data: tenantResponse } = useQuery<TenantListResponseType>({
     queryKey: ['my-tenants'],
-    queryFn: async () => apiGet<any[]>('/tenants/me'),
+    queryFn: async () => parseTenantListResponse(await apiGet('/tenants/me')),
   })
 
-  // 自动选择第一个租户
   useEffect(() => {
-    if (tenants && tenants.length > 0 && !selectedTenantId) {
+    const tenants = tenantResponse?.content ?? []
+    if (tenants.length > 0 && !selectedTenantId) {
       setSelectedTenantId(tenants[0].id)
     }
-  }, [tenants, selectedTenantId])
+  }, [tenantResponse, selectedTenantId])
 
   const { data: application, isLoading: appLoading } = useApplication(applicationId)
   const { data: ticket, isLoading, refetch } = useTicketByApplication(applicationId)
@@ -38,8 +38,8 @@ export default function CandidateTicketPage() {
   const download = useTicketDownload()
 
   const canGenerate = useMemo(() => {
-    const status = (application as any)?.status
-    return status === 'PAID' || status === 'APPROVED' // 后端将控制冲突(409)
+    const status = application?.status
+    return status === 'PAID' || status === 'APPROVED'
   }, [application])
 
   const handleBack = () => router.push('/candidate/applications')
@@ -58,24 +58,22 @@ export default function CandidateTicketPage() {
   const handleView = async () => {
     if (!ticket || !selectedTenantId) return
     try {
-      // 使用fetch API获取PDF，传递租户ID
       const token = localStorage.getItem('token') || sessionStorage.getItem('token')
-      const response = await fetch(`/api/v1/tickets/${(ticket as any).id}/view`, {
+      const response = await fetch(`/api/v1/tickets/${ticket.id}/view`, {
         headers: {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           'X-Tenant-ID': selectedTenantId,
         },
         credentials: 'include',
       })
-      
+
       if (!response.ok) {
         throw new Error('查看失败')
       }
-      
+
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
-    window.open(url, '_blank')
-      // 注意：不立即revoke URL，让新窗口可以访问
+      window.open(url, '_blank')
       setTimeout(() => window.URL.revokeObjectURL(url), 1000)
     } catch (error) {
       console.error('View error:', error)
@@ -86,7 +84,7 @@ export default function CandidateTicketPage() {
   const handleDownload = async () => {
     if (!ticket || !selectedTenantId) return
     try {
-      await download.mutateAsync({ ticketId: (ticket as any).id, tenantId: selectedTenantId })
+      await download.mutateAsync({ ticketId: ticket.id, tenantId: selectedTenantId })
     } catch (e) {
       console.error('download ticket error', e)
       alert('下载失败，请重试')
@@ -126,10 +124,14 @@ export default function CandidateTicketPage() {
     )
   }
 
+  const venueDisplay = ticket.venue || '待安排'
+  const roomDisplay = ticket.room || '待安排'
+  const seatDisplay = ticket.seat || '待安排'
+  const hasVenue = !!ticket.venue
+
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={handleBack}>
             <ArrowLeft className="h-4 w-4 mr-2" /> 返回我的报名
@@ -147,37 +149,34 @@ export default function CandidateTicketPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Basic info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <div className="text-sm text-gray-500">准考证号</div>
-                <div className="text-lg font-semibold">{(ticket as any).ticketNumber}</div>
+                <div className="text-lg font-semibold">{ticket.ticketNumber}</div>
               </div>
               <div className="space-y-2">
                 <div className="text-sm text-gray-500">状态</div>
                 <div className="text-lg font-semibold flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" /> {(ticket as any).status}
+                  <CheckCircle2 className="h-5 w-5 text-green-600" /> {ticket.status}
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="text-sm text-gray-500">考试</div>
-                <div className="text-gray-900">{(ticket as any).examTitle}</div>
+                <div className="text-gray-900">{ticket.examTitle}</div>
               </div>
               <div className="space-y-2">
                 <div className="text-sm text-gray-500">岗位</div>
-                <div className="text-gray-900">{(ticket as any).positionTitle}</div>
+                <div className="text-gray-900">{ticket.positionTitle}</div>
               </div>
             </div>
 
-            {/* Candidate info */}
             <div className="space-y-2">
               <div className="text-sm text-gray-500">考生信息</div>
               <div className="flex items-center gap-2 text-gray-900">
-                <User className="h-4 w-4" /> {(ticket as any).candidateName}（{(ticket as any).candidateIdNumber}）
+                <User className="h-4 w-4" /> {ticket.candidateName}（{ticket.candidateIdNumber}）
               </div>
             </div>
 
-            {/* 座位安排信息 - 醒目显示 */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="text-sm font-medium text-blue-800 mb-3 flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
@@ -186,24 +185,18 @@ export default function CandidateTicketPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white rounded-lg p-3 shadow-sm">
                   <div className="text-xs text-gray-500 mb-1">考场地点</div>
-                  <div className="font-semibold text-gray-900">
-                    {(ticket as any).venue || (ticket as any).venueName || '待安排'}
-                  </div>
+                  <div className="font-semibold text-gray-900">{venueDisplay}</div>
                 </div>
                 <div className="bg-white rounded-lg p-3 shadow-sm">
                   <div className="text-xs text-gray-500 mb-1">教室/考场</div>
-                  <div className="font-semibold text-gray-900">
-                    {(ticket as any).room || (ticket as any).roomNumber || '待安排'}
-                  </div>
+                  <div className="font-semibold text-gray-900">{roomDisplay}</div>
                 </div>
                 <div className="bg-white rounded-lg p-3 shadow-sm">
                   <div className="text-xs text-gray-500 mb-1">座位号</div>
-                  <div className="font-semibold text-xl text-blue-600">
-                    {(ticket as any).seat || (ticket as any).seatNumber || '待安排'}
-                  </div>
+                  <div className="font-semibold text-xl text-blue-600">{seatDisplay}</div>
                 </div>
               </div>
-              {!(ticket as any).venue && !(ticket as any).venueName && (
+              {!hasVenue && (
                 <div className="mt-3 text-xs text-blue-600 flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
                   座位尚未分配，请等待管理员安排后再查看
@@ -211,21 +204,19 @@ export default function CandidateTicketPage() {
               )}
             </div>
 
-            {/* Time */}
             <div className="space-y-2">
               <div className="text-sm text-gray-500">考试时间</div>
               <div className="flex items-center gap-2 text-gray-900">
                 <Clock className="h-4 w-4" />
-                <span>{(ticket as any).examDate} {(ticket as any).examStartTime} - {(ticket as any).examEndTime}</span>
+                <span>{ticket.examDate} {ticket.examStartTime} - {ticket.examEndTime}</span>
               </div>
             </div>
 
-            {/* Subjects */}
-            {Array.isArray((ticket as any).subjects) && (ticket as any).subjects.length > 0 && (
+            {ticket.subjects.length > 0 && (
               <div>
                 <div className="text-sm text-gray-500 mb-2">考试科目</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {(ticket as any).subjects.map((s: any) => (
+                  {ticket.subjects.map((s) => (
                     <div key={s.id} className="border rounded-lg p-3 text-sm">
                       <div className="font-medium text-gray-900">{s.name}</div>
                       <div className="text-gray-600">{s.startTime} - {s.endTime}（{s.duration} 分钟）</div>
@@ -235,10 +226,9 @@ export default function CandidateTicketPage() {
               </div>
             )}
 
-            {/* QR */}
-            {(ticket as any).qrCode && (
+            {ticket.qrCode && (
               <div className="flex flex-col md:flex-row items-center gap-6">
-                <Image src={(ticket as any).qrCode} alt="ticket-qr" width={160} height={160} className="border rounded" unoptimized />
+                <Image src={ticket.qrCode} alt="ticket-qr" width={160} height={160} className="border rounded" unoptimized />
                 <div className="text-sm text-gray-600">
                   <p>• 请妥善保管准考证，现场检票时需出示</p>
                   <p>• 建议提前打印纸质版，或保存至手机相册</p>
@@ -246,19 +236,17 @@ export default function CandidateTicketPage() {
               </div>
             )}
 
-            {/* Instructions */}
-            {Array.isArray((ticket as any).instructions) && (ticket as any).instructions.length > 0 && (
+            {ticket.instructions.length > 0 && (
               <div>
                 <div className="text-sm text-gray-500 mb-2">考试须知</div>
                 <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
-                  {(ticket as any).instructions.map((line: any, idx: number) => (
-                    <li key={`${String(line)}-${idx}`}>{line}</li>
+                  {ticket.instructions.map((line, idx) => (
+                    <li key={`${line}-${idx}`}>{line}</li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {/* Actions */}
             <div id="ticket-actions" className="flex flex-wrap gap-3 print:hidden">
               <Button variant="secondary" onClick={handleView}>
                 <Eye className="h-4 w-4 mr-2" /> 在线查看PDF
@@ -270,8 +258,6 @@ export default function CandidateTicketPage() {
           </CardContent>
         </Card>
       </div>
-
     </DashboardLayout>
   )
 }
-

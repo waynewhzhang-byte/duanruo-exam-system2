@@ -1,17 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useExams } from '@/lib/api-hooks';
+import { useOpenExams } from '@/lib/api-hooks';
+import { buildPublicExamPath } from '@/lib/public-exams';
 
 export default function ExamsPage() {
   const router = useRouter();
   
-  // 使用 React Query 获取考试列表
-  const { data, isLoading, error } = useExams({
-    status: 'OPEN',
-  });
-
-  const exams = data?.content || [];
+  const { data: exams = [], isLoading, error } = useOpenExams();
 
   if (isLoading) {
     return (
@@ -80,13 +76,13 @@ export default function ExamsPage() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => router.push(`/exams/${exam.id}`)}
+                      onClick={() => router.push(buildPublicExamPath(exam.tenantCode, exam.code))}
                       className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                     >
                       查看详情
                     </button>
                     <button
-                      onClick={() => router.push(`/exams/${exam.id}/register`)}
+                      onClick={() => router.push(buildPublicExamPath(exam.tenantCode, exam.code))}
                       className="px-6 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-50"
                     >
                       立即报名
@@ -101,4 +97,3 @@ export default function ExamsPage() {
     </div>
   );
 }
-

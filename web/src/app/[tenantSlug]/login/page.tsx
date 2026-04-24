@@ -36,8 +36,9 @@ function TenantLoginForm() {
                 setPageLoading(true)
                 const response = await fetch(`/api/v1/tenants/slug/${tenantSlug}`)
                 if (response.ok) {
-                    const data = await response.json()
-                    if (data && data.id) {
+                    const raw = await response.json()
+                    const data = unwrapApiResult<any>(raw) ?? raw
+                    if (data?.id) {
                         setTenantId(data.id)
                         setTenantName(data.name)
                     } else {

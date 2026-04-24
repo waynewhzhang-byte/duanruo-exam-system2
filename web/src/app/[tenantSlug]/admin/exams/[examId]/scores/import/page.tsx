@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGetWithTenant } from '@/lib/api'
@@ -18,10 +18,10 @@ import { toast } from 'sonner'
 import Papa from 'papaparse'
 
 interface ImportPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     examId: string
-  }>
+  }
 }
 
 interface Exam {
@@ -49,7 +49,7 @@ interface ValidationError {
 }
 
 export default function ScoreImportPage({ params }: ImportPageProps) {
-  const resolvedParams = use(params)
+  const resolvedParams = params
   const router = useRouter()
   const queryClient = useQueryClient()
   const { tenant } = useTenant()

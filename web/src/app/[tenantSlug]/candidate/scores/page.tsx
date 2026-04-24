@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { apiGetWithTenant } from '@/lib/api'
@@ -16,9 +16,9 @@ import { Spinner } from '@/components/ui/loading'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 interface ScoresPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
-  }>
+  }
 }
 
 interface Application {
@@ -51,7 +51,7 @@ interface ScoreStatistics {
 }
 
 export default function ScoresPage({ params }: ScoresPageProps) {
-  const { tenantSlug } = use(params)
+  const { tenantSlug } = params
   const router = useRouter()
   const { tenant } = useTenant()
 

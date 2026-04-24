@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGetWithTenant, apiPost, apiDelete } from '@/lib/api'
@@ -31,10 +31,10 @@ import {
 } from '@/components/ui/alert-dialog'
 
 interface ScoresPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     examId: string
-  }>
+  }
 }
 
 interface Exam {
@@ -85,7 +85,7 @@ interface Score {
 }
 
 export default function ScoresPage({ params }: ScoresPageProps) {
-  const { tenantSlug, examId } = use(params)
+  const { tenantSlug, examId } = params
   const router = useRouter()
   const queryClient = useQueryClient()
   const { tenant } = useTenant()

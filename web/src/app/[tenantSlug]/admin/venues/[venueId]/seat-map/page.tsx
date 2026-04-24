@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiPut } from '@/lib/api'
@@ -15,14 +15,14 @@ import { Spinner } from '@/components/ui/loading'
 import { toast } from 'sonner'
 
 interface SeatMapPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     venueId: string
-  }>
+  }
 }
 
 export default function SeatMapPage({ params }: SeatMapPageProps) {
-  const { tenantSlug, venueId } = use(params)
+  const { tenantSlug, venueId } = params
   const router = useRouter()
   const queryClient = useQueryClient()
 

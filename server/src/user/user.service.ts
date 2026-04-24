@@ -21,45 +21,108 @@ export class UserService {
   }
 
   async createUser(dto: CreateUserDto) {
+    const normalizedPhoneNumber = dto.phoneNumber?.trim() || undefined;
+
+    const duplicateFilters: Prisma.UserWhereInput[] = [
+      { username: dto.username },
+      { email: dto.email },
+    ];
+    if (normalizedPhoneNumber) {
+      duplicateFilters.push({ phoneNumber: normalizedPhoneNumber });
+    }
+
     const existingUser = await this.prisma.user.findFirst({
       where: {
-        OR: [{ username: dto.username }, { email: dto.email }],
+        OR: duplicateFilters,
       },
     });
 
     if (existingUser) {
-      throw new ConflictException('用户名或邮箱已存在');
+      if (existingUser.username === dto.username) {
+        throw new ConflictException('用户名已存在');
+      }
+      if (existingUser.email === dto.email) {
+        throw new ConflictException('邮箱已存在');
+      }
+      if (
+        normalizedPhoneNumber &&
+        existingUser.phoneNumber === normalizedPhoneNumber
+      ) {
+        throw new ConflictException('手机号已存在');
+      }
+      throw new ConflictException('用户名、邮箱或手机号已存在');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    return this.prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          username: dto.username,
-          email: dto.email,
-          fullName: dto.fullName,
-          passwordHash,
-          phoneNumber: dto.phoneNumber,
-          status: 'ACTIVE',
-          roles: JSON.stringify(dto.globalRoles || []),
-          emailVerified: true,
-        },
-      });
-
-      if (dto.tenantId && dto.tenantRole) {
-        await tx.userTenantRole.create({
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
           data: {
-            userId: user.id,
-            tenantId: dto.tenantId,
-            role: dto.tenantRole,
-            active: true,
+            username: dto.username,
+            email: dto.email,
+            fullName: dto.fullName,
+            passwordHash,
+            phoneNumber: normalizedPhoneNumber,
+            status: 'ACTIVE',
+            roles: JSON.stringify(dto.globalRoles || []),
+            emailVerified: true,
           },
         });
-      }
 
-      return user;
-    });
+        if (dto.tenantId && dto.tenantRole) {
+          await tx.userTenantRole.create({
+            data: {
+              userId: user.id,
+              tenantId: dto.tenantId,
+              role: dto.tenantRole,
+              active: true,
+            },
+          });
+        }
+
+        return user;
+      });
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        throw new ConflictException(this.buildUniqueConflictMessage(error));
+      }
+      throw error;
+    }
+  }
+
+  private isUniqueConstraintError(
+    error: unknown,
+  ): error is { code: string; meta?: { target?: unknown } } {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: unknown }).code === 'P2002'
+    );
+  }
+
+  private buildUniqueConflictMessage(error: {
+    meta?: { target?: unknown };
+  }): string {
+    const targets = Array.isArray(error.meta?.target) ? error.meta.target : [];
+    const labels = new Set<string>();
+
+    for (const target of targets) {
+      if (target === 'username') {
+        labels.add('用户名');
+      } else if (target === 'email') {
+        labels.add('邮箱');
+      } else if (target === 'phone_number' || target === 'phoneNumber') {
+        labels.add('手机号');
+      }
+    }
+
+    if (labels.size > 0) {
+      return `${Array.from(labels).join('、')}已存在`;
+    }
+
+    return '用户名、邮箱或手机号已存在';
   }
 
   /**

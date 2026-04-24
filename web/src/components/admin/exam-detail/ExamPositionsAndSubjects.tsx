@@ -20,6 +20,18 @@ interface ExamPositionsAndSubjectsProps {
   examId: string
 }
 
+function toDisplayText(value: unknown): string | null {
+  if (value == null) return null
+  if (typeof value === 'string' || typeof value === 'number') return String(value)
+  // Prisma Decimal serialized to plain object (e.g. { s, e, d }) should not crash rendering.
+  if (typeof value === 'object' && value !== null && 'toString' in value && typeof value.toString === 'function') {
+    const text = value.toString()
+    if (text !== '[object Object]') return text
+  }
+  if (value instanceof Date) return value.toISOString()
+  return null
+}
+
 export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSubjectsProps) {
   const router = useRouter()
   const params = useParams()
@@ -245,6 +257,14 @@ export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSub
               <div className="space-y-3">
                 {subjects.map((subject: any) => (
                   <div key={subject.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                    {(() => {
+                      const durationText = toDisplayText(subject.duration ?? subject.durationMinutes) ?? '-'
+                      const maxScoreText = toDisplayText(subject.maxScore) ?? '-'
+                      const passingScoreText = toDisplayText(subject.passingScore) ?? '-'
+                      const weightText = toDisplayText(subject.weight) ?? '-'
+                      const scheduleText = toDisplayText(subject.schedule)
+                      return (
+                    <>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
@@ -257,26 +277,26 @@ export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSub
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <Clock className="h-4 w-4" />
-                            <span>时长: {subject.duration || subject.durationMinutes}分钟</span>
+                            <span>时长: {durationText}分钟</span>
                           </div>
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <Award className="h-4 w-4" />
-                            <span>满分: {subject.maxScore}分</span>
+                            <span>满分: {maxScoreText}分</span>
                           </div>
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <TrendingUp className="h-4 w-4" />
-                            <span>及格: {subject.passingScore}分</span>
+                            <span>及格: {passingScoreText}分</span>
                           </div>
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <BookOpen className="h-4 w-4" />
-                            <span>权重: {subject.weight}</span>
+                            <span>权重: {weightText}</span>
                           </div>
                         </div>
 
-                        {subject.schedule && (
+                        {scheduleText && (
                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-2">
                             <Calendar className="h-4 w-4" />
-                            <span>考试时间: {subject.schedule}</span>
+                            <span>考试时间: {scheduleText}</span>
                           </div>
                         )}
                       </div>
@@ -303,6 +323,9 @@ export default function ExamPositionsAndSubjects({ examId }: ExamPositionsAndSub
                         </Button>
                       </div>
                     </div>
+                    </>
+                      )
+                    })()}
                   </div>
                 ))}
               </div>

@@ -1,6 +1,5 @@
 'use client'
 
-import { use } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -9,14 +8,14 @@ import { useApplication } from '@/lib/api-hooks'
 import { useTenant } from '@/hooks/useTenant'
 
 interface PaymentSuccessPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     id: string
-  }>
+  }
 }
 
 export default function PaymentSuccessPage({ params }: PaymentSuccessPageProps) {
-  const resolvedParams = use(params)
+  const resolvedParams = params
   const { tenantSlug, id } = resolvedParams
   const router = useRouter()
   const { tenant } = useTenant()

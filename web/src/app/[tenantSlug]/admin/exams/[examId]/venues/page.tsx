@@ -1,6 +1,5 @@
 'use client'
 
-import { use } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,14 +12,14 @@ import { useExam } from '@/lib/api-hooks'
 import { Spinner } from '@/components/ui/loading'
 
 interface VenuesPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     examId: string
-  }>
+  }
 }
 
 export default function VenuesPage({ params }: VenuesPageProps) {
-  const { tenantSlug, examId } = use(params)
+  const { tenantSlug, examId } = params
   const router = useRouter()
 
   // Fetch exam details

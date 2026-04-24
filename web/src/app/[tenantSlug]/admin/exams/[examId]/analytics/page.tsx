@@ -1,6 +1,5 @@
 'use client'
 
-import { use } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -9,16 +8,16 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { Users, FileText, CheckCircle, XCircle, TrendingUp, Calendar } from 'lucide-react'
 
 interface ExamAnalyticsPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     examId: string
-  }>
+  }
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
 export default function ExamAnalyticsPage({ params }: ExamAnalyticsPageProps) {
-  const { examId } = use(params)
+  const { examId } = params
   
   const { data: exam, isLoading: examLoading } = useExam(examId)
   const { data: positions, isLoading: positionsLoading } = useExamPositions(examId)

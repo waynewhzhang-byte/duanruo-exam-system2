@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { use, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTenant } from '@/contexts/TenantContext'
 import { Spinner } from '@/components/ui/loading'
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 interface ApplicationsPageProps {
-  params: Promise<{ tenantSlug: string }>
+  params: { tenantSlug: string }
 }
 
 /**
@@ -17,7 +17,6 @@ interface ApplicationsPageProps {
  * Redirects to the global applications page
  */
 export default function TenantApplicationsPage({ params }: Readonly<ApplicationsPageProps>) {
-  use(params)
   const { tenant, isLoading } = useTenant()
   const router = useRouter()
 

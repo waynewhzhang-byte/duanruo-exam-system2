@@ -55,7 +55,7 @@ export default function ExamManagementExample() {
     } = usePermissionQuery(
         ['exams'],
         async () => {
-            const response = await apiClient.GET('/exams');
+            const response = await (apiClient as any).GET('/api/v1/exams', {});
 
             if (response.error) {
                 throw response.error;
@@ -77,12 +77,7 @@ export default function ExamManagementExample() {
     // ============================================================
     const createExamMutation = usePermissionMutation(
         async (data: ExamCreateRequest) => {
-            const response = await apiClient.POST('/exams', {
-                params: {
-                    query: {
-                        userId: '123' // Mock userId for example
-                    }
-                },
+            const response = await (apiClient as any).POST('/api/v1/exams', {
                 body: data,
             });
 
@@ -116,7 +111,7 @@ export default function ExamManagementExample() {
     // ============================================================
     const deleteExamMutation = usePermissionMutation(
         async (examId: string) => {
-            const response = await apiClient.DELETE('/exams/{id}', {
+            const response = await (apiClient as any).DELETE('/api/v1/exams/{id}', {
                 params: {
                     path: { id: examId },
                 },
@@ -150,10 +145,13 @@ export default function ExamManagementExample() {
     // ============================================================
     const publishExamMutation = usePermissionMutation(
         async (examId: string) => {
-            const response = await apiClient.POST('/exams/{id}/publish' as any, {
+            const response = await (apiClient as any).POST('/api/v1/exams/{id}', {
                 params: {
                     path: { id: examId },
-                } as any,
+                },
+                body: {
+                    status: 'OPEN',
+                },
             });
 
             if (response.error) {

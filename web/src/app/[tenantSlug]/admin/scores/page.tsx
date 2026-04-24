@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,13 +31,13 @@ interface Exam {
 }
 
 interface ScoresPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
-  }>
+  }
 }
 
 export default function ScoresPage({ params }: ScoresPageProps) {
-  const { tenantSlug } = use(params)
+  const { tenantSlug } = params
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
 

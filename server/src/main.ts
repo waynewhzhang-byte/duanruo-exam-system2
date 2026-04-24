@@ -36,6 +36,11 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
 
+  const swaggerEnabled =
+    process.env.SWAGGER_ENABLED === 'true' ||
+    (process.env.SWAGGER_ENABLED !== 'false' &&
+      process.env.NODE_ENV !== 'production');
+
   const config = new DocumentBuilder()
     .setTitle('端若数智考盟 API')
     .setDescription(
@@ -61,16 +66,24 @@ async function bootstrap() {
     .addTag('super-admin', '平台管理')
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document, {
-    swaggerOptions: {
-      persistAuthorization: true,
-    },
-  });
+  if (swaggerEnabled) {
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
+      },
+    });
+  }
 
   const port = process.env.PORT ?? 8081;
   await app.listen(port, '0.0.0.0');
   logger.log(`Application is running on: http://localhost:${port}/api/v1`);
-  logger.log(`Swagger docs available at: http://localhost:${port}/api/docs`);
+  if (swaggerEnabled) {
+    logger.log(`Swagger docs available at: http://localhost:${port}/api/docs`);
+  } else {
+    logger.log(
+      'Swagger docs are disabled. Set SWAGGER_ENABLED=true to enable.',
+    );
+  }
 }
 void bootstrap();

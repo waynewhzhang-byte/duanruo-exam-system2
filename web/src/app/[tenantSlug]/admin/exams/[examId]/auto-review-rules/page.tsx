@@ -64,7 +64,7 @@ function AutoReviewRulesContent() {
   // Initialize rules from API
   useEffect(() => {
     if (rulesData?.rules) {
-      setRules(rulesData.rules as Rule[])
+      setRules(rulesData.rules)
     }
   }, [rulesData])
 

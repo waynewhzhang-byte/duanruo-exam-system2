@@ -65,11 +65,11 @@ export class TenantSchemaMigrationService implements OnModuleInit {
 
     const templateTables = await this.prisma.$queryRaw<
       { tablename: string }[]
-    >`SELECT tablename FROM pg_tables WHERE schemaname = ${TEMPLATE_SCHEMA} ORDER BY tablename`;
+    >`SELECT tablename::text AS tablename FROM pg_tables WHERE schemaname = ${TEMPLATE_SCHEMA} ORDER BY tablename`;
 
     const targetTables = await this.prisma.$queryRaw<
       { tablename: string }[]
-    >`SELECT tablename FROM pg_tables WHERE schemaname = ${schemaName} ORDER BY tablename`;
+    >`SELECT tablename::text AS tablename FROM pg_tables WHERE schemaname = ${schemaName} ORDER BY tablename`;
 
     const targetTableSet = new Set(targetTables.map((t) => t.tablename));
 
@@ -100,7 +100,7 @@ export class TenantSchemaMigrationService implements OnModuleInit {
 
     const templateSequences = await this.prisma.$queryRaw<
       { sequencename: string }[]
-    >`SELECT sequencename FROM pg_sequences WHERE schemaname = ${TEMPLATE_SCHEMA}`;
+    >`SELECT sequencename::text AS sequencename FROM pg_sequences WHERE schemaname = ${TEMPLATE_SCHEMA}`;
     for (const { sequencename } of templateSequences) {
       const safeSeq = escapeIdentifier(sequencename);
       await this.prisma
@@ -130,11 +130,11 @@ export class TenantSchemaMigrationService implements OnModuleInit {
         column_default: string | null;
         character_maximum_length: number | null;
       }[]
-    >`SELECT column_name, data_type, is_nullable, column_default, character_maximum_length FROM information_schema.columns WHERE table_schema = ${TEMPLATE_SCHEMA} AND table_name = ${tableName} ORDER BY ordinal_position`;
+    >`SELECT column_name::text AS column_name, data_type::text AS data_type, is_nullable::text AS is_nullable, column_default::text AS column_default, character_maximum_length FROM information_schema.columns WHERE table_schema = ${TEMPLATE_SCHEMA} AND table_name = ${tableName} ORDER BY ordinal_position`;
 
     const targetColumns = await this.prisma.$queryRaw<
       { column_name: string }[]
-    >`SELECT column_name FROM information_schema.columns WHERE table_schema = ${schemaName} AND table_name = ${tableName}`;
+    >`SELECT column_name::text AS column_name FROM information_schema.columns WHERE table_schema = ${schemaName} AND table_name = ${tableName}`;
 
     const targetColumnSet = new Set(targetColumns.map((c) => c.column_name));
     const safeSchema = escapeIdentifier(schemaName);
@@ -168,11 +168,11 @@ export class TenantSchemaMigrationService implements OnModuleInit {
 
     const templateIndexes = await this.prisma.$queryRaw<
       { indexname: string; indexdef: string }[]
-    >`SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = ${TEMPLATE_SCHEMA} AND tablename = ${tableName}`;
+    >`SELECT indexname::text AS indexname, indexdef FROM pg_indexes WHERE schemaname = ${TEMPLATE_SCHEMA} AND tablename = ${tableName}`;
 
     const targetIndexes = await this.prisma.$queryRaw<
       { indexname: string }[]
-    >`SELECT indexname FROM pg_indexes WHERE schemaname = ${schemaName} AND tablename = ${tableName}`;
+    >`SELECT indexname::text AS indexname FROM pg_indexes WHERE schemaname = ${schemaName} AND tablename = ${tableName}`;
 
     const targetIndexSet = new Set(targetIndexes.map((i) => i.indexname));
 

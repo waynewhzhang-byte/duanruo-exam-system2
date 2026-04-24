@@ -1,7 +1,12 @@
-import { FormTemplate, PRESET_FIELDS } from '@/types/form-template'
+import { FormTemplate as FormTemplateSchema, PRESET_FIELDS } from '@/types/form-template'
+import type { FormTemplate, FormTemplateInput } from '@/types/form-template'
+
+function makeTemplate(template: FormTemplateInput): FormTemplate {
+  return FormTemplateSchema.parse(template)
+}
 
 // 基础模板 - 适用于简单考试（包含身份信息和学历信息）
-export const BASIC_TEMPLATE: FormTemplate = {
+export const BASIC_TEMPLATE: FormTemplate = makeTemplate({
   id: 'basic-template',
   name: '基础报名模板',
   description: '包含身份信息、学历信息和对应附件的标准报名表单',
@@ -24,14 +29,14 @@ export const BASIC_TEMPLATE: FormTemplate = {
       collapsible: false,
       collapsed: false,
       fields: [
-        { ...PRESET_FIELDS.fullName, id: 'fullName', key: 'fullName', order: 1, width: 'half' } ,
-        { ...PRESET_FIELDS.idNumber, id: 'idNumber', key: 'idNumber', order: 2, width: 'half' } as any,
-        { ...PRESET_FIELDS.idCardFiles, id: 'idCardFiles', key: 'idCardFiles', order: 3 } as any,
-        { ...PRESET_FIELDS.gender, id: 'gender', key: 'gender', order: 4, width: 'third' } as any,
-        { ...PRESET_FIELDS.birthDate, id: 'birthDate', key: 'birthDate', order: 5, width: 'third' } as any,
-        { ...PRESET_FIELDS.photoFiles, id: 'photoFiles', key: 'photoFiles', order: 6, width: 'third' } as any,
-        { ...PRESET_FIELDS.phone, id: 'phone', key: 'phone', order: 7, width: 'half' } as any,
-        { ...PRESET_FIELDS.email, id: 'email', key: 'email', order: 8, width: 'half' } as any,
+        { ...PRESET_FIELDS.fullName, id: 'fullName', key: 'fullName', order: 1, width: 'half' },
+        { ...PRESET_FIELDS.idNumber, id: 'idNumber', key: 'idNumber', order: 2, width: 'half' },
+        { ...PRESET_FIELDS.idCardFiles, id: 'idCardFiles', key: 'idCardFiles', order: 3 },
+        { ...PRESET_FIELDS.gender, id: 'gender', key: 'gender', order: 4, width: 'third' },
+        { ...PRESET_FIELDS.birthDate, id: 'birthDate', key: 'birthDate', order: 5, width: 'third' },
+        { ...PRESET_FIELDS.photoFiles, id: 'photoFiles', key: 'photoFiles', order: 6, width: 'third' },
+        { ...PRESET_FIELDS.phone, id: 'phone', key: 'phone', order: 7, width: 'half' },
+        { ...PRESET_FIELDS.email, id: 'email', key: 'email', order: 8, width: 'half' },
       ],
     },
     {
@@ -42,12 +47,12 @@ export const BASIC_TEMPLATE: FormTemplate = {
       collapsible: false,
       collapsed: false,
       fields: [
-        { ...PRESET_FIELDS.highestEducation, id: 'highestEducation', key: 'highestEducation', order: 1, width: 'half' } as any,
-        { ...PRESET_FIELDS.graduationSchool, id: 'graduationSchool', key: 'graduationSchool', order: 2, width: 'half' } as any,
-        { ...PRESET_FIELDS.major, id: 'major', key: 'major', order: 3, width: 'half' } as any,
-        { ...PRESET_FIELDS.graduationDate, id: 'graduationDate', key: 'graduationDate', order: 4, width: 'half' } as any,
-        { ...PRESET_FIELDS.graduationCertFiles, id: 'graduationCertFiles', key: 'graduationCertFiles', order: 5 } as any,
-        { ...PRESET_FIELDS.degreeCertFiles, id: 'degreeCertFiles', key: 'degreeCertFiles', order: 6 } as any,
+        { ...PRESET_FIELDS.highestEducation, id: 'highestEducation', key: 'highestEducation', order: 1, width: 'half' },
+        { ...PRESET_FIELDS.graduationSchool, id: 'graduationSchool', key: 'graduationSchool', order: 2, width: 'half' },
+        { ...PRESET_FIELDS.major, id: 'major', key: 'major', order: 3, width: 'half' },
+        { ...PRESET_FIELDS.graduationDate, id: 'graduationDate', key: 'graduationDate', order: 4, width: 'half' },
+        { ...PRESET_FIELDS.graduationCertFiles, id: 'graduationCertFiles', key: 'graduationCertFiles', order: 5 },
+        { ...PRESET_FIELDS.degreeCertFiles, id: 'degreeCertFiles', key: 'degreeCertFiles', order: 6 },
       ],
     },
     {
@@ -58,9 +63,9 @@ export const BASIC_TEMPLATE: FormTemplate = {
       collapsible: false,
       collapsed: false,
       fields: [
-        { ...PRESET_FIELDS.agreeToTerms, id: 'agreeToTerms', key: 'agreeToTerms', order: 1 } as any,
-        { ...PRESET_FIELDS.agreeToPrivacy, id: 'agreeToPrivacy', key: 'agreeToPrivacy', order: 2 } as any,
-        { ...PRESET_FIELDS.confirmInfoAccuracy, id: 'confirmInfoAccuracy', key: 'confirmInfoAccuracy', order: 3 } as any,
+        { ...PRESET_FIELDS.agreeToTerms, id: 'agreeToTerms', key: 'agreeToTerms', order: 1 },
+        { ...PRESET_FIELDS.agreeToPrivacy, id: 'agreeToPrivacy', key: 'agreeToPrivacy', order: 2 },
+        { ...PRESET_FIELDS.confirmInfoAccuracy, id: 'confirmInfoAccuracy', key: 'confirmInfoAccuracy', order: 3 },
       ],
     },
   ],
@@ -102,10 +107,10 @@ export const BASIC_TEMPLATE: FormTemplate = {
       examples: ['学位证.jpg', '学位证.pdf'],
     },
   ],
-}
+})
 
 // 完整模板 - 适用于复杂考试（含工作经历）
-export const COMPREHENSIVE_TEMPLATE: FormTemplate = {
+export const COMPREHENSIVE_TEMPLATE: FormTemplate = makeTemplate({
   id: 'comprehensive-template',
   name: '完整报名模板',
   description: '包含身份、学历、工作经历及所有对应附件的完整报名表单',
@@ -160,7 +165,7 @@ export const COMPREHENSIVE_TEMPLATE: FormTemplate = {
           validation: [
             { type: 'required', message: '紧急联系人姓名不能为空' },
           ],
-        } as any,
+        },
         {
           id: 'emergencyContactPhone',
           key: 'emergencyContactPhone',
@@ -408,10 +413,10 @@ export const COMPREHENSIVE_TEMPLATE: FormTemplate = {
       examples: ['资格证书.pdf', '荣誉证书.jpg'],
     },
   ],
-}
+})
 
 // 技能认证模板 - 适用于技能类考试
-export const SKILL_CERTIFICATION_TEMPLATE: FormTemplate = {
+export const SKILL_CERTIFICATION_TEMPLATE: FormTemplate = makeTemplate({
   id: 'skill-certification-template',
   name: '技能认证模板',
   description: '适用于技能认证类考试，包含身份信息和技能证书附件',
@@ -559,7 +564,7 @@ export const SKILL_CERTIFICATION_TEMPLATE: FormTemplate = {
       examples: ['技能证书.pdf', '作品集.pdf', '项目截图.jpg'],
     },
   ],
-}
+})
 
 // 导出所有模板
 export const FORM_TEMPLATES: FormTemplate[] = [

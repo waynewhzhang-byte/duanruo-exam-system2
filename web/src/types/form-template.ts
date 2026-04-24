@@ -75,13 +75,14 @@ export const FormField = z.object({
   options: z.array(FieldOption).optional(),
   conditional: ConditionalLogic.optional(),
   fileConfig: FileUploadConfig.optional(),
-  defaultValue: z.union([z.string(), z.number(), z.boolean(), z.array(z.any())]).optional(),
+  defaultValue: z.union([z.string(), z.number(), z.boolean(), z.array(z.unknown())]).optional(),
   // 布局相关
   width: z.enum(['full', 'half', 'third', 'quarter']).default('full'),
   order: z.number().default(0),
 })
 
 export type FormField = z.infer<typeof FormField>
+export type FormFieldInput = z.input<typeof FormField>
 
 // 表单分组/节
 export const FormSection = z.object({
@@ -133,13 +134,14 @@ export const FormTemplate = z.object({
 })
 
 export type FormTemplate = z.infer<typeof FormTemplate>
+export type FormTemplateInput = z.input<typeof FormTemplate>
 
 // 表单提交数据
 export const FormSubmission = z.object({
   templateId: z.string(),
   examId: z.string(),
   candidateId: z.string(),
-  data: z.record(z.string(), z.any()), // 动态字段数据
+  data: z.record(z.string(), z.unknown()), // 动态字段数据
   files: z.record(z.string(), z.array(z.string())), // 文件ID映射
   status: z.enum(['draft', 'submitted', 'approved', 'rejected']),
   submittedAt: z.string().optional(),
@@ -187,7 +189,15 @@ export const CONDITIONAL_OPERATOR_LABELS: Record<string, string> = {
 }
 
 // 预设字段模板
-export const PRESET_FIELDS: Record<string, any> = {
+export type PresetFieldBase = Omit<FormFieldInput, 'id' | 'key' | 'order' | 'width'>
+export type PresetField = PresetFieldBase & {
+  id: string
+  key: string
+  order: number
+  width?: FormFieldInput['width']
+}
+
+export const PRESET_FIELDS: Record<string, PresetFieldBase> = {
   fullName: {
     type: 'text',
     name: 'fullName',

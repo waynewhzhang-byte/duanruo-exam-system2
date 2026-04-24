@@ -4,1632 +4,23 @@
  */
 
 export interface paths {
-    "/venues/{venueId}": {
+    "/api/v1": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        /** 更新考场 */
-        put: operations["update"];
-        post?: never;
-        /** 删除考场 */
-        delete: operations["delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/venues/{venueId}/seat-map/seats/{row}/{col}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 更新座位状态
-         * @description 更新指定座位的状态（AVAILABLE, UNAVAILABLE, AISLE）
-         */
-        put: operations["updateSeatStatus"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/venues/{venueId}/seat-map/seats/{row}/{col}/label": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 更新座位标签
-         * @description 更新指定座位的标签（如 A1, B2）
-         */
-        put: operations["updateSeatLabel"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tickets/exam/{examId}/template": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取准考证模板
-         * @description 获取考试的准考证模板配置
-         */
-        get: operations["getTicketTemplate"];
-        /**
-         * 更新准考证模板
-         * @description 更新考试的准考证模板配置
-         */
-        put: operations["updateTicketTemplate"];
-        post?: never;
-        /**
-         * 恢复默认准考证号规则
-         * @description 删除考试的自定义准考证号规则并恢复为默认规则
-         */
-        delete: operations["resetTicketTemplate"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tenants/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取租户详情
-         * @description 根据ID获取租户详细信息（仅管理员）
-         */
-        get: operations["getTenant"];
-        /**
-         * 更新租户信息
-         * @description 更新租户的基本信息（仅管理员）
-         */
-        put: operations["updateTenant"];
-        post?: never;
-        /**
-         * 删除租户
-         * @description 软删除指定的租户（仅管理员）
-         */
-        delete: operations["deleteTenant"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/super-admin/tenants/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取租户详情
-         * @description 根据ID获取租户详细信息（仅超级管理员）
-         */
-        get: operations["getTenant_1"];
-        /**
-         * 更新租户信息
-         * @description 更新租户的基本信息（仅超级管理员）
-         */
-        put: operations["updateTenant_1"];
-        post?: never;
-        /**
-         * 删除租户
-         * @description 软删除指定的租户（仅超级管理员）
-         */
-        delete: operations["deleteTenant_1"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/positions/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取岗位详情
-         * @description 根据岗位ID获取详细信息
-         */
-        get: operations["getPositionById"];
-        /**
-         * 更新岗位
-         * @description 更新岗位信息
-         */
-        put: operations["updatePosition"];
-        post?: never;
-        /**
-         * 删除岗位
-         * @description 删除指定岗位
-         */
-        delete: operations["deletePosition"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/positions/subjects/{subjectId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 更新科目
-         * @description 更新科目信息
-         */
-        put: operations["updateSubject"];
-        post?: never;
-        /**
-         * 删除科目
-         * @description 删除指定科目
-         */
-        delete: operations["deleteSubject"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notification-templates/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取模板详情
-         * @description 根据ID获取通知模板详情
-         */
-        get: operations["getById"];
-        /**
-         * 更新通知模板
-         * @description 更新现有通知模板
-         */
-        put: operations["update_1"];
-        post?: never;
-        /**
-         * 删除模板
-         * @description 删除指定的通知模板
-         */
-        delete: operations["delete_1"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/form-templates/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取表单模板详情
-         * @description 根据ID获取表单模板详细信息(包含所有字段)
-         */
-        get: operations["getFormTemplate"];
-        /**
-         * 更新表单模板
-         * @description 更新表单模板基本信息(名称、描述)
-         */
-        put: operations["updateFormTemplate"];
-        post?: never;
-        /**
-         * 删除表单模板
-         * @description 删除指定的表单模板
-         */
-        delete: operations["deleteFormTemplate"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/form-templates/{id}/fields/{fieldId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 更新字段
-         * @description 更新表单模板中的字段配置
-         */
-        put: operations["updateField"];
-        post?: never;
-        /**
-         * 删除字段
-         * @description 从表单模板中删除字段
-         */
-        delete: operations["deleteField"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/form-templates/{id}/fields/reorder": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 重新排序字段
-         * @description 更改表单模板中字段的显示顺序
-         */
-        put: operations["reorderFields"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/exams/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 根据ID获取考试
-         * @description 根据考试ID获取考试详细信息
-         */
-        get: operations["getExamById"];
-        /**
-         * 更新考试
-         * @description 更新现有考试的信息（仅租户管理员和超级管理员）
-         */
-        put: operations["updateExam"];
-        post?: never;
-        /**
-         * 删除考试
-         * @description 删除指定的考试（仅租户管理员和超级管理员）
-         */
-        delete: operations["removeExamByIdentifier"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/exams/{id}/rules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取考试规则配置
-         * @description 返回指定考试的规则配置（自动审核/必需字段/必需附件等）
-         */
-        get: operations["getRules"];
-        /**
-         * 更新考试规则配置
-         * @description 管理员更新指定考试的规则配置（自动审核/必需字段/必需附件等）
-         */
-        put: operations["updateRules"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/exams/{id}/form-template": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取考试报名表单模板
-         * @description 获取考试的报名表单模板（公开访问）
-         */
-        get: operations["getExamFormTemplate"];
-        /**
-         * 更新考试报名表单模板
-         * @description 更新考试的报名表单模板
-         */
-        put: operations["updateExamFormTemplate"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/exams/{id}/announcement": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取考试公告
-         * @description 返回指定考试的公告内容（中文）
-         */
-        get: operations["getAnnouncement"];
-        /**
-         * 更新考试公告
-         * @description 管理员更新指定考试的公告内容（中文）
-         */
-        put: operations["updateAnnouncement"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/exams/{examId}/ticket-number-rule": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取准考证编号规则
-         * @description 获取指定考试的准考证编号生成规则
-         */
-        get: operations["getRule"];
-        /**
-         * 更新准考证编号规则
-         * @description 更新指定考试的准考证编号生成规则
-         */
-        put: operations["updateRule"];
-        post?: never;
-        /**
-         * 重置准考证编号规则
-         * @description 将准考证编号规则重置为默认值
-         */
-        delete: operations["resetRule"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/exam-admins/permissions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["updateExamAdminPermissions"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/applications/{id}/withdraw": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 撤销报名申请
-         * @description 候选人撤销自己的报名申请
-         */
-        put: operations["withdrawApplication"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/applications/{id}/resubmit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 重提报名申请
-         * @description 候选人在被退回后，更新表单并重新提交；将自动触发一次自动审核
-         */
-        put: operations["resubmit"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/applications/drafts/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 更新报名草稿
-         * @description 候选人更新自己的报名草稿，仅允许 DRAFT 状态
-         */
-        put: operations["updateDraft"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/{tenantId}/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 创建租户用户（租户管理员）
-         * @description 租户管理员在租户内创建用户（审核员、候选人等）
-         */
-        post: operations["createTenantUser"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/{tenantId}/users/{userId}/roles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 添加用户到租户
-         * @description 为现有用户添加租户角色，用于用户参与多个租户的考试
-         */
-        post: operations["addUserToTenant"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/venues/{venueId}/seat-map": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取座位地图
-         * @description 获取考场的座位布局地图
-         */
-        get: operations["getSeatMap"];
-        put?: never;
-        /**
-         * 创建座位地图
-         * @description 为考场创建座位布局地图
-         */
-        post: operations["createSeatMap"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/users/directory/resolve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 批量解析显示名 */
-        post: operations["resolve"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tickets/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 验证准考证
-         * @description 验证准考证有效性
-         */
-        post: operations["verifyTicket"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tickets/validate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 验证准考证
-         * @description 验证准考证的有效性
-         */
-        post: operations["validateTicket"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tickets/batch-generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 批量生成准考证
-         * @description 为考试批量生成准考证
-         */
-        post: operations["batchGenerateTickets"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tickets/application/{applicationId}/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 生成准考证
-         * @description 为已通过审核的申请生成准考证
-         */
-        post: operations["generateTicket"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tenants": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取租户列表
-         * @description 获取所有激活状态的租户列表（用于租户选择页面）
-         */
-        get: operations["listTenants"];
-        put?: never;
-        /**
-         * 创建租户
-         * @description 创建新的租户实例（仅管理员）
-         */
-        post: operations["createTenant"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tenants/{tenantId}/users/roles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["grantRole"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tenants/{tenantId}/backups": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取租户备份列表
-         * @description 获取指定租户的所有备份记录
-         */
-        get: operations["getTenantBackups"];
-        put?: never;
-        /**
-         * 创建租户备份
-         * @description 创建租户的全量数据备份
-         */
-        post: operations["createBackup"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tenants/{tenantId}/backups/{backupId}/validate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 验证备份完整性
-         * @description 验证备份文件的完整性和可用性
-         */
-        post: operations["validateBackup"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tenants/{tenantId}/backups/{backupId}/restore": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 从备份恢复数据
-         * @description 从指定备份恢复租户数据
-         */
-        post: operations["restoreFromBackup"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tenants/{tenantId}/backups/cleanup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 清理过期备份
-         * @description 清理超过保留期限的备份
-         */
-        post: operations["cleanupExpiredBackups"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tenants/{id}/deactivate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 停用租户
-         * @description 停用指定的租户（仅管理员）
-         */
-        post: operations["deactivateTenant"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tenants/{id}/activate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 激活租户
-         * @description 激活指定的租户（仅管理员）
-         */
-        post: operations["activateTenant"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/super-admin/tenants": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取租户列表
-         * @description 获取所有租户列表（仅超级管理员）
-         */
-        get: operations["listTenants_1"];
-        put?: never;
-        /**
-         * 创建租户
-         * @description 创建新的租户实例（仅超级管理员）
-         */
-        post: operations["createTenant_1"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/super-admin/tenants/{id}/deactivate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 停用租户
-         * @description 停用指定的租户（仅超级管理员）
-         */
-        post: operations["deactivateTenant_1"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/super-admin/tenants/{id}/activate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 激活租户
-         * @description 激活指定的租户（仅超级管理员）
-         */
-        post: operations["activateTenant_1"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/scores/record": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["recordScore"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/scores/exam/{examId}/batch-update-interview-eligibility": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["batchUpdateInterviewEligibility"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/scores/batch-record": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["batchRecordScores"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/scores/application/{applicationId}/update-interview-eligibility": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["updateInterviewEligibility"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/scores/absent": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["markAsAbsent"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rules/validate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 验证规则配置
-         * @description 验证规则配置的语法和结构是否正确
-         */
-        post: operations["validateRule"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rules/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 测试规则执行
-         * @description 使用测试数据测试规则执行结果
-         */
-        post: operations["testRule"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rules/execute": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 执行规则
-         * @description 执行规则并返回结果（用于调试）
-         */
-        post: operations["executeRule"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reviews/{applicationId}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 审核拒绝
-         * @description 审核员拒绝申请
-         */
-        post: operations["rejectApplication"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reviews/{applicationId}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 审核通过
-         * @description 审核员通过申请
-         */
-        post: operations["approveApplication"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reviews/tasks/{taskId}/release": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 释放任务 */
-        post: operations["release"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reviews/tasks/{taskId}/heartbeat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 任务心跳 */
-        post: operations["heartbeat"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reviews/tasks/{taskId}/decision": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 提交审结（附证据） */
-        post: operations["decision"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reviews/tasks/batch-decision": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 批量审核 */
-        post: operations["batchDecision"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reviews/queue/pull": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 拉取队列下一条 */
-        post: operations["pull"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reviews/queue/auto-assign": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 自动分配任务（负载均衡） */
-        post: operations["autoAssign"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reviews/batch-review": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 批量审核
-         * @description 批量审核多个报名申请
-         */
-        post: operations["batchReview"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/positions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 创建岗位
-         * @description 为指定考试创建新岗位
-         */
-        post: operations["createPosition"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/positions/{id}/subjects": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取岗位科目列表
-         * @description 获取指定岗位的所有科目
-         */
-        get: operations["getPositionSubjects"];
-        put?: never;
-        /**
-         * 创建科目
-         * @description 为指定岗位创建新科目
-         */
-        post: operations["createSubject"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payments/query": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 查询支付状态
-         * @description 根据商户订单号查询支付状态
-         */
-        post: operations["query"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payments/initiate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 支付预下单
-         * @description 创建支付订单并返回支付参数
-         */
-        post: operations["initiate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payments/callback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 支付回调（签名校验）
-         * @description 网关回调签名采用 HMAC-SHA256(secret) 计算；字段：appId, amount, channel, transactionId, nonce, timestamp, sign
-         */
-        post: operations["callback"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notification-templates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取所有模板
-         * @description 获取所有通知模板列表
-         */
-        get: operations["listAll"];
-        put?: never;
-        /**
-         * 创建通知模板
-         * @description 创建新的通知模板
-         */
-        post: operations["create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notification-templates/{id}/preview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 预览模板
-         * @description 使用提供的变量值预览渲染后的模板
-         */
-        post: operations["preview"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notification-templates/{id}/deactivate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 停用模板
-         * @description 停用指定的通知模板
-         */
-        post: operations["deactivate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notification-templates/{id}/activate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 激活模板
-         * @description 激活指定的通知模板
-         */
-        post: operations["activate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notification-histories/{id}/resend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 重发通知
-         * @description 重新发送失败的通知
-         */
-        post: operations["resend"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/form-templates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取所有表单模板
-         * @description 获取所有表单模板列表
-         */
-        get: operations["getAllFormTemplates"];
-        put?: never;
-        /**
-         * 创建表单模板
-         * @description 创建新的表单模板（仅租户管理员）
-         */
-        post: operations["createFormTemplate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/form-templates/{id}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 发布表单模板
-         * @description 将表单模板状态从DRAFT更改为PUBLISHED
-         */
-        post: operations["publishTemplate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/form-templates/{id}/fields": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 添加字段
-         * @description 向表单模板添加新字段
-         */
-        post: operations["addField"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/form-templates/{id}/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 归档表单模板
-         * @description 将表单模板状态更改为ARCHIVED
-         */
-        post: operations["archiveTemplate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/files/{fileId}/scan": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 触发病毒扫描
-         * @description 手动触发文件病毒扫描
-         */
-        post: operations["scanFile"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/files/{fileId}/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 确认文件上传
-         * @description 确认文件已成功上传到存储，更新文件状态
-         */
-        post: operations["confirmUpload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/files/validate-type": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 文件类型验证
-         * @description 验证文件类型是否符合要求
-         */
-        post: operations["validateFileType"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/files/upload-url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 获取文件上传URL
-         * @description 获取预签名的文件上传URL，用于直接上传到对象存储
-         */
-        post: operations["getUploadUrl"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/files/batch-info": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 批量获取文件信息
-         * @description 批量获取多个文件的信息
-         */
-        post: operations["getBatchFileInfo"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/exams": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取所有考试
-         * @description 获取系统中所有考试的列表
-         */
-        get: operations["getAllExams"];
-        put?: never;
-        /**
-         * 创建新考试
-         * @description 创建一个新的考试（仅租户管理员和超级管理员）
-         */
-        post: operations["createExam"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/exams/{id}/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
+        get: operations["AppController_getHello"];
         put?: never;
-        /**
-         * 开始考试
-         * @description 将考试状态设置为进行中
-         */
-        post: operations["startExam"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exams/{id}/publish": {
+    "/api/v1/files/upload-url": {
         parameters: {
             query?: never;
             header?: never;
@@ -1638,18 +29,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 发布考试（别名：开放报名）
-         * @description 将考试状态设置为开放报名，等同于/open端点
-         */
-        post: operations["publishExam"];
+        post: operations["FileController_getUploadUrl"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exams/{id}/open": {
+    "/api/v1/files/{id}/confirm": {
         parameters: {
             query?: never;
             header?: never;
@@ -1658,38 +45,30 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 开放考试报名
-         * @description 将考试状态设置为开放报名
-         */
-        post: operations["openExam"];
+        post: operations["FileController_confirmUpload"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exams/{id}/copy": {
+    "/api/v1/files/{id}/download-url": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["FileController_getDownloadUrl"];
         put?: never;
-        /**
-         * 复制考试
-         * @description 基于现有考试创建新考试，可选择复制岗位、科目等信息
-         */
-        post: operations["copyExam"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exams/{id}/complete": {
+    "/api/v1/files/batch-info": {
         parameters: {
             query?: never;
             header?: never;
@@ -1698,137 +77,112 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 完成考试
-         * @description 将考试状态设置为已完成
-         */
-        post: operations["completeExam"];
+        post: operations["FileController_getBatchInfo"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exams/{id}/close": {
+    "/api/v1/files/my": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["FileController_listMyFiles"];
         put?: never;
-        /**
-         * 关闭考试报名
-         * @description 将考试状态设置为关闭报名
-         */
-        post: operations["closeExam"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exams/{id}/cancel": {
+    "/api/v1/files/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["FileController_getFileInfo"];
         put?: never;
-        /**
-         * 取消考试（别名：关闭报名）
-         * @description 将考试状态设置为关闭报名，等同于/close端点
-         */
-        post: operations["cancelExam"];
-        delete?: never;
+        post?: never;
+        delete: operations["FileController_deleteFile"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exams/{examId}/venues": {
+    "/api/v1/files/{id}/preview-url": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** 列出考试的考场 */
-        get: operations["list"];
+        get: operations["FileController_getPreviewUrl"];
         put?: never;
-        /** 创建考场 */
-        post: operations["create_1"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exams/{examId}/ticket-number-rule/preview": {
+    "/api/v1/tenants/slug/{slug}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["TenantController_getBySlug"];
         put?: never;
-        /**
-         * 预览准考证编号
-         * @description 根据当前规则预览生成的准考证编号
-         */
-        post: operations["previewTicketNumber"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exams/{examId}/reviewers": {
+    "/api/v1/tenants/{tenantId}/users/details/categorized": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 列出审核员
-         * @description 列出某考试下已关联的审核员（包括用户详细信息）
-         */
-        get: operations["list_1"];
+        /** 租户下用户按审核员/考生分类 */
+        get: operations["TenantController_getTenantUsersCategorized"];
         put?: never;
-        /**
-         * 添加审核员
-         * @description 为考试添加审核员（指定角色：PRIMARY_REVIEWER或SECONDARY_REVIEWER）
-         */
-        post: operations["add"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exams/{examId}/issue-tickets": {
+    "/api/v1/tenants/{tenantId}/users/details": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** 租户下用户列表（扁平） */
+        get: operations["TenantController_getTenantUsersDetails"];
         put?: never;
-        /** 为已分配座位的候选人批量发放准考证 */
-        post: operations["issueTickets"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exams/{examId}/allocate-seats": {
+    "/api/v1/tenants/{tenantId}/users": {
         parameters: {
             query?: never;
             header?: never;
@@ -1837,107 +191,95 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 执行座位分配（报名关闭后）- 使用默认策略 */
-        post: operations["allocate"];
+        /** 租户管理员创建用户 */
+        post: operations["TenantController_createUser"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exams/{examId}/allocate-seats-with-strategy": {
+    "/api/v1/users/me": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["UserController_getMe"];
         put?: never;
-        /**
-         * 执行座位分配（报名关闭后）- 使用指定策略
-         * @description 支持多种分配策略：POSITION_FIRST_SUBMITTED_AT（默认）、RANDOM（随机）、SUBMITTED_AT_FIRST（按报名时间）、POSITION_FIRST_RANDOM（岗位分组+随机）、CUSTOM_GROUP（自定义分组）
-         */
-        post: operations["allocateWithStrategy"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exam-admins/batch-assign": {
+    "/api/v1/users/me/tenants": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["UserController_getMyTenants"];
         put?: never;
-        post: operations["batchAssignExamAdmins"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exam-admins/assign": {
+    "/api/v1/profile": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        post: operations["assignExamAdmin"];
-        delete?: never;
+        get: operations["ProfileController_getMyProfile"];
+        put: operations["ProfileController_updateProfile"];
+        post: operations["ProfileController_createOrUpdateProfile"];
+        delete: operations["ProfileController_deleteProfile"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/select-tenant": {
+    "/api/v1/profile/for-application": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ProfileController_getProfileForApplication"];
         put?: never;
-        /**
-         * 选择租户
-         * @description 用户选择租户后生成包含租户信息和租户特定角色的JWT Token
-         */
-        post: operations["selectTenant"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/register": {
+    "/api/v1/profile/user/{userId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ProfileController_getUserProfile"];
         put?: never;
-        /**
-         * 候选人注册
-         * @description 候选人自助注册账号
-         */
-        post: operations["register"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/refresh": {
+    "/api/v1/auth/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -1946,18 +288,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 刷新Token
-         * @description 使用现有Token刷新获取新Token
-         */
-        post: operations["refreshToken"];
+        post: operations["AuthController_login"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/logout": {
+    "/api/v1/auth/select-tenant": {
         parameters: {
             query?: never;
             header?: never;
@@ -1966,18 +304,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 登出
-         * @description 用户登出（客户端删除Token）
-         */
-        post: operations["logout"];
+        post: operations["AuthController_selectTenant"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/login": {
+    "/api/v1/auth/register": {
         parameters: {
             query?: never;
             header?: never;
@@ -1986,38 +320,30 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 用户登录
-         * @description 用户登录获取JWT Token
-         */
-        post: operations["login"];
+        post: operations["AuthController_register"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/change-password": {
+    "/api/v1/auth/me": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["AuthController_getMe"];
         put?: never;
-        /**
-         * 修改密码
-         * @description 用户修改自己的密码
-         */
-        post: operations["changePassword"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/bootstrap/create-initial-admin": {
+    "/api/v1/auth/logout": {
         parameters: {
             query?: never;
             header?: never;
@@ -2026,18 +352,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 引导创建首个管理员
-         * @description 仅当系统中无任何管理员时可用，需提供引导令牌
-         */
-        post: operations["createInitialAdmin"];
+        post: operations["AuthController_logout"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/admin/reset-password": {
+    "/api/v1/auth/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -2046,98 +368,78 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 重置用户密码
-         * @description 管理员重置用户密码
-         */
-        post: operations["resetPassword"];
+        post: operations["AuthController_refresh"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/admin/lock/{username}": {
+    "/api/v1/exams": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ExamController_getAll"];
         put?: never;
-        /**
-         * 锁定用户
-         * @description 管理员锁定用户账号
-         */
-        post: operations["lockUser"];
+        post: operations["ExamController_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/admin/deactivate/{username}": {
+    "/api/v1/exams/{id}/applications": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ExamController_listExamApplications"];
         put?: never;
-        /**
-         * 停用用户
-         * @description 管理员停用用户账号
-         */
-        post: operations["deactivateUser"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/admin/create-tenant-admin": {
+    "/api/v1/exams/{id}/reviewers/available": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ExamController_listAvailableExamReviewers"];
         put?: never;
-        /**
-         * 创建租户管理员
-         * @description 创建租户管理员账号。注意：请求中必须包含 tenantId 字段以指定租户，系统会自动在 user_tenant_roles 表中创建用户-租户关联。
-         */
-        post: operations["createTenantAdmin"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/admin/create-secondary-reviewer": {
+    "/api/v1/exams/{id}/reviewers": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ExamController_listExamReviewers"];
         put?: never;
-        /**
-         * 创建二级审核员
-         * @description 创建二级审核员账号
-         */
-        post: operations["createSecondaryReviewer"];
+        post: operations["ExamController_addExamReviewer"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/admin/create-primary-reviewer": {
+    "/api/v1/exams/{id}/reviewers/{assignmentId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2146,18 +448,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 创建一级审核员
-         * @description 创建一级审核员账号
-         */
-        post: operations["createPrimaryReviewer"];
-        delete?: never;
+        post?: never;
+        delete: operations["ExamController_removeExamReviewer"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/admin/create-examiner": {
+    "/api/v1/exams/{id}/issue-tickets": {
         parameters: {
             query?: never;
             header?: never;
@@ -2166,98 +464,78 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 创建考官
-         * @description 创建考官账号
-         */
-        post: operations["createExaminer"];
+        post: operations["ExamController_issueExamTickets"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/admin/create-admin": {
+    "/api/v1/exams/{id}/ticket-number-rule": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        /**
-         * 创建管理员用户
-         * @description 创建管理员账号
-         */
-        post: operations["createAdmin"];
+        get: operations["ExamController_getTicketNumberRule"];
+        put: operations["ExamController_putTicketNumberRule"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/admin/activate/{username}": {
+    "/api/v1/exams/{id}/scores": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ExamController_listExamScores"];
         put?: never;
-        /**
-         * 激活用户
-         * @description 管理员激活用户账号
-         */
-        post: operations["activateUser"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/audit-logs/query": {
+    "/api/v1/exams/{id}/scores/statistics": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ExamController_examScoresStatistics"];
         put?: never;
-        /**
-         * 查询审计日志
-         * @description 根据条件查询审计日志
-         */
-        post: operations["query_1"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications": {
+    "/api/v1/exams/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        /**
-         * 提交报名申请
-         * @description 候选人提交考试报名申请
-         */
-        post: operations["submitApplication"];
-        delete?: never;
+        get: operations["ExamController_getById"];
+        put: operations["ExamController_update"];
+        post?: never;
+        delete: operations["ExamController_delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/{id}/secondary-reject": {
+    "/api/v1/exams/{id}/open": {
         parameters: {
             query?: never;
             header?: never;
@@ -2266,18 +544,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 复审拒绝
-         * @description 复审人员将申请标记为拒绝
-         */
-        post: operations["secondaryReject"];
+        post: operations["ExamController_open"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/{id}/secondary-approve": {
+    "/api/v1/exams/{id}/close": {
         parameters: {
             query?: never;
             header?: never;
@@ -2286,38 +560,30 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 复审通过
-         * @description 复审人员将申请标记为最终通过
-         */
-        post: operations["secondaryApprove"];
+        post: operations["ExamController_close"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/{id}/run-auto-review": {
+    "/api/v1/exams/{id}/positions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ExamController_getPositions"];
         put?: never;
-        /**
-         * 触发自动审核
-         * @description 管理员手动触发自动审核（测试用）
-         */
-        post: operations["runAutoReview"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/{id}/primary-reject": {
+    "/api/v1/exams/positions": {
         parameters: {
             query?: never;
             header?: never;
@@ -2326,18 +592,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 初审拒绝
-         * @description 初审人员将申请标记为拒绝
-         */
-        post: operations["primaryReject"];
+        post: operations["ExamController_createPosition"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/{id}/primary-approve": {
+    "/api/v1/exams/positions/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2345,59 +607,47 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
-        /**
-         * 初审通过
-         * @description 初审人员将申请标记为通过，推进到复审
-         */
-        post: operations["primaryApprove"];
-        delete?: never;
+        put: operations["ExamController_updatePosition"];
+        post?: never;
+        delete: operations["ExamController_deletePosition"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/{id}/pay": {
+    "/api/v1/exams/{id}/subjects": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ExamController_getExamSubjects"];
         put?: never;
-        /**
-         * 申请支付
-         * @description 为已通过审核的申请进行支付
-         */
-        post: operations["payApplication"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/{id}/attachments": {
+    "/api/v1/exams/positions/{positionId}/subjects": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ExamController_getSubjects"];
         put?: never;
-        /**
-         * 上传申请附件
-         * @description 为申请上传支持文件
-         */
-        post: operations["uploadAttachment"];
+        post: operations["ExamController_createSubject"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/import": {
+    "/api/v1/exams/subjects/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2405,83 +655,63 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
-        /**
-         * 批量导入申请
-         * @description 支持 dryRun 验证与错误报告；非 dryRun 时按项提交并记录审计
-         */
-        post: operations["importApplications"];
-        delete?: never;
+        put: operations["ExamController_updateSubject"];
+        post?: never;
+        delete: operations["ExamController_deleteSubject"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/drafts": {
+    "/api/v1/exams/{id}/rules": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取草稿列表
-         * @description 获取当前考生的所有草稿
-         */
-        get: operations["listDrafts"];
-        put?: never;
-        /**
-         * 保存报名草稿
-         * @description 候选人保存报名草稿（可部分字段）
-         */
-        post: operations["saveDraft"];
+        get: operations["ExamController_getExamRules"];
+        put: operations["ExamController_updateExamRules"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/batch/transition": {
+    "/api/v1/exams/positions/{positionId}/rules": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        /**
-         * 批量状态迁移
-         * @description 对指定申请批量迁移到目标状态，支持 dryRun 与审计
-         */
-        post: operations["batchTransition"];
+        get: operations["ExamController_getPositionRules"];
+        put: operations["ExamController_updatePositionRules"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/batch-import": {
+    "/api/v1/exams/{id}/form-template": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ExamController_getExamFormTemplate"];
         put?: never;
-        /**
-         * 批量导入报名
-         * @description 管理员批量导入考生报名信息
-         */
-        post: operations["batchImport"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/admin/users": {
+    "/api/v1/exams/{id}/form-template/{templateId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2489,28 +719,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
-        /**
-         * 创建用户（超级管理员）
-         * @description 超级管理员创建用户，可以指定全局角色和租户角色
-         */
-        post: operations["createUser"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/users/{userId}/display-name": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 查询单个显示名 */
-        get: operations["displayName"];
-        put?: never;
+        put: operations["ExamController_setExamFormTemplate"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2518,18 +727,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tickets/{ticketId}": {
+    "/api/v1/positions/{id}/form-template": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取准考证详情
-         * @description 根据准考证ID获取详细信息
-         */
-        get: operations["getTicket"];
+        get: operations["PositionController_getFormTemplate"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2538,18 +743,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tickets/{ticketId}/view": {
+    "/api/v1/positions/{id}/applications": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 在线查看准考证PDF
-         * @description 在线内嵌查看准考证PDF（Content-Disposition=inline）
-         */
-        get: operations["viewTicketPdf"];
+        get: operations["PositionController_listApplications"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2558,38 +759,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tickets/{ticketId}/download": {
+    "/api/v1/positions/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 下载准考证PDF
-         * @description 下载准考证PDF文件
-         */
-        get: operations["downloadTicketPdf"];
-        put?: never;
+        get: operations["PositionController_getById"];
+        put: operations["PositionController_update"];
         post?: never;
-        delete?: never;
+        delete: operations["PositionController_delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tickets/exam/{examId}/statistics": {
+    "/api/v1/public/exams/open": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取准考证统计
-         * @description 获取考试的准考证统计信息
-         */
-        get: operations["getTicketStatistics"];
+        get: operations["PublicExamController_getOpenExams"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2598,18 +791,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tickets/application/{applicationId}": {
+    "/api/v1/public/exams/tenant/{tenantCode}/code/{code}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取准考证信息
-         * @description 根据申请ID获取准考证信息
-         */
-        get: operations["getTicketByApplication"];
+        get: operations["PublicExamController_getExamByTenantAndCode"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2618,14 +807,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tenants/{tenantId}/users": {
+    "/api/v1/public/exams/tenant/{tenantCode}/code/{code}/positions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["getTenantUsers"];
+        get: operations["PublicExamController_getExamPositionsByTenantAndCode"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2634,14 +823,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tenants/{tenantId}/users/{userId}/roles": {
+    "/api/v1/public/exams/tenant/{tenantCode}/code/{code}/announcement": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["getUserRoles"];
+        get: operations["PublicExamController_getAnnouncementByTenantAndCode"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2650,14 +839,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tenants/{tenantId}/users/me/tenants": {
+    "/api/v1/published-exams/open": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["getMyTenants"];
+        get: operations["PublishedExamController_getOpenExams"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2666,32 +855,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tenants/{tenantId}/users/details": {
+    "/api/v1/form-templates": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @deprecated */
-        get: operations["getTenantUsersWithDetails"];
+        get: operations["FormTemplateController_list"];
         put?: never;
-        post?: never;
+        post: operations["FormTemplateController_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tenants/{tenantId}/users/details/categorized": {
+    "/api/v1/form-templates/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["getTenantUsersWithDetailsCategorized"];
-        put?: never;
+        get: operations["FormTemplateController_getById"];
+        put: operations["FormTemplateController_update"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2699,78 +887,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tenants/{tenantId}/users/by-role/{role}": {
+    "/api/v1/form-templates/{id}/batch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["getTenantUsersByRole"];
-        put?: never;
+        get?: never;
+        put: operations["FormTemplateController_batchUpdate"];
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tenants/{tenantId}/backups/{backupId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取备份详情
-         * @description 获取指定备份的详细信息
-         */
-        get: operations["getBackupDetails"];
-        put?: never;
-        post?: never;
-        /**
-         * 删除备份
-         * @description 删除指定的备份记录和文件
-         */
-        delete: operations["deleteBackup"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tenants/{tenantId}/backups/{backupId}/progress": {
+    "/api/v1/form-templates/{id}/publish": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取备份进度
-         * @description 获取备份任务的执行进度
-         */
-        get: operations["getBackupProgress"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["FormTemplateController_publish"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tenants/{tenantId}/backups/restore/{restoreTaskId}/progress": {
+    "/api/v1/scores/exam/{examId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取恢复进度
-         * @description 获取恢复任务的执行进度
-         */
-        get: operations["getRestoreProgress"];
+        get: operations["ScoreController_getScoresByExam"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2779,18 +935,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tenants/{tenantId}/backups/latest": {
+    "/api/v1/scores/application/{applicationId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取最新备份
-         * @description 获取租户的最新备份记录
-         */
-        get: operations["getLatestBackup"];
+        get: operations["ScoreController_getScoresByApplication"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2799,98 +951,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tenants/slug/{slug}": {
+    "/api/v1/scores/record": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 根据slug获取租户
-         * @description 根据租户slug（代码）获取租户详细信息。此端点用于前端租户选择，无需认证即可访问。
-         */
-        get: operations["getTenantBySlug"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["ScoreController_recordScore"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tenants/me": {
+    "/api/v1/scores/batch-import": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取我的租户
-         * @description 获取当前登录用户所属的所有租户
-         */
-        get: operations["getMyTenants_1"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["ScoreController_batchImport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tenants/check-code": {
+    "/api/v1/scores/calculate-eligibility/{examId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 检查租户代码
-         * @description 检查租户代码是否可用（仅管理员）
-         */
-        get: operations["checkTenantCode"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["ScoreController_calculateEligibility"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/statistics/tenants/{tenantId}": {
+    "/api/v1/scores/interview-result": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取租户统计
-         * @description 获取指定租户的统计数据（仅超级管理员可见）
-         */
-        get: operations["getTenantStatistics"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["ScoreController_updateInterviewResult"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/statistics/tenant/me": {
+    "/api/v1/scores/statistics/{examId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取当前租户统计
-         * @description 获取当前登录用户所属租户的统计数据（租户管理员可见）
-         */
-        get: operations["getCurrentTenantStatistics"];
+        get: operations["ScoreController_getStatistics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2899,18 +1031,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/statistics/platform": {
+    "/api/v1/scores/ranking/exam/{examId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取平台统计
-         * @description 获取整个平台的统计数据（仅超级管理员可见）
-         */
-        get: operations["getPlatformStatistics"];
+        get: operations["ScoreController_getRanking"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2919,18 +1047,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/statistics/exams/{examId}": {
+    "/api/v1/scores/export/{examId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取考试统计
-         * @description 获取指定考试的详细统计数据（租户管理员可见）
-         */
-        get: operations["getExamStatistics"];
+        get: operations["ScoreController_exportScores"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2939,18 +1063,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/statistics/applications/{examId}": {
+    "/api/v1/scores/template/{examId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取报名统计
-         * @description 获取指定考试的报名统计数据（租户管理员可见）
-         */
-        get: operations["getApplicationStatistics"];
+        get: operations["ScoreController_getImportTemplate"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2959,58 +1079,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scores/subject/{subjectId}": {
+    "/api/v1/scores/{scoreId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 根据科目查询成绩
-         * @description 查询指定科目的所有成绩
-         */
-        get: operations["getScoresBySubject"];
+        get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["ScoreController_deleteScore"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scores/statistics/exam/{examId}": {
+    "/api/v1/tickets": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查询考试成绩统计
-         * @description 查看指定考试的成绩统计数据
-         */
-        get: operations["getScoreStatistics"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["TicketController_generate"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scores/ranking/exam/{examId}": {
+    "/api/v1/tickets/application/{applicationId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查询成绩排名
-         * @description 查看指定考试或岗位的成绩排名
-         */
-        get: operations["getRanking"];
+        get: operations["TicketController_getByApplication"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3019,18 +1127,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scores/exam/{examId}": {
+    "/api/v1/tickets/my": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 根据考试查询所有成绩
-         * @description 查询指定考试的所有成绩
-         */
-        get: operations["getScoresByExam"];
+        get: operations["TicketController_getMyTickets"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3039,14 +1143,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scores/exam/{examId}/interview-eligibility-statistics": {
+    "/api/v1/tickets/{id}/download": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["getInterviewEligibilityStatistics"];
+        get: operations["TicketController_download"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3055,91 +1159,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scores/exam/{examId}/export": {
+    "/api/v1/tickets/batch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 导出考试成绩
-         * @description 导出指定考试的所有成绩为Excel文件
-         */
-        get: operations["exportScores"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["TicketController_batchGenerate"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scores/application/{applicationId}": {
+    "/api/v1/tickets/validate": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查询申请的所有成绩
-         * @description 候选人可查看自己的成绩，管理员可查看任意申请的成绩
-         */
-        get: operations["getScoresByApplication"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["TicketController_validate"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scores/application/{applicationId}/interview-eligibility": {
+    "/api/v1/tickets/verify": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["checkInterviewEligibility"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["TicketController_verify"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reviews/{applicationId}": {
+    "/api/v1/tickets/batch-generate/{examId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取审核任务详情
-         * @description 获取指定审核任务的详细信息
-         */
-        get: operations["getReviewDetails"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["TicketController_batchGenerateForExam"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reviews/workbench": {
+    "/api/v1/tickets/exam/{examId}/list": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** 获取审核员工作台 */
-        get: operations["getWorkbench"];
+        get: operations["TicketController_listForExam"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3148,32 +1239,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/reviews/tasks/{taskId}/assignee": {
+    "/api/v1/tickets/exam/{examId}/template": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** 查询任务占用人信息 */
-        get: operations["assignee"];
-        put?: never;
+        get: operations["TicketController_getTicketTemplate"];
+        put: operations["TicketController_saveTicketTemplate"];
         post?: never;
-        delete?: never;
+        delete: operations["TicketController_resetTicketTemplate"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reviews/stats/me": {
+    "/api/v1/tickets/exam/{examId}/statistics": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** 我的审核统计 */
-        get: operations["myStats"];
+        get: operations["TicketController_getTicketStatistics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3182,18 +1271,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/reviews/statistics": {
+    "/api/v1/tickets/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取审核统计
-         * @description 获取审核工作的统计信息
-         */
-        get: operations["getReviewStatistics"];
+        get: operations["TicketController_getById"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3202,15 +1287,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/reviews/queue": {
+    "/api/v1/applications/my": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** 查询队列（分页/过滤） */
-        get: operations["listQueue"];
+        get: operations["ApplicationController_getMyApplications"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3219,38 +1303,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/reviews/pending": {
+    "/api/v1/applications": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取待审核申请
-         * @description 获取当前用户权限范围内的待审核申请列表（仅本人占用；可选包含未占用且限关联考试）
-         */
-        get: operations["getPendingReviews"];
+        get: operations["ApplicationController_listAll"];
         put?: never;
-        post?: never;
+        post: operations["ApplicationController_submit"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/public/exams/slug/{slug}": {
+    "/api/v1/applications/drafts/my": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 通过slug获取考试信息
-         * @description 通过考试URL后缀获取考试详细信息，无需认证。用于公开考试页面展示。
-         */
-        get: operations["getExamBySlug"];
+        get: operations["ApplicationController_getMyDrafts"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3259,39 +1335,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/public/exams/slug/{slug}/positions": {
+    "/api/v1/applications/drafts": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 通过slug获取考试岗位列表
-         * @description 通过考试URL后缀获取考试下的所有岗位信息，无需认证。
-         */
-        get: operations["getExamPositionsBySlug"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["ApplicationController_saveDraft"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/public/exams/slug/{slug}/announcement": {
+    "/api/v1/applications/drafts/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 通过slug获取考试公告
-         * @description 通过考试URL后缀获取考试公告内容，无需认证。
-         */
-        get: operations["getAnnouncementBySlug"];
-        put?: never;
+        get?: never;
+        put: operations["ApplicationController_updateDraft"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3299,18 +1367,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/public/exams/open": {
+    "/api/v1/applications/{id}/audit-logs": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取开放报名的考试列表
-         * @description 获取所有状态为开放报名的考试列表，无需认证。用于公开考试列表页面。
-         */
-        get: operations["getOpenExams"];
+        get: operations["ApplicationController_getAuditLogs"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3319,18 +1383,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/pii-compliance/access-logs": {
+    "/api/v1/applications/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查询所有PII访问日志
-         * @description 分页查询指定时间范围内的所有PII数据访问记录
-         */
-        get: operations["getAllAccessLogs"];
+        get: operations["ApplicationController_getById"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3339,18 +1399,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/pii-compliance/access-logs/users/{userId}": {
+    "/api/v1/applications/{id}/reviews": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查询用户的PII访问日志
-         * @description 查询指定用户在指定时间范围内的PII数据访问记录
-         */
-        get: operations["getUserAccessLogs"];
+        get: operations["ApplicationController_getReviews"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3359,18 +1415,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/pii-compliance/access-logs/types/{accessType}": {
+    "/api/v1/reviews/stats/me": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查询特定类型的PII访问日志
-         * @description 查询指定访问类型在指定时间范围内的PII数据访问记录
-         */
-        get: operations["getAccessLogsByType"];
+        get: operations["ReviewController_getMyStats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3379,118 +1431,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/pii-compliance/access-logs/resources": {
+    "/api/v1/reviews/pull": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查询资源的PII访问日志
-         * @description 查询指定资源在指定时间范围内的PII数据访问记录
-         */
-        get: operations["getResourceAccessLogs"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["ReviewController_pullTask"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/pii-compliance/access-logs/count": {
+    "/api/v1/reviews/decide": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 统计PII访问次数
-         * @description 统计指定条件下的PII数据访问次数
-         */
-        get: operations["countAccess"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["ReviewController_decide"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/payments/config": {
+    "/api/v1/reviews/batch-decide": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取支付配置
-         * @description 返回支付相关开关与币种，仅用于前端展示控制
-         */
-        get: operations["config"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["ReviewController_batchDecide"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/notification-templates/status/{status}": {
+    "/api/v1/reviews/tasks/{id}/heartbeat": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 根据状态获取模板列表
-         * @description 获取指定状态的所有通知模板
-         */
-        get: operations["listByStatus"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["ReviewController_heartbeat"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/notification-templates/code/{code}": {
+    "/api/v1/reviews/tasks/{id}/release": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 根据代码获取模板
-         * @description 根据模板代码获取通知模板
-         */
-        get: operations["getByCode"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["ReviewController_release"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/notification-templates/channel/{channel}": {
+    "/api/v1/reviews/queue": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 根据渠道获取模板列表
-         * @description 获取指定渠道的所有通知模板
-         */
-        get: operations["listByChannel"];
+        get: operations["ReviewController_getQueue"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3499,62 +1527,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/notification-histories": {
+    "/api/v1/reviews/history": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查询通知历史
-         * @description 根据条件查询通知历史（分页）
-         */
-        get: operations["query_2"];
+        get: operations["ReviewController_getHistory"];
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notification-histories/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取通知历史详情
-         * @description 根据ID获取通知历史详情
-         */
-        get: operations["getById_1"];
-        put?: never;
-        post?: never;
-        /**
-         * 删除通知历史
-         * @description 删除指定的通知历史记录
-         */
-        delete: operations["delete_2"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/notification-histories/statistics": {
+    "/api/v1/statistics/platform": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取通知统计信息
-         * @description 获取通知发送的统计数据
-         */
-        get: operations["getStatistics"];
+        get: operations["StatisticsController_getPlatformStatistics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3563,18 +1559,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/notification-histories/my": {
+    "/api/v1/statistics/tenant/me": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取当前用户的通知历史
-         * @description 获取当前登录用户的所有通知历史
-         */
-        get: operations["getMyNotifications"];
+        get: operations["StatisticsController_getCurrentTenantStatistics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3583,18 +1575,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/form-templates/by-status/{status}": {
+    "/api/v1/statistics/applications": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 根据状态获取表单模板
-         * @description 根据状态筛选表单模板(DRAFT/PUBLISHED/ARCHIVED)
-         */
-        get: operations["getFormTemplatesByStatus"];
+        get: operations["StatisticsController_getApplicationStatistics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3603,42 +1591,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/files/{fileId}": {
+    "/api/v1/statistics/reviews": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取文件信息
-         * @description 根据文件ID获取文件详细信息
-         */
-        get: operations["getFileInfo"];
+        get: operations["StatisticsController_getReviewStatistics"];
         put?: never;
         post?: never;
-        /**
-         * 删除文件
-         * @description 删除指定文件
-         */
-        delete: operations["deleteFile"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/files/{fileId}/scan-result": {
+    "/api/v1/statistics/funnel": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取文件扫描结果
-         * @description 获取文件病毒扫描结果
-         */
-        get: operations["getScanResult"];
+        get: operations["StatisticsController_getFunnelStatistics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3647,18 +1623,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/files/{fileId}/download-url": {
+    "/api/v1/statistics/score-analysis": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取文件下载URL
-         * @description 获取预签名的文件下载URL
-         */
-        get: operations["getDownloadUrl"];
+        get: operations["StatisticsController_getScoreAnalysis"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3667,18 +1639,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/files/my": {
+    "/api/v1/analytics/overview": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取用户文件列表
-         * @description 获取当前用户上传的所有文件
-         */
-        get: operations["getMyFiles"];
+        get: operations["AnalyticsController_overview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3687,18 +1655,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/exams/{id}/statistics": {
+    "/api/v1/analytics/exam-stats": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取考试统计信息
-         * @description 获取考试的报名统计、审核统计、岗位统计等信息
-         */
-        get: operations["getExamStatistics_1"];
+        get: operations["AnalyticsController_examStats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3707,18 +1671,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/exams/{id}/positions": {
+    "/api/v1/analytics/application-trends": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取考试的岗位列表
-         * @description 获取指定考试下的所有岗位
-         */
-        get: operations["getExamPositions"];
+        get: operations["AnalyticsController_applicationTrends"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3727,18 +1687,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/exams/{id}/applications": {
+    "/api/v1/analytics/reviewer-performance": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取考试的报名列表
-         * @description 获取指定考试的所有报名申请，支持按状态和岗位筛选
-         */
-        get: operations["getExamApplications"];
+        get: operations["AnalyticsController_reviewerPerformance"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3747,18 +1703,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/exams/{id}/applications/export": {
+    "/api/v1/analytics/payment-analytics": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 导出考试报名数据
-         * @description 导出指定考试的报名数据为CSV格式，支持按状态和岗位筛选
-         */
-        get: operations["exportExamApplications"];
+        get: operations["AnalyticsController_paymentAnalytics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3767,18 +1719,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/exams/{examId}/ticket-number-rule/options": {
+    "/api/v1/analytics/candidate-analytics": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取配置选项
-         * @description 获取准考证编号规则的所有可用配置选项
-         */
-        get: operations["getOptions"];
+        get: operations["AnalyticsController_candidateAnalytics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3787,18 +1735,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/exams/{examId}/reviewers/available": {
+    "/api/v1/analytics/system-performance": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取可用审核员
-         * @description 获取可以添加为审核员的用户列表
-         */
-        get: operations["getAvailableReviewers"];
+        get: operations["AnalyticsController_systemPerformance"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3807,46 +1751,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/exam-admins/user/{userId}/exams": {
+    "/api/v1/payments/initiate": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["getUserManagedExams"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["PaymentController_initiate"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exam-admins/my-exams": {
+    "/api/v1/payments/callback": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["getMyManagedExams"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["PaymentController_callback"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exam-admins/exam/{examId}": {
+    "/api/v1/payments/order/{orderId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["getExamAdmins"];
+        get: operations["PaymentController_queryOrder"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3855,14 +1799,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/exam-admins/check/{examId}/{userId}": {
+    "/api/v1/payments/my-orders": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["checkExamAdmin"];
+        get: operations["PaymentController_listMyOrders"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3871,18 +1815,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/me": {
+    "/api/v1/mock-pay/{outTradeNo}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取当前用户信息
-         * @description 获取当前登录用户的详细信息
-         */
-        get: operations["getCurrentUser"];
+        get: operations["MockGatewayController_showPaymentPage"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3891,99 +1831,79 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/audit-logs/users/{userId}": {
+    "/api/v1/mock-pay/action/{outTradeNo}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查询用户审计日志
-         * @description 查询指定用户的审计日志
-         */
-        get: operations["findByUserId"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["MockGatewayController_handlePaymentAction"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/audit-logs/tenants/{tenantId}": {
+    "/api/v1/seating/venues": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查询租户审计日志
-         * @description 查询指定租户的审计日志
-         */
-        get: operations["findByTenantId"];
+        get: operations["SeatingController_listVenues"];
         put?: never;
-        post?: never;
+        post: operations["SeatingController_createVenue"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/audit-logs/tenants/{tenantId}/count": {
+    "/api/v1/seating/venues/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 统计租户审计日志数量
-         * @description 统计指定租户的审计日志总数
-         */
-        get: operations["countByTenantId"];
-        put?: never;
+        get: operations["SeatingController_getVenue"];
+        put: operations["SeatingController_updateVenue"];
         post?: never;
-        delete?: never;
+        delete: operations["SeatingController_deleteVenue"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/audit-logs/resources/{resourceType}/{resourceId}": {
+    "/api/v1/seating/venues/{venueId}/seat-map": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查询资源审计日志
-         * @description 查询指定资源的审计日志
-         */
-        get: operations["findByResource"];
+        get: operations["SeatingController_getSeatMap"];
         put?: never;
-        post?: never;
+        post: operations["SeatingController_createSeatMap"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/{id}": {
+    "/api/v1/seating/venues/{venueId}/seat-map/seats/{row}/{col}/status": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 根据ID获取申请详情
-         * @description 获取指定申请的详细信息
-         */
-        get: operations["getApplicationById"];
-        put?: never;
+        get?: never;
+        put: operations["SeatingController_updateSeatMapSeatStatus"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3991,19 +1911,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/applications/{id}/reviews": {
+    "/api/v1/seating/venues/{venueId}/seat-map/seats/{row}/{col}/label": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 报名审核历史
-         * @description 返回指定申请的审核历史（候选人仅可查看自己的申请；审核员/管理员可查看）
-         */
-        get: operations["listReviews"];
-        put?: never;
+        get?: never;
+        put: operations["SeatingController_updateSeatMapSeatLabel"];
         post?: never;
         delete?: never;
         options?: never;
@@ -4011,78 +1927,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/applications/{id}/audit-logs": {
+    "/api/v1/seating/venues/{venueId}/rooms": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查询申请的审计日志
-         * @description 按时间升序返回指定申请的审计日志列表
-         */
-        get: operations["listAuditLogs"];
+        get: operations["SeatingController_listRooms"];
         put?: never;
-        post?: never;
+        post: operations["SeatingController_createRoom"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/my": {
+    "/api/v1/seating/rooms/{roomId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查看我的报名
-         * @description 候选人查看自己的报名申请（支持分页与状态过滤）
-         */
-        get: operations["getMyApplications"];
-        put?: never;
+        get?: never;
+        put: operations["SeatingController_updateRoom"];
         post?: never;
-        delete?: never;
+        delete: operations["SeatingController_deleteRoom"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/export": {
+    "/api/v1/seating/{examId}/allocate": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 导出申请（CSV）
-         * @description 按考试导出报名申请，支持按状态过滤，返回CSV
-         */
-        get: operations["exportCsv"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["SeatingController_allocate"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/drafts/my": {
+    "/api/v1/seating/{examId}/assignments": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 查看我的报名草稿
-         * @description 候选人查看自己的报名草稿列表（仅 DRAFT）
-         */
-        get: operations["listMyDrafts"];
+        get: operations["SeatingController_listAssignments"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4091,7 +1991,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tenants/{tenantId}/users/{userId}": {
+    "/api/v1/seating/assign": {
         parameters: {
             query?: never;
             header?: never;
@@ -4100,50 +2000,50 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete: operations["removeUserFromTenant"];
+        post: operations["SeatingController_assignSeat"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tenants/{tenantId}/users/{userId}/roles/{role}": {
+    "/api/v1/super-admin/tenants": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** 获取所有租户列表 */
+        get: operations["SuperAdminController_getAllTenants"];
         put?: never;
-        post?: never;
-        delete: operations["revokeRole"];
+        /** 创建新租户 */
+        post: operations["SuperAdminController_createTenant"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scores/{scoreId}": {
+    "/api/v1/super-admin/users": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** 获取系统所有用户列表 */
+        get: operations["SuperAdminController_getAllUsers"];
         put?: never;
-        post?: never;
-        /**
-         * 删除成绩记录
-         * @description 删除指定的成绩记录
-         */
-        delete: operations["deleteScore"];
+        /** 创建系统用户/租户管理员 */
+        post: operations["SuperAdminController_createUser"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/pii-compliance/access-logs/cleanup": {
+    "/api/v1/super-admin/users/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4153,17 +2053,15 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /**
-         * 清理过期的PII访问日志
-         * @description 删除超过保留期限的PII访问日志
-         */
-        delete: operations["cleanupOldLogs"];
+        /** 删除系统用户 */
+        delete: operations["SuperAdminController_deleteUser"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** 更新系统用户 */
+        patch: operations["SuperAdminController_updateUser"];
         trace?: never;
     };
-    "/exams/{examId}/reviewers/{id}": {
+    "/api/v1/super-admin/tenants/{id}/activate": {
         parameters: {
             query?: never;
             header?: never;
@@ -4172,18 +2070,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        /**
-         * 移除审核员
-         * @description 移除考试的审核员
-         */
-        delete: operations["remove"];
+        /** 激活租户 */
+        post: operations["SuperAdminController_activateTenant"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/exam-admins/remove": {
+    "/api/v1/super-admin/tenants/{id}/deactivate": {
         parameters: {
             query?: never;
             header?: never;
@@ -4192,14 +2087,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete: operations["removeExamAdmin"];
+        /** 停用租户 */
+        post: operations["SuperAdminController_deactivateTenant"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/applications/{id}/draft": {
+    "/api/v1/super-admin/tenants/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4209,11 +2105,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /**
-         * 删除草稿
-         * @description 删除草稿状态的报名申请
-         */
-        delete: operations["deleteDraft"];
+        /** 彻底删除租户 */
+        delete: operations["SuperAdminController_deleteTenant"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4223,1894 +2116,165 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description 标准错误响应模型 */
-        ErrorResponse: {
+        FileUploadUrlRequest: Record<string, never>;
+        FileConfimRequest: Record<string, never>;
+        FileBatchInfoRequest: Record<string, never>;
+        CreateUserDto: {
             /**
-             * @description 错误代码（可读）
-             * @example VALIDATION_ERROR
+             * @description 用户名
+             * @example admin001
              */
-            errorCode?: string;
+            username: string;
             /**
-             * @description 错误信息
-             * @example 请求参数不合法
+             * @description 密码
+             * @example password123
              */
-            message?: string;
-            /** @description 详情（字段错误或上下文信息） */
-            details?: {
-                [key: string]: unknown;
-            };
+            password: string;
             /**
-             * Format: date-time
-             * @description 时间戳，Asia/Shanghai，格式 yyyy-MM-dd HH:mm:ss
+             * @description 邮箱
+             * @example user@example.com
              */
-            timestamp?: string;
+            email: string;
             /**
-             * @description 请求路径
-             * @example /positions/123
+             * @description 真实姓名
+             * @example 张三
              */
-            path?: string;
+            fullName: string;
+            /**
+             * @description 手机号
+             * @example 13800138000
+             */
+            phoneNumber?: string;
+            /**
+             * @description 全局角色列表
+             * @example [
+             *       "TENANT_ADMIN"
+             *     ]
+             */
+            globalRoles?: string[];
+            /**
+             * @description 关联租户ID
+             * @example uuid-of-tenant
+             */
+            tenantId?: string;
+            /**
+             * @description 在租户中的角色
+             * @example TENANT_ADMIN
+             */
+            tenantRole?: string;
         };
-        TicketTemplateUpdateRequest: {
-            templateName: string;
-            templateFormat?: string;
-            numberPrefix?: string;
-            numberFormat?: string;
-            /** Format: int32 */
-            sequenceStart?: number;
-            customFields?: {
-                [key: string]: unknown;
-            };
-        };
-        UpdateTenantRequest: {
-            name: string;
-            contactEmail: string;
-            contactPhone?: string;
-            description?: string;
-        };
-        /** @description 租户信息 */
-        TenantResponse: {
+        UpdateProfileDto: Record<string, never>;
+        LoginRequestDto: Record<string, never>;
+        SelectTenantDto: Record<string, never>;
+        RegisterRequestDto: Record<string, never>;
+        ExamCreateRequest: Record<string, never>;
+        ExamUpdateRequest: Record<string, never>;
+        PositionCreateRequest: Record<string, never>;
+        UpdatePositionRequest: Record<string, never>;
+        CreateSubjectRequest: Record<string, never>;
+        UpdateSubjectRequest: Record<string, never>;
+        UpdateExamRulesRequest: Record<string, never>;
+        UpdatePositionRulesRequest: Record<string, never>;
+        CreateFormTemplateRequest: Record<string, never>;
+        UpdateFormTemplateRequest: Record<string, never>;
+        BatchUpdateFormTemplateRequest: Record<string, never>;
+        RecordScoreDto: Record<string, never>;
+        BatchImportDto: Record<string, never>;
+        UpdateInterviewResultDto: Record<string, never>;
+        GenerateTicketRequest: Record<string, never>;
+        BatchGenerateTicketsRequest: Record<string, never>;
+        ValidateTicketRequest: Record<string, never>;
+        VerifyTicketRequest: Record<string, never>;
+        ApplicationSubmitRequest: Record<string, never>;
+        PullTaskRequest: Record<string, never>;
+        DecisionTaskRequest: Record<string, never>;
+        BatchReviewDecisionRequest: Record<string, never>;
+        InitiatePaymentRequest: Record<string, never>;
+        PaymentCallbackRequest: Record<string, never>;
+        CreateVenueRequest: Record<string, never>;
+        UpdateVenueRequest: Record<string, never>;
+        CreateRoomRequest: Record<string, never>;
+        UpdateRoomRequest: Record<string, never>;
+        AllocateSeatsRequest: Record<string, never>;
+        AssignSeatRequest: Record<string, never>;
+        UpdateUserDto: {
             /**
-             * Format: uuid
-             * @description 租户ID
-             * @example 123e4567-e89b-12d3-a456-426614174000
+             * @description 用户名
+             * @example admin001
              */
-            id?: string;
+            username?: string;
+            /**
+             * @description 密码
+             * @example password123
+             */
+            password?: string;
+            /**
+             * @description 邮箱
+             * @example user@example.com
+             */
+            email?: string;
+            /**
+             * @description 真实姓名
+             * @example 张三
+             */
+            fullName?: string;
+            /**
+             * @description 手机号
+             * @example 13800138000
+             */
+            phoneNumber?: string;
+            /**
+             * @description 用户状态
+             * @example ACTIVE
+             */
+            status?: string;
+            /**
+             * @description 全局角色列表
+             * @example [
+             *       "TENANT_ADMIN"
+             *     ]
+             */
+            globalRoles?: string[];
+            /**
+             * @description 关联租户ID
+             * @example uuid-of-tenant
+             */
+            tenantId?: string;
+            /**
+             * @description 在租户中的角色
+             * @example TENANT_ADMIN
+             */
+            tenantRole?: string;
+        };
+        CreateTenantDto: {
             /**
              * @description 租户名称
-             * @example 2024年公务员考试
+             * @example 演示大学
              */
-            name?: string;
+            name: string;
             /**
-             * @description 租户代码（slug）
-             * @example 2024-civil-service
+             * @description 租户唯一标识码
+             * @example demo
              */
-            slug?: string;
+            code: string;
             /**
-             * @description 租户描述
-             * @example 2024年度国家公务员考试
+             * @description 联系人邮箱
+             * @example admin@demo.edu.cn
              */
-            description?: string;
+            contactEmail: string;
             /**
-             * @description 租户状态
-             * @example ACTIVE
-             * @enum {string}
-             */
-            status?: "PENDING" | "ACTIVE" | "INACTIVE" | "DELETED";
-            /**
-             * @description 联系邮箱
-             * @example contact@example.com
-             */
-            contactEmail?: string;
-            /**
-             * @description 联系电话
+             * @description 联系人电话
              * @example 13800138000
              */
             contactPhone?: string;
             /**
-             * @description 创建时间
-             * @example 2024-01-01 10:00:00
-             */
-            createdAt?: string;
-            /**
-             * @description 更新时间
-             * @example 2024-01-01 10:00:00
-             */
-            updatedAt?: string;
-            /**
-             * @description 激活时间
-             * @example 2024-01-01 10:00:00
-             */
-            activatedAt?: string;
-            /**
-             * @description 停用时间
-             * @example 2024-01-01 10:00:00
-             */
-            deactivatedAt?: string;
-        };
-        PositionUpdateRequest: {
-            title?: string;
-            description?: string;
-            requirements?: string;
-            /** Format: int32 */
-            quota?: number;
-        };
-        PositionResponse: {
-            id?: string;
-            examId?: string;
-            code?: string;
-            title?: string;
-            description?: string;
-            requirements?: string;
-            /** Format: int32 */
-            quota?: number;
-        };
-        SubjectUpdateRequest: {
-            name?: string;
-            /** Format: int32 */
-            durationMinutes?: number;
-            /** @enum {string} */
-            type?: "WRITTEN" | "INTERVIEW" | "PRACTICAL";
-            maxScore?: number;
-            passingScore?: number;
-            weight?: number;
-            /** Format: int32 */
-            ordering?: number;
-            schedule?: string;
-        };
-        SubjectResponse: {
-            id?: string;
-            positionId?: string;
-            name?: string;
-            /** Format: int32 */
-            durationMinutes?: number;
-            type?: string;
-            maxScore?: number;
-            passingScore?: number;
-            weight?: number;
-            /** Format: int32 */
-            ordering?: number;
-            schedule?: string;
-        };
-        NotificationTemplateDTO: {
-            /** Format: uuid */
-            id?: string;
-            code?: string;
-            name?: string;
-            channel?: string;
-            subject?: string;
-            content?: string;
-            status?: string;
-            variables?: {
-                [key: string]: string;
-            };
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: date-time */
-            updatedAt?: string;
-            createdBy?: string;
-            updatedBy?: string;
-        };
-        /** @description 更新表单模板请求 */
-        FormTemplateUpdateRequest: {
-            /**
-             * @description 模板名称
-             * @example 2024年招聘报名表(修订版)
-             */
-            templateName?: string;
-            /**
-             * @description 模板描述
-             * @example 用于2024年度公务员招聘报名(已更新)
+             * @description 租户描述
+             * @example 这是一个用于演示的租户
              */
             description?: string;
-        };
-        /** @description 条件规则 */
-        ConditionalRulesDTO: {
-            /**
-             * @description 可见性条件(JSON格式)
-             * @example {
-             *       "field": "education",
-             *       "operator": "in",
-             *       "values": [
-             *         "bachelor",
-             *         "master"
-             *       ]
-             *     }
-             */
-            visibilityCondition?: string;
-            /** @description 验证条件(JSON格式) */
-            validationCondition?: string;
-        };
-        /** @description 字段约束 */
-        FieldConstraintsDTO: {
-            /**
-             * Format: int32
-             * @description 最小长度
-             * @example 2
-             */
-            minLength?: number;
-            /**
-             * Format: int32
-             * @description 最大长度
-             * @example 50
-             */
-            maxLength?: number;
-            /**
-             * Format: double
-             * @description 最小值
-             * @example 0
-             */
-            minValue?: number;
-            /**
-             * Format: double
-             * @description 最大值
-             * @example 100
-             */
-            maxValue?: number;
-            /**
-             * @description 正则表达式
-             * @example ^[\u4e00-\u9fa5]+$
-             */
-            pattern?: string;
-            /**
-             * Format: int64
-             * @description 最大文件大小(字节)
-             * @example 5242880
-             */
-            maxFileSizeBytes?: number;
-            /**
-             * @description 允许的文件类型(逗号分隔)
-             * @example jpg,png,pdf
-             */
-            allowedFileTypes?: string;
-            /** @description 自定义错误消息 */
-            customErrorMessage?: string;
-        };
-        /** @description 字段定义响应 */
-        FieldDefinitionResponse: {
-            /** @description 字段ID */
-            id?: string;
-            /** @description 字段键 */
-            fieldKey?: string;
-            /** @description 字段类型 */
-            fieldType?: string;
-            /** @description 字段标签 */
-            label?: string;
-            /** @description 占位符文本 */
-            placeholder?: string;
-            /** @description 帮助文本 */
-            helpText?: string;
-            /** @description 是否必填 */
-            required?: boolean;
-            /**
-             * Format: int32
-             * @description 显示顺序
-             */
-            displayOrder?: number;
-            /** @description 字段选项 */
-            options?: components["schemas"]["FieldOptionsDTO"];
-            /** @description 字段约束 */
-            constraints?: components["schemas"]["FieldConstraintsDTO"];
-            /** @description 条件规则 */
-            conditionalRules?: components["schemas"]["ConditionalRulesDTO"];
-            /**
-             * Format: date-time
-             * @description 创建时间
-             */
-            createdAt?: string;
-        };
-        /** @description 字段选项 */
-        FieldOptionsDTO: {
-            /**
-             * @description 是否允许自定义输入
-             * @example false
-             */
-            allowCustomInput?: boolean;
-            /** @description 选项列表 */
-            options?: components["schemas"]["OptionDTO"][];
-        };
-        /** @description 表单模板详情响应 */
-        FormTemplateDetailResponse: {
-            /**
-             * @description 模板ID
-             * @example 550e8400-e29b-41d4-a716-446655440000
-             */
-            id?: string;
-            /**
-             * @description 模板名称
-             * @example 2024年招聘报名表
-             */
-            templateName?: string;
-            /** @description 模板描述 */
-            description?: string;
-            /**
-             * Format: int32
-             * @description 版本号
-             * @example 1
-             */
-            version?: number;
-            /**
-             * @description 状态
-             * @example PUBLISHED
-             * @enum {string}
-             */
-            status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
-            /** @description 字段列表 */
-            fields?: components["schemas"]["FieldDefinitionResponse"][];
-            /** @description 创建者 */
-            createdBy?: string;
-            /**
-             * Format: date-time
-             * @description 创建时间
-             */
-            createdAt?: string;
-            /**
-             * Format: date-time
-             * @description 更新时间
-             */
-            updatedAt?: string;
-        };
-        /** @description 选项 */
-        OptionDTO: {
-            /**
-             * @description 选项值
-             * @example bachelor
-             */
-            value?: string;
-            /**
-             * @description 选项标签
-             * @example 本科
-             */
-            label?: string;
-            /** @description 选项说明 */
-            description?: string;
-        };
-        /** @description 字段定义请求 */
-        FieldDefinitionRequest: {
-            /**
-             * @description 字段键(唯一标识)
-             * @example full_name
-             */
-            fieldKey: string;
-            /**
-             * @description 字段类型
-             * @example TEXT_SHORT
-             * @enum {string}
-             */
-            fieldType: "TEXT_SHORT" | "TEXT_LONG" | "NUMBER_INTEGER" | "NUMBER_DECIMAL" | "NUMBER_CURRENCY" | "SELECT_SINGLE" | "SELECT_MULTIPLE" | "FILE_IMAGE" | "FILE_DOCUMENT" | "FILE_PDF" | "DATE" | "DATETIME" | "TIME_RANGE" | "PHONE" | "EMAIL" | "ADDRESS" | "ID_CARD" | "PASSPORT" | "CUSTOM";
-            /**
-             * @description 字段标签
-             * @example 姓名
-             */
-            label: string;
-            /**
-             * @description 占位符文本
-             * @example 请输入您的真实姓名
-             */
-            placeholder?: string;
-            /**
-             * @description 帮助文本
-             * @example 请填写与身份证上一致的姓名
-             */
-            helpText?: string;
-            /**
-             * @description 是否必填
-             * @example true
-             */
-            required: boolean;
-            /**
-             * Format: int32
-             * @description 显示顺序(从0开始)
-             * @example 0
-             */
-            displayOrder: number;
-            /** @description 字段选项(用于SELECT类型) */
-            options?: components["schemas"]["FieldOptionsDTO"];
-            /** @description 字段约束 */
-            constraints?: components["schemas"]["FieldConstraintsDTO"];
-            /** @description 条件规则 */
-            conditionalRules?: components["schemas"]["ConditionalRulesDTO"];
-        };
-        /** @description 字段重新排序请求 */
-        FieldReorderRequest: {
-            /**
-             * @description 按新顺序排列的字段ID列表
-             * @example [
-             *       "550e8400-e29b-41d4-a716-446655440001",
-             *       "550e8400-e29b-41d4-a716-446655440002"
-             *     ]
-             */
-            fieldIds: string[];
-        };
-        ExamUpdateRequest: {
-            title?: string;
-            slug?: string;
-            description?: string;
-            announcement?: string;
-            /** Format: date-time */
-            registrationStart?: string;
-            /** Format: date-time */
-            registrationEnd?: string;
-            /** Format: date-time */
-            examStart?: string;
-            /** Format: date-time */
-            examEnd?: string;
-            feeRequired?: boolean;
-            feeAmount?: number;
-        };
-        ExamResponse: {
-            id?: string;
-            code?: string;
-            slug?: string;
-            title?: string;
-            description?: string;
-            announcement?: string;
-            /** Format: date-time */
-            registrationStart?: string;
-            /** Format: date-time */
-            registrationEnd?: string;
-            /** Format: date-time */
-            examStart?: string;
-            /** Format: date-time */
-            examEnd?: string;
-            feeRequired?: boolean;
-            feeAmount?: number;
-            status?: string;
-            createdBy?: string;
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: date-time */
-            updatedAt?: string;
-        };
-        AnnouncementUpdateRequest: {
-            announcement?: string;
-        };
-        UpdateExamAdminPermissionsRequest: {
-            /** Format: uuid */
-            examId?: string;
-            /** Format: uuid */
-            adminId?: string;
-            permissions?: {
-                [key: string]: unknown;
-            };
-        };
-        /** @description 报名申请响应体 */
-        ApplicationResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            examId?: string;
-            /** Format: uuid */
-            positionId?: string;
-            /** Format: uuid */
-            candidateId?: string;
-            /** Format: int32 */
-            formVersion?: number;
-            status?: string;
-            /** Format: date-time */
-            submittedAt?: string;
-        };
-        /** @description 提交报名的请求体 */
-        ApplicationSubmitRequest: {
-            /**
-             * Format: uuid
-             * @description 考试ID
-             */
-            examId: string;
-            /**
-             * Format: uuid
-             * @description 岗位ID
-             */
-            positionId: string;
-            /**
-             * Format: int32
-             * @description 表单版本
-             * @default 1
-             */
-            formVersion: number;
-            /** @description 表单JSON数据 */
-            payload: {
-                [key: string]: unknown;
-            };
-            /** @description 附件引用列表：{fileId, fieldKey} */
-            attachments?: components["schemas"]["AttachmentRef"][];
-        };
-        /** @description 附件引用 */
-        AttachmentRef: {
-            /** Format: uuid */
-            fileId?: string;
-            fieldKey?: string;
-        };
-        CreateTenantUserRequest: {
-            username: string;
-            password: string;
-            email: string;
-            fullName: string;
-            phoneNumber?: string;
-            department?: string;
-            jobTitle?: string;
-            tenantRole: string;
-        };
-        UserResponse: {
-            id?: string;
-            username?: string;
-            email?: string;
-            fullName?: string;
-            phoneNumber?: string;
-            status?: string;
-            roles?: string[];
-            permissions?: string[];
-            /** Format: date-time */
-            lastLoginAt?: string;
-            emailVerified?: boolean;
-            phoneVerified?: boolean;
-            department?: string;
-            jobTitle?: string;
-            /** Format: date-time */
-            createdAt?: string;
-        };
-        SeatDTO: {
-            /** Format: int32 */
-            row?: number;
-            /** Format: int32 */
-            col?: number;
-            status?: string;
-            label?: string;
-            candidateName?: string;
-            positionTitle?: string;
-        };
-        SeatMapDTO: {
-            /** Format: int32 */
-            rows?: number;
-            /** Format: int32 */
-            columns?: number;
-            seats?: components["schemas"]["SeatDTO"][];
-        };
-        ResolveRequest: {
-            ids?: string[];
-        };
-        TicketVerifyRequest: {
-            ticketNo?: string;
-            candidateIdNumber?: string;
-        };
-        TicketVerifyResponse: {
-            valid?: boolean;
-            message?: string;
-            ticketNo?: string;
-            candidateName?: string;
-            examTitle?: string;
-            positionTitle?: string;
-            venueName?: string;
-            roomNumber?: string;
-            seatNumber?: string;
-            /** Format: date-time */
-            examStartTime?: string;
-            /** Format: date-time */
-            examEndTime?: string;
-        };
-        TicketValidationRequest: {
-            ticketNumber: string;
-            candidateId: string;
-            examId?: string;
-            venueId?: string;
-        };
-        BatchGenerateTicketsRequest: {
-            /** Format: uuid */
-            examId?: string;
-            applicationIds?: string[];
-        };
-        BatchGenerateTicketsResponse: {
-            /** Format: int32 */
-            totalCount?: number;
-            /** Format: int32 */
-            successCount?: number;
-            /** Format: int32 */
-            failureCount?: number;
-            results?: components["schemas"]["TicketResult"][];
-        };
-        TicketResult: {
-            /** Format: uuid */
-            applicationId?: string;
-            success?: boolean;
-            ticketNo?: string;
-            errorMessage?: string;
-        };
-        CreateTenantRequest: {
-            name: string;
-            code: string;
-            contactEmail: string;
-            contactPhone?: string;
-            description?: string;
-        };
-        GrantRoleRequest: {
-            /** Format: uuid */
-            userId: string;
-            role: string;
-        };
-        RestoreRequest: {
-            /** Format: uuid */
-            targetTenantId?: string;
-            overwrite?: boolean;
-        };
-        ScoreRecordRequest: {
-            /** Format: uuid */
-            applicationId: string;
-            /** Format: uuid */
-            subjectId: string;
-            score: number;
-            remarks?: string;
-        };
-        AbsentMarkRequest: {
-            /** Format: uuid */
-            applicationId: string;
-            /** Format: uuid */
-            subjectId: string;
-            remarks?: string;
-        };
-        RuleValidationResultDTO: {
-            valid?: boolean;
-            errors?: string[];
-            warnings?: string[];
-        };
-        TestRuleRequest: {
-            ruleConfig?: {
-                [key: string]: unknown;
-            };
-            testData?: {
-                [key: string]: unknown;
-            };
-        };
-        RuleTestResultDTO: {
-            passed?: boolean;
-            action?: string;
-            reason?: string;
-            executionLog?: string[];
-            debugInfo?: {
-                [key: string]: unknown;
-            };
-        };
-        ExecuteRuleRequest: {
-            ruleConfig?: {
-                [key: string]: unknown;
-            };
-            /** Format: uuid */
-            examId?: string;
-            /** Format: uuid */
-            positionId?: string;
-            /** Format: uuid */
-            candidateId?: string;
-            formData?: {
-                [key: string]: unknown;
-            };
-        };
-        RuleExecutionResultDTO: {
-            passed?: boolean;
-            action?: string;
-            reason?: string;
-            matchedRules?: string[];
-            failedRules?: string[];
-        };
-        ReviewDecisionRequest: {
-            action?: string;
-            approve?: boolean;
-            reason?: string;
-            evidenceFileIds?: string[];
-        };
-        BatchDecisionRequest: {
-            taskIds?: string[];
-            approve?: boolean;
-            reason?: string;
-        };
-        PullRequest: {
-            /** Format: uuid */
-            examId?: string;
-            /** @enum {string} */
-            stage?: "PRIMARY" | "SECONDARY";
-            /** Format: uuid */
-            positionId?: string;
-        };
-        BatchReviewRequest: {
-            applicationIds: string[];
-            approve: boolean;
-            reason?: string;
-            evidenceFileIds?: string[];
-        };
-        BatchReviewResponse: {
-            /** Format: int32 */
-            total?: number;
-            /** Format: int32 */
-            success?: number;
-            /** Format: int32 */
-            failed?: number;
-            successIds?: string[];
-            failures?: components["schemas"]["FailureDetail"][];
-        };
-        FailureDetail: {
-            /** Format: uuid */
-            applicationId?: string;
-            errorMessage?: string;
-        };
-        PositionCreateRequest: {
-            /** Format: uuid */
-            examId: string;
-            code: string;
-            title: string;
-            description?: string;
-            requirements?: string;
-            /** Format: int32 */
-            quota?: number;
-        };
-        SubjectCreateRequest: {
-            /** Format: uuid */
-            positionId: string;
-            name: string;
-            /** Format: int32 */
-            durationMinutes: number;
-            /** @enum {string} */
-            type: "WRITTEN" | "INTERVIEW" | "PRACTICAL";
-            maxScore?: number;
-            passingScore?: number;
-            weight?: number;
-            /** Format: int32 */
-            ordering?: number;
-            schedule?: string;
-        };
-        PaymentQueryRequest: {
-            outTradeNo: string;
-        };
-        PaymentInitiateRequest: {
-            /** Format: uuid */
-            applicationId: string;
-            channel?: string;
-        };
-        PaymentCallbackRequest: {
-            /** Format: uuid */
-            appId: string;
-            amount: number;
-            channel?: string;
-            transactionId?: string;
-            nonce: string;
-            /** Format: int64 */
-            timestamp: number;
-            sign: string;
-        };
-        /** @description 创建表单模板请求 */
-        FormTemplateCreateRequest: {
-            /**
-             * @description 模板名称
-             * @example 2024年招聘报名表
-             */
-            templateName: string;
-            /**
-             * @description 模板描述
-             * @example 用于2024年度公务员招聘报名
-             */
-            description?: string;
-        };
-        ScanStatusResponse: {
-            /** Format: uuid */
-            fileId?: string;
-            status?: string;
-            result?: string;
-            /** Format: date-time */
-            scannedAt?: string;
-        };
-        /** @description 文件上传确认请求 */
-        FileUploadConfirmRequest: {
-            /**
-             * @description 文件名
-             * @example resume.pdf
-             */
-            fileName?: string;
-            /**
-             * Format: int64
-             * @description 文件大小（字节）
-             * @example 1024000
-             */
-            fileSize: number;
-            /**
-             * @description 内容类型
-             * @example application/pdf
-             */
-            contentType?: string;
-        };
-        /** @description 文件上传确认响应 */
-        FileUploadConfirmResponse: {
-            /**
-             * Format: uuid
-             * @description 文件ID
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            fileId?: string;
-            /**
-             * @description 文件状态
-             * @example UPLOADED
-             */
-            status?: string;
-            /**
-             * @description 文件名
-             * @example resume.pdf
-             */
-            fileName?: string;
-            /**
-             * Format: int64
-             * @description 文件大小
-             * @example 1024000
-             */
-            fileSize?: number;
-            /**
-             * @description 内容类型
-             * @example application/pdf
-             */
-            contentType?: string;
-            /**
-             * @description 病毒扫描状态
-             * @example PENDING
-             */
-            virusScanStatus?: string;
-            /**
-             * Format: date-time
-             * @description 上传时间
-             * @example 2024-01-01T12:00:00
-             */
-            uploadedAt?: string;
-            /**
-             * @description 消息
-             * @example 文件上传确认成功
-             */
-            message?: string;
-        };
-        /** @description 文件类型验证请求 */
-        ValidateTypeRequest: {
-            /**
-             * @description 文件名
-             * @example resume.pdf
-             */
-            fileName: string;
-            /**
-             * @description 内容类型
-             * @example application/pdf
-             */
-            contentType: string;
-            /**
-             * @description 字段键
-             * @example resume
-             */
-            fieldKey: string;
-        };
-        /** @description 文件类型验证响应 */
-        ValidateTypeResponse: {
-            /**
-             * @description 是否有效
-             * @example true
-             */
-            valid?: boolean;
-            /**
-             * @description 验证结果说明
-             * @example 文件类型有效
-             */
-            reason?: string;
-            /**
-             * @description 允许的文件类型
-             * @example [
-             *       "pdf",
-             *       "doc",
-             *       "docx",
-             *       "jpg",
-             *       "jpeg",
-             *       "png"
-             *     ]
-             */
-            allowedTypes?: string[];
-            /**
-             * @description 最大文件大小
-             * @example 10MB
-             */
-            maxSize?: string;
-        };
-        /** @description 文件上传URL请求 */
-        FileUploadUrlRequest: {
-            /**
-             * @description 文件名
-             * @example resume.pdf
-             */
-            fileName: string;
-            /**
-             * @description 内容类型
-             * @example application/pdf
-             */
-            contentType: string;
-            /**
-             * @description 字段键
-             * @example resume
-             */
-            fieldKey: string;
-        };
-        /** @description 文件上传URL响应 */
-        FileUploadUrlResponse: {
-            /**
-             * Format: uuid
-             * @description 文件ID
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            fileId?: string;
-            /**
-             * @description 上传URL
-             * @example https://minio.example.com/exam-uploads/...
-             */
-            uploadUrl?: string;
-            /**
-             * @description 文件键
-             * @example uploads/candidate1/resume/123e4567-e89b-12d3-a456-426614174000.pdf
-             */
-            fileKey?: string;
-            /**
-             * @description 文件名
-             * @example resume.pdf
-             */
-            fileName?: string;
-            /**
-             * @description 内容类型
-             * @example application/pdf
-             */
-            contentType?: string;
-            /**
-             * @description 字段键
-             * @example resume
-             */
-            fieldKey?: string;
-            /**
-             * Format: int32
-             * @description 过期时间（秒）
-             * @example 3600
-             */
-            expiresIn?: number;
-        };
-        /** @description 批量获取文件信息请求 */
-        FileBatchInfoRequest: {
-            /**
-             * @description 文件ID列表
-             * @example [
-             *       "123e4567-e89b-12d3-a456-426614174000",
-             *       "987fcdeb-51a2-43d1-b567-123456789abc"
-             *     ]
-             */
-            fileIds: string[];
-        };
-        /** @description 批量文件信息响应 */
-        FileBatchInfoResponse: {
-            /** @description 文件信息列表 */
-            files?: components["schemas"]["FileInfoResponse"][];
-            /**
-             * Format: int32
-             * @description 总数量
-             * @example 2
-             */
-            totalCount?: number;
-            /**
-             * @description 请求者
-             * @example candidate1
-             */
-            requestedBy?: string;
-            /**
-             * Format: date-time
-             * @description 请求时间
-             * @example 2024-01-01T12:00:00
-             */
-            requestedAt?: string;
-        };
-        FileInfoResponse: {
-            /** Format: uuid */
-            fileId?: string;
-            fileName?: string;
-            originalName?: string;
-            contentType?: string;
-            /** Format: int64 */
-            fileSize?: number;
-            status?: string;
-            virusScanStatus?: string;
-            fieldKey?: string;
-            /** Format: uuid */
-            applicationId?: string;
-            uploadedBy?: string;
-            /** Format: date-time */
-            uploadedAt?: string;
-            /** Format: date-time */
-            lastAccessedAt?: string;
-            /** Format: int32 */
-            accessCount?: number;
-        };
-        ExamCreateRequest: {
-            code: string;
-            slug?: string;
-            title: string;
-            description?: string;
-            announcement?: string;
-            /** Format: date-time */
-            registrationStart?: string;
-            /** Format: date-time */
-            registrationEnd?: string;
-            /** Format: date-time */
-            examStart?: string;
-            /** Format: date-time */
-            examEnd?: string;
-            feeRequired?: boolean;
-            feeAmount?: number;
-        };
-        ExamCopyRequest: {
-            newCode: string;
-            newTitle: string;
-            newSlug?: string;
-            copyPositions?: boolean;
-            copySubjects?: boolean;
-            copyAnnouncement?: boolean;
-            copyRulesConfig?: boolean;
-            copyFeeSettings?: boolean;
-        };
-        AddReviewerRequest: {
-            /** Format: uuid */
-            userId?: string;
-            role?: string;
-        };
-        BatchAssignExamAdminRequest: {
-            /** Format: uuid */
-            examId?: string;
-            adminIds?: string[];
-            permissions?: {
-                [key: string]: unknown;
-            };
-        };
-        AssignExamAdminRequest: {
-            /** Format: uuid */
-            examId?: string;
-            /** Format: uuid */
-            adminId?: string;
-            permissions?: {
-                [key: string]: unknown;
-            };
-        };
-        SelectTenantRequest: {
-            tenantId: string;
-        };
-        LoginResponse: {
-            token?: string;
-            tokenType?: string;
-            /** Format: int64 */
-            expiresIn?: number;
-            user?: components["schemas"]["UserResponse"];
-        };
-        RegisterRequest: {
-            username: string;
-            password: string;
-            confirmPassword: string;
-            email: string;
-            fullName: string;
-            phoneNumber?: string;
-            department?: string;
-            jobTitle?: string;
-            tenantId?: string;
-        };
-        LoginRequest: {
-            username: string;
-            password: string;
-            rememberMe?: boolean;
-        };
-        ChangePasswordRequest: {
-            oldPassword: string;
-            newPassword: string;
-            confirmPassword: string;
-            newPasswordConfirmed?: boolean;
-        };
-        ResetPasswordRequest: {
-            username: string;
-            newPassword: string;
-            confirmPassword: string;
-            passwordConfirmed?: boolean;
-        };
-        AuditLogQueryRequest: {
-            /** Format: uuid */
-            tenantId?: string;
-            /** Format: uuid */
-            userId?: string;
-            /** @enum {string} */
-            action?: "LOGIN" | "LOGOUT" | "LOGIN_FAILED" | "PASSWORD_CHANGE" | "PASSWORD_RESET" | "EXAM_CREATE" | "EXAM_UPDATE" | "EXAM_DELETE" | "EXAM_PUBLISH" | "EXAM_CANCEL" | "EXAM_COPY" | "EXAM_VIEW" | "POSITION_CREATE" | "POSITION_UPDATE" | "POSITION_DELETE" | "POSITION_VIEW" | "POSITION_FORM_CONFIG" | "SUBJECT_CREATE" | "SUBJECT_UPDATE" | "SUBJECT_DELETE" | "APPLICATION_SUBMIT" | "APPLICATION_UPDATE" | "APPLICATION_WITHDRAW" | "APPLICATION_VIEW" | "APPLICATION_VIEW_OWN" | "APPLICATION_EXPORT" | "APPLICATION_IMPORT" | "REVIEW_PRIMARY" | "REVIEW_SECONDARY" | "REVIEW_BATCH" | "REVIEW_ASSIGN" | "REVIEW_CLAIM" | "REVIEW_RELEASE" | "PAYMENT_INITIATE" | "PAYMENT_CALLBACK" | "PAYMENT_REFUND" | "PAYMENT_CONFIG_VIEW" | "TICKET_GENERATE" | "TICKET_ISSUE" | "TICKET_DOWNLOAD" | "TICKET_VERIFY" | "TICKET_TEMPLATE_VIEW" | "TICKET_TEMPLATE_UPDATE" | "TICKET_TEMPLATE_DELETE" | "SEATING_ALLOCATE" | "SEATING_VIEW" | "VENUE_CREATE" | "VENUE_UPDATE" | "VENUE_DELETE" | "VENUE_LIST" | "SCORE_CREATE" | "SCORE_UPDATE" | "SCORE_DELETE" | "SCORE_VIEW" | "SCORE_VIEW_OWN" | "SCORE_PUBLISH" | "SCORE_EXPORT" | "FILE_UPLOAD" | "FILE_DOWNLOAD" | "FILE_DELETE" | "FILE_VIEW" | "USER_CREATE" | "USER_UPDATE" | "USER_DELETE" | "USER_VIEW" | "USER_ROLE_ASSIGN" | "TENANT_CREATE" | "TENANT_UPDATE" | "TENANT_DELETE" | "TENANT_VIEW" | "TENANT_BACKUP" | "TENANT_RESTORE" | "ROLE_MANAGE" | "PERMISSION_ASSIGN" | "TEMPLATE_CREATE" | "TEMPLATE_UPDATE" | "TEMPLATE_DELETE" | "TEMPLATE_VIEW" | "NOTIFICATION_SEND" | "NOTIFICATION_HISTORY_VIEW" | "STATISTICS_VIEW" | "PII_ACCESS" | "PII_EXPORT" | "SYSTEM_CONFIG" | "SYSTEM_BACKUP" | "SYSTEM_RESTORE";
-            /** @enum {string} */
-            result?: "SUCCESS" | "FAILURE" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "VALIDATION_ERROR" | "RESOURCE_NOT_FOUND" | "BUSINESS_ERROR" | "SYSTEM_ERROR";
-            /** Format: date-time */
-            startTime?: string;
-            /** Format: date-time */
-            endTime?: string;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-        };
-        AuditLogDTO: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            tenantId?: string;
-            /** Format: uuid */
-            userId?: string;
-            username?: string;
-            /** @enum {string} */
-            action?: "LOGIN" | "LOGOUT" | "LOGIN_FAILED" | "PASSWORD_CHANGE" | "PASSWORD_RESET" | "EXAM_CREATE" | "EXAM_UPDATE" | "EXAM_DELETE" | "EXAM_PUBLISH" | "EXAM_CANCEL" | "EXAM_COPY" | "EXAM_VIEW" | "POSITION_CREATE" | "POSITION_UPDATE" | "POSITION_DELETE" | "POSITION_VIEW" | "POSITION_FORM_CONFIG" | "SUBJECT_CREATE" | "SUBJECT_UPDATE" | "SUBJECT_DELETE" | "APPLICATION_SUBMIT" | "APPLICATION_UPDATE" | "APPLICATION_WITHDRAW" | "APPLICATION_VIEW" | "APPLICATION_VIEW_OWN" | "APPLICATION_EXPORT" | "APPLICATION_IMPORT" | "REVIEW_PRIMARY" | "REVIEW_SECONDARY" | "REVIEW_BATCH" | "REVIEW_ASSIGN" | "REVIEW_CLAIM" | "REVIEW_RELEASE" | "PAYMENT_INITIATE" | "PAYMENT_CALLBACK" | "PAYMENT_REFUND" | "PAYMENT_CONFIG_VIEW" | "TICKET_GENERATE" | "TICKET_ISSUE" | "TICKET_DOWNLOAD" | "TICKET_VERIFY" | "TICKET_TEMPLATE_VIEW" | "TICKET_TEMPLATE_UPDATE" | "TICKET_TEMPLATE_DELETE" | "SEATING_ALLOCATE" | "SEATING_VIEW" | "VENUE_CREATE" | "VENUE_UPDATE" | "VENUE_DELETE" | "VENUE_LIST" | "SCORE_CREATE" | "SCORE_UPDATE" | "SCORE_DELETE" | "SCORE_VIEW" | "SCORE_VIEW_OWN" | "SCORE_PUBLISH" | "SCORE_EXPORT" | "FILE_UPLOAD" | "FILE_DOWNLOAD" | "FILE_DELETE" | "FILE_VIEW" | "USER_CREATE" | "USER_UPDATE" | "USER_DELETE" | "USER_VIEW" | "USER_ROLE_ASSIGN" | "TENANT_CREATE" | "TENANT_UPDATE" | "TENANT_DELETE" | "TENANT_VIEW" | "TENANT_BACKUP" | "TENANT_RESTORE" | "ROLE_MANAGE" | "PERMISSION_ASSIGN" | "TEMPLATE_CREATE" | "TEMPLATE_UPDATE" | "TEMPLATE_DELETE" | "TEMPLATE_VIEW" | "NOTIFICATION_SEND" | "NOTIFICATION_HISTORY_VIEW" | "STATISTICS_VIEW" | "PII_ACCESS" | "PII_EXPORT" | "SYSTEM_CONFIG" | "SYSTEM_BACKUP" | "SYSTEM_RESTORE";
-            resourceType?: string;
-            resourceId?: string;
-            requiredPermission?: string;
-            /** @enum {string} */
-            result?: "SUCCESS" | "FAILURE" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "VALIDATION_ERROR" | "RESOURCE_NOT_FOUND" | "BUSINESS_ERROR" | "SYSTEM_ERROR";
-            ipAddress?: string;
-            userAgent?: string;
-            requestMethod?: string;
-            requestPath?: string;
-            requestParams?: string;
-            responseStatus?: string;
-            errorMessage?: string;
-            /** Format: date-time */
-            timestamp?: string;
-            /** Format: int64 */
-            executionTimeMs?: number;
-        };
-        ApplicationPayRequest: {
-            channel?: string;
-        };
-        ApplicationAttachmentUploadRequest: {
-            filename: string;
-            type: string;
-        };
-        ApplicationBatchTransitionRequest: {
-            applicationIds: string[];
-            targetStatus: string;
-            dryRun?: boolean;
-            reason?: string;
-        };
-        /** @description 批量导入报名请求 */
-        ApplicationBatchImportRequest: {
-            /**
-             * Format: uuid
-             * @description 考试ID
-             */
-            examId: string;
-            /** @description 导入的报名数据列表 */
-            items: components["schemas"]["ImportItem"][];
-            /**
-             * @description 是否跳过错误继续导入
-             * @default false
-             */
-            skipErrors: boolean;
-        };
-        /** @description 单个导入项 */
-        ImportItem: {
-            /**
-             * Format: uuid
-             * @description 岗位ID
-             */
-            positionId: string;
-            /** @description 考生用户名 */
-            candidateUsername: string;
-            /** @description 表单数据 */
-            payload?: {
-                [key: string]: unknown;
-            };
-        };
-        /** @description 批量导入报名响应 */
-        ApplicationBatchImportResponse: {
-            /**
-             * Format: int32
-             * @description 总数
-             */
-            total?: number;
-            /**
-             * Format: int32
-             * @description 成功数
-             */
-            success?: number;
-            /**
-             * Format: int32
-             * @description 失败数
-             */
-            failed?: number;
-            /** @description 成功的报名ID列表 */
-            successIds?: string[];
-            /** @description 失败的详细信息 */
-            failures?: components["schemas"]["FailureDetail"][];
-        };
-        CreateUserRequest: {
-            username: string;
-            password: string;
-            email: string;
-            fullName: string;
-            phoneNumber?: string;
-            department?: string;
-            jobTitle?: string;
-            globalRoles?: string[];
-            tenantId?: string;
-            tenantRole?: string;
-        };
-        TicketResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            applicationId?: string;
-            /** Format: uuid */
-            examId?: string;
-            /** Format: uuid */
-            positionId?: string;
-            /** Format: uuid */
-            candidateId?: string;
-            ticketNo?: string;
-            /** @enum {string} */
-            status?: "ISSUED" | "PRINTED" | "VERIFIED" | "CANCELLED";
-            candidateName?: string;
-            candidateIdNumber?: string;
-            candidatePhoto?: string;
-            examTitle?: string;
-            positionTitle?: string;
-            /** Format: date-time */
-            examStartTime?: string;
-            /** Format: date-time */
-            examEndTime?: string;
-            venueName?: string;
-            roomNumber?: string;
-            seatNumber?: string;
-            qrCode?: string;
-            barcode?: string;
-            /** Format: date-time */
-            issuedAt?: string;
-            /** Format: date-time */
-            printedAt?: string;
-            /** Format: date-time */
-            verifiedAt?: string;
-            /** Format: date-time */
-            cancelledAt?: string;
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: date-time */
-            updatedAt?: string;
-        };
-        TicketStatisticsResponse: {
-            /** Format: uuid */
-            examId?: string;
-            /** Format: int64 */
-            totalCount?: number;
-            /** Format: int64 */
-            issuedCount?: number;
-            /** Format: int64 */
-            printedCount?: number;
-            /** Format: int64 */
-            verifiedCount?: number;
-            /** Format: int64 */
-            cancelledCount?: number;
-        };
-        /** @description 租户列表响应（分页） */
-        TenantListResponse: {
-            /** @description 租户列表 */
-            content?: components["schemas"]["TenantResponse"][];
-            /**
-             * Format: int64
-             * @description 总元素数
-             * @example 100
-             */
-            totalElements?: number;
-            /**
-             * Format: int32
-             * @description 总页数
-             * @example 10
-             */
-            totalPages?: number;
-            /**
-             * Format: int32
-             * @description 每页大小
-             * @example 10
-             */
-            size?: number;
-            /**
-             * Format: int32
-             * @description 当前页码（从0开始）
-             * @example 0
-             */
-            number?: number;
-        };
-        TenantUserResponse: {
-            user?: components["schemas"]["UserResponse"];
-            tenantRoles?: string[];
-        };
-        TenantUsersResponse: {
-            reviewers?: components["schemas"]["TenantUserResponse"][];
-            candidates?: components["schemas"]["TenantUserResponse"][];
-        };
-        RecentExam: {
-            examId?: string;
-            examTitle?: string;
-            startDate?: string;
-            /** Format: int64 */
-            applications?: number;
-        };
-        TenantStatisticsDTO: {
-            tenantId?: string;
-            tenantName?: string;
-            /** Format: int64 */
-            totalExams?: number;
-            /** Format: int64 */
-            activeExams?: number;
-            /** Format: int64 */
-            completedExams?: number;
-            /** Format: int64 */
-            totalApplications?: number;
-            /** Format: int64 */
-            approvedApplications?: number;
-            /** Format: int64 */
-            rejectedApplications?: number;
-            /** Format: int64 */
-            paidApplications?: number;
-            /** Format: int64 */
-            totalUsers?: number;
-            /** Format: int64 */
-            activeUsers?: number;
-            /** Format: double */
-            totalRevenue?: number;
-            recentExams?: components["schemas"]["RecentExam"][];
-        };
-        PlatformStatisticsDTO: {
-            /** Format: int64 */
-            totalTenants?: number;
-            /** Format: int64 */
-            activeTenants?: number;
-            /** Format: int64 */
-            totalExams?: number;
-            /** Format: int64 */
-            activeExams?: number;
-            /** Format: int64 */
-            completedExams?: number;
-            /** Format: int64 */
-            totalApplications?: number;
-            /** Format: int64 */
-            approvedApplications?: number;
-            /** Format: int64 */
-            rejectedApplications?: number;
-            /** Format: int64 */
-            paidApplications?: number;
-            /** Format: int64 */
-            totalUsers?: number;
-            /** Format: int64 */
-            activeUsers?: number;
-            /** Format: double */
-            totalRevenue?: number;
-            /** Format: double */
-            averageRevenuePerTenant?: number;
-            topTenantsByApplications?: components["schemas"]["TenantRanking"][];
-            topTenantsByRevenue?: components["schemas"]["TenantRanking"][];
-            applicationTrend?: {
-                [key: string]: number;
-            };
-            revenueTrend?: {
-                [key: string]: number;
-            };
-        };
-        TenantRanking: {
-            tenantId?: string;
-            tenantName?: string;
-            /** Format: int64 */
-            value?: number;
-            /** Format: double */
-            percentage?: number;
-        };
-        ExamStatisticsDTO: {
-            examId?: string;
-            examTitle?: string;
-            /** Format: int64 */
-            totalApplications?: number;
-            /** Format: int64 */
-            approvedApplications?: number;
-            /** Format: int64 */
-            rejectedApplications?: number;
-            /** Format: int64 */
-            paidApplications?: number;
-            /** Format: int32 */
-            totalPositions?: number;
-            positionStatistics?: {
-                [key: string]: components["schemas"]["PositionStatistics"];
-            };
-            /** Format: int64 */
-            pendingFirstReview?: number;
-            /** Format: int64 */
-            pendingSecondReview?: number;
-            /** Format: int64 */
-            autoApproved?: number;
-            /** Format: int64 */
-            autoRejected?: number;
-            /** Format: double */
-            totalRevenue?: number;
-            /** Format: double */
-            averagePaymentAmount?: number;
-            /** Format: int64 */
-            assignedSeats?: number;
-            /** Format: int64 */
-            unassignedSeats?: number;
-            /** Format: int64 */
-            ticketsIssued?: number;
-            /** Format: int64 */
-            ticketsNotIssued?: number;
-        };
-        PositionStatistics: {
-            positionId?: string;
-            positionTitle?: string;
-            /** Format: int64 */
-            applications?: number;
-            /** Format: int64 */
-            approved?: number;
-            /** Format: int64 */
-            rejected?: number;
-            /** Format: int64 */
-            paid?: number;
-            /** Format: int32 */
-            maxApplicants?: number;
-            /** Format: double */
-            fillRate?: number;
-        };
-        ApplicationStatisticsDTO: {
-            /** Format: int64 */
-            totalApplications?: number;
-            /** Format: int64 */
-            pendingReview?: number;
-            /** Format: int64 */
-            approved?: number;
-            /** Format: int64 */
-            rejected?: number;
-            /** Format: int64 */
-            paid?: number;
-            /** Format: int64 */
-            unpaid?: number;
-            applicationsByPosition?: {
-                [key: string]: number;
-            };
-            applicationsByStatus?: {
-                [key: string]: number;
-            };
-            applicationsByDate?: {
-                [key: string]: number;
-            };
-            /** Format: double */
-            approvalRate?: number;
-            /** Format: double */
-            paymentRate?: number;
-        };
-        ScoreResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            applicationId?: string;
-            /** Format: uuid */
-            subjectId?: string;
-            score?: number;
-            isAbsent?: boolean;
-            /** Format: uuid */
-            gradedBy?: string;
-            /** Format: date-time */
-            gradedAt?: string;
-            remarks?: string;
-            subjectName?: string;
-            totalScore?: number;
-        };
-        ScoreStatisticsResponse: {
-            /** Format: uuid */
-            examId?: string;
-            /** Format: int64 */
-            totalCount?: number;
-            /** Format: int64 */
-            validCount?: number;
-            /** Format: int64 */
-            absentCount?: number;
-            averageScore?: number;
-            maxScore?: number;
-            minScore?: number;
-        };
-        ScoreRankingResponse: {
-            /** Format: uuid */
-            applicationId?: string;
-            candidateName?: string;
-            idCard?: string;
-            ticketNo?: string;
-            /** Format: uuid */
-            positionId?: string;
-            positionName?: string;
-            totalScore?: number;
-            /** Format: int32 */
-            rank?: number;
-            isTied?: boolean;
-            isInterviewEligible?: boolean;
-            /** Format: int64 */
-            totalCandidates?: number;
-        };
-        InterviewEligibilityStatistics: {
-            /** Format: uuid */
-            examId?: string;
-            /** Format: int32 */
-            totalCompleted?: number;
-            /** Format: int32 */
-            eligible?: number;
-            /** Format: int32 */
-            failed?: number;
-            /** Format: int32 */
-            pendingCount?: number;
-            /** Format: double */
-            eligibilityRate?: number;
-        };
-        MyReviewStatsResponse: {
-            /** Format: int32 */
-            myAssigned?: number;
-            /** Format: int32 */
-            todayDone?: number;
-            /** Format: int32 */
-            weekDone?: number;
-        };
-        PIIAccessLogDTO: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            userId?: string;
-            username?: string;
-            userRole?: string;
-            resourceType?: string;
-            resourceId?: string;
-            fieldName?: string;
-            fieldType?: string;
-            /** @enum {string} */
-            accessType?: "READ" | "EXPORT" | "DOWNLOAD" | "PRINT" | "UPDATE" | "DELETE";
-            /** Format: date-time */
-            accessedAt?: string;
-            ipAddress?: string;
-            source?: string;
-            masked?: boolean;
-            purpose?: string;
-        };
-        NotificationHistoryDTO: {
-            /** Format: uuid */
-            id?: string;
-            templateCode?: string;
-            channel?: string;
-            recipient?: string;
-            /** Format: uuid */
-            recipientUserId?: string;
-            subject?: string;
-            content?: string;
-            variables?: {
-                [key: string]: unknown;
-            };
-            status?: string;
-            errorMessage?: string;
-            /** Format: date-time */
-            sentAt?: string;
-            /** Format: date-time */
-            deliveredAt?: string;
-            /** Format: int32 */
-            retryCount?: number;
-            /** Format: date-time */
-            createdAt?: string;
-        };
-        NotificationStatisticsDTO: {
-            /** Format: int64 */
-            totalCount?: number;
-            /** Format: int64 */
-            pendingCount?: number;
-            /** Format: int64 */
-            sendingCount?: number;
-            /** Format: int64 */
-            successCount?: number;
-            /** Format: int64 */
-            failedCount?: number;
-            channelCounts?: {
-                [key: string]: number;
-            };
-            /** Format: double */
-            successRate?: number;
-        };
-        /** @description 表单模板摘要响应 */
-        FormTemplateSummaryResponse: {
-            /** @description 模板ID */
-            id?: string;
-            /** @description 模板名称 */
-            templateName?: string;
-            /** @description 模板描述 */
-            description?: string;
-            /**
-             * Format: int32
-             * @description 版本号
-             */
-            version?: number;
-            /**
-             * @description 状态
-             * @enum {string}
-             */
-            status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
-            /**
-             * Format: int32
-             * @description 字段数量
-             */
-            fieldCount?: number;
-            /** @description 创建者 */
-            createdBy?: string;
-            /**
-             * Format: date-time
-             * @description 创建时间
-             */
-            createdAt?: string;
-            /**
-             * Format: date-time
-             * @description 更新时间
-             */
-            updatedAt?: string;
-        };
-        PresignedUrlResponse: {
-            /** Format: uuid */
-            fileId?: string;
-            url?: string;
-            /** Format: int32 */
-            expiresIn?: number;
-            fileName?: string;
-            contentType?: string;
-            /** Format: int64 */
-            fileSize?: number;
-        };
-        /** @description 文件列表响应 */
-        FileListResponse: {
-            /** @description 文件信息列表 */
-            files?: components["schemas"]["FileInfoResponse"][];
-            /**
-             * Format: int64
-             * @description 总元素数
-             * @example 25
-             */
-            totalElements?: number;
-            /**
-             * Format: int32
-             * @description 总页数
-             * @example 3
-             */
-            totalPages?: number;
-            /**
-             * Format: int32
-             * @description 当前页码
-             * @example 0
-             */
-            currentPage?: number;
-            /**
-             * Format: int32
-             * @description 页大小
-             * @example 20
-             */
-            pageSize?: number;
-            /**
-             * @description 是否有下一页
-             * @example true
-             */
-            hasNext?: boolean;
-            /**
-             * @description 是否有上一页
-             * @example false
-             */
-            hasPrevious?: boolean;
-        };
-        ExamStatisticsResponse: {
-            examId?: string;
-            examCode?: string;
-            examTitle?: string;
-            /** Format: int64 */
-            totalApplications?: number;
-            /** Format: int64 */
-            draftApplications?: number;
-            /** Format: int64 */
-            submittedApplications?: number;
-            /** Format: int64 */
-            pendingPrimaryReviewApplications?: number;
-            /** Format: int64 */
-            primaryPassedApplications?: number;
-            /** Format: int64 */
-            primaryRejectedApplications?: number;
-            /** Format: int64 */
-            pendingSecondaryReviewApplications?: number;
-            /** Format: int64 */
-            approvedApplications?: number;
-            /** Format: int64 */
-            secondaryRejectedApplications?: number;
-            /** Format: int64 */
-            paidApplications?: number;
-            /** Format: int64 */
-            ticketIssuedApplications?: number;
-            /** Format: double */
-            primaryApprovalRate?: number;
-            /** Format: double */
-            secondaryApprovalRate?: number;
-            /** Format: double */
-            overallApprovalRate?: number;
-            positionStatistics?: components["schemas"]["PositionStatistics"][];
-            applicationsByDate?: {
-                [key: string]: number;
-            };
-        };
-        /** @description 岗位表单模板响应 */
-        FormTemplateResponse: {
-            /** @description 岗位ID */
-            positionId?: string;
-            /** @description 表单模板JSON字符串 */
-            templateJson?: string;
-        };
-        /** @description 报名申请列表项（含可读标题） */
-        ApplicationListItemResponse: {
-            /**
-             * Format: uuid
-             * @description 申请ID
-             */
-            id?: string;
-            /**
-             * Format: uuid
-             * @description 考试ID
-             */
-            examId?: string;
-            /**
-             * Format: uuid
-             * @description 岗位ID
-             */
-            positionId?: string;
-            /**
-             * Format: uuid
-             * @description 候选人用户ID
-             */
-            candidateId?: string;
-            /**
-             * Format: int32
-             * @description 表单版本
-             */
-            formVersion?: number;
-            /** @description 状态 */
-            status?: string;
-            /**
-             * Format: date-time
-             * @description 提交时间
-             */
-            submittedAt?: string;
-            /** @description 考试标题 */
-            examTitle?: string;
-            /** @description 岗位标题 */
-            positionTitle?: string;
-        };
-        ExamReviewerResponse: {
-            id?: string;
-            userId?: string;
-            username?: string;
-            email?: string;
-            role?: string;
-            /** Format: date-time */
-            assignedAt?: string;
-            assignedBy?: string;
-        };
-        ApplicationDetailResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            examId?: string;
-            /** Format: uuid */
-            positionId?: string;
-            /** Format: uuid */
-            candidateId?: string;
-            /** Format: int32 */
-            formVersion?: number;
-            payload?: {
-                [key: string]: unknown;
-            };
-            status?: string;
-            autoCheckResult?: {
-                [key: string]: unknown;
-            };
-            finalDecision?: {
-                [key: string]: unknown;
-            };
-            /** Format: date-time */
-            submittedAt?: string;
-            /** Format: date-time */
-            statusUpdatedAt?: string;
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: date-time */
-            updatedAt?: string;
-        };
-        /** @description 申请审计日志条目 */
-        ApplicationAuditLogItemResponse: {
-            /**
-             * Format: uuid
-             * @description 日志ID
-             */
-            id?: string;
-            /**
-             * Format: uuid
-             * @description 申请ID
-             */
-            applicationId?: string;
-            /** @description 原状态 */
-            fromStatus?: string;
-            /** @description 新状态 */
-            toStatus?: string;
-            /** @description 执行人 */
-            actor?: string;
-            /** @description 原因/备注 */
-            reason?: string;
-            /** @description 元数据(JSON字符串) */
-            metadata?: string;
-            /**
-             * Format: date-time
-             * @description 创建时间，Asia/Shanghai
-             */
-            createdAt?: string;
-        };
-        /** @description 文件删除响应 */
-        FileDeleteResponse: {
-            /**
-             * Format: uuid
-             * @description 文件ID
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            fileId?: string;
-            /**
-             * @description 文件状态
-             * @example DELETED
-             */
-            status?: string;
-            /**
-             * @description 删除者
-             * @example candidate1
-             */
-            deletedBy?: string;
-            /**
-             * @description 消息
-             * @example 文件删除成功
-             */
-            message?: string;
-        };
-        RemoveExamAdminRequest: {
-            /** Format: uuid */
-            examId?: string;
-            /** Format: uuid */
-            adminId?: string;
         };
     };
-    responses: {
-        /** @description 400 - 请求参数错误 */
-        BadRequest: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description 401 - 未认证，需要登录 */
-        Unauthorized: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description 403 - 权限不足，无法访问 */
-        Forbidden: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description 500 - 服务器内部错误 */
-        InternalServerError: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-    };
+    responses: never;
     parameters: never;
     requestBodies: never;
     headers: never;
@@ -6118,335 +2282,604 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    update: {
+    AppController_getHello: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FileController_getUploadUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileUploadUrlRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FileController_confirmUpload: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                venueId: string;
+                id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["FileConfimRequest"];
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": Record<string, never>;
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    delete: {
+    FileController_getDownloadUrl: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                venueId: string;
+                id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": Record<string, never>;
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    updateSeatStatus: {
+    FileController_getBatchInfo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileBatchInfoRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FileController_listMyFiles: {
         parameters: {
             query: {
-                /**
-                 * @description 座位状态
-                 * @example UNAVAILABLE
-                 */
+                status: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FileController_getFileInfo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FileController_deleteFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FileController_getPreviewUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantController_getBySlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantController_getTenantUsersCategorized: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantController_getTenantUsersDetails: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantController_createUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUserDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UserController_getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UserController_getMyTenants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileController_getMyProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileController_updateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileController_createOrUpdateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileController_deleteProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileController_getProfileForApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfileController_getUserProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_selectTenant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectTenantDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_getAll: {
+        parameters: {
+            query: {
+                status: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExamCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_listExamApplications: {
+        parameters: {
+            query: {
                 status: string;
             };
             header?: never;
             path: {
-                venueId: string;
-                row: number;
-                col: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": Record<string, never>;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    updateSeatLabel: {
-        parameters: {
-            query: {
-                /**
-                 * @description 座位标签
-                 * @example A1
-                 */
-                label: string;
-            };
-            header?: never;
-            path: {
-                venueId: string;
-                row: number;
-                col: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": Record<string, never>;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getTicketTemplate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    updateTicketTemplate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TicketTemplateUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    resetTicketTemplate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getTenant: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description 成功 */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description 租户不存在 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    updateTenant: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateTenantRequest"];
-            };
-        };
-        responses: {
-            /** @description 更新成功 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description 租户不存在 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    deleteTenant: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 删除成功 */
-            204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description 租户不存在 */
-            404: {
+        };
+    };
+    ExamController_listAvailableExamReviewers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    getTenant_1: {
+    ExamController_listExamReviewers: {
         parameters: {
             query?: never;
             header?: never;
@@ -6457,279 +2890,73 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description 成功 */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description 租户不存在 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    updateTenant_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateTenantRequest"];
-            };
-        };
-        responses: {
-            /** @description 更新成功 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description 租户不存在 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    deleteTenant_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 删除成功 */
-            204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description 租户不存在 */
-            404: {
+        };
+    };
+    ExamController_addExamReviewer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    getPositionById: {
+    ExamController_removeExamReviewer: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 id: string;
+                assignmentId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PositionResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    updatePosition: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PositionUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PositionResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    deletePosition: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    updateSubject: {
+    ExamController_issueExamTickets: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                subjectId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubjectUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SubjectResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    deleteSubject: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                subjectId: string;
+                id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
-            204: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    getById: {
+    ExamController_getTicketNumberRule: {
         parameters: {
             query?: never;
             header?: never;
@@ -6740,80 +2967,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["NotificationTemplateDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    update_1: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["NotificationTemplateDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    delete_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    getFormTemplate: {
+    ExamController_putTicketNumberRule: {
         parameters: {
             query?: never;
             header?: never;
@@ -6824,70 +2986,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["FormTemplateDetailResponse"];
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    updateFormTemplate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FormTemplateUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FormTemplateDetailResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    deleteFormTemplate: {
+    ExamController_listExamScores: {
         parameters: {
             query?: never;
             header?: never;
@@ -6898,150 +3005,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    updateField: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                fieldId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FieldDefinitionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FieldDefinitionResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    deleteField: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                fieldId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    reorderFields: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FieldReorderRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FormTemplateDetailResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getExamById: {
+    ExamController_examScoresStatistics: {
         parameters: {
             query?: never;
             header?: never;
@@ -7052,31 +3024,34 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"];
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
+        };
+    };
+    ExamController_getById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
+                content?: never;
             };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    updateExam: {
+    ExamController_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -7091,218 +3066,15 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    removeExamByIdentifier: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getRules: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    updateRules: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getExamFormTemplate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FormTemplateResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    updateExamFormTemplate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FormTemplateUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    getAnnouncement: {
+    ExamController_delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -7313,197 +3085,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    updateAnnouncement: {
+    ExamController_open: {
         parameters: {
             query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnnouncementUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getRule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    updateRule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    resetRule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    updateExamAdminPermissions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateExamAdminPermissionsRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    withdrawApplication: {
-        parameters: {
-            query: {
-                userId: string;
-            };
             header?: never;
             path: {
                 id: string;
@@ -7512,636 +3104,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    resubmit: {
-        parameters: {
-            query: {
-                candidateId: string;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ApplicationSubmitRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    updateDraft: {
-        parameters: {
-            query: {
-                candidateId: string;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ApplicationSubmitRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createTenantUser: {
-        parameters: {
-            query: {
-                currentUserId: string;
-            };
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTenantUserRequest"];
-            };
-        };
-        responses: {
-            /** @description 创建成功 */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["UserResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    addUserToTenant: {
-        parameters: {
-            query: {
-                /** @description 租户角色 */
-                role: string;
-                currentUserId: string;
-            };
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-                /** @description 用户ID */
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 添加成功 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    getSeatMap: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                venueId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SeatMapDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createSeatMap: {
-        parameters: {
-            query: {
-                /**
-                 * @description 行数
-                 * @example 10
-                 */
-                rows: number;
-                /**
-                 * @description 列数
-                 * @example 10
-                 */
-                columns: number;
-            };
-            header?: never;
-            path: {
-                venueId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SeatMapDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    resolve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResolveRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    verifyTicket: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TicketVerifyRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TicketVerifyResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    validateTicket: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TicketValidationRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    batchGenerateTickets: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BatchGenerateTicketsRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["BatchGenerateTicketsResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    generateTicket: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path: {
-                applicationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    listTenants: {
-        parameters: {
-            query?: {
-                /**
-                 * @description 页码（从0开始）
-                 * @example 0
-                 */
-                page?: number;
-                /**
-                 * @description 每页大小
-                 * @example 10
-                 */
-                size?: number;
-                /**
-                 * @description 仅显示激活的租户
-                 * @example true
-                 */
-                activeOnly?: boolean;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 成功获取租户列表 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantListResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createTenant: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTenantRequest"];
-            };
-        };
-        responses: {
-            /** @description 创建成功 */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    grantRole: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tenantId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GrantRoleRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getTenantBackups: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createBackup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    validateBackup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-                /** @description 备份ID */
-                backupId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    restoreFromBackup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-                /** @description 备份ID */
-                backupId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RestoreRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    cleanupExpiredBackups: {
-        parameters: {
-            query?: {
-                retentionDays?: number;
-            };
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    deactivateTenant: {
+    ExamController_close: {
         parameters: {
             query?: never;
             header?: never;
@@ -8152,134 +3123,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description 停用成功 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description 租户不存在 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    activateTenant: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 激活成功 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description 租户不存在 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    listTenants_1: {
-        parameters: {
-            query?: {
-                /**
-                 * @description 页码（从0开始）
-                 * @example 0
-                 */
-                page?: number;
-                /**
-                 * @description 每页大小
-                 * @example 10
-                 */
-                size?: number;
-                /**
-                 * @description 仅显示激活的租户
-                 * @example false
-                 */
-                activeOnly?: boolean;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 成功获取租户列表 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantListResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createTenant_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTenantRequest"];
-            };
-        };
-        responses: {
-            /** @description 创建成功 */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    deactivateTenant_1: {
+    ExamController_getPositions: {
         parameters: {
             query?: never;
             header?: never;
@@ -8290,596 +3142,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description 停用成功 */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description 租户不存在 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    activateTenant_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 激活成功 */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description 租户不存在 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    recordScore: {
-        parameters: {
-            query: {
-                gradedBy: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScoreRecordRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    batchUpdateInterviewEligibility: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    batchRecordScores: {
-        parameters: {
-            query: {
-                gradedBy: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScoreRecordRequest"][];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    updateInterviewEligibility: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                applicationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    markAsAbsent: {
-        parameters: {
-            query: {
-                gradedBy: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AbsentMarkRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    validateRule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["RuleValidationResultDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    testRule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TestRuleRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["RuleTestResultDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    executeRule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExecuteRuleRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["RuleExecutionResultDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    rejectApplication: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                applicationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    approveApplication: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                applicationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    release: {
-        parameters: {
-            query: {
-                reviewerId: string;
-            };
-            header?: never;
-            path: {
-                taskId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    heartbeat: {
-        parameters: {
-            query: {
-                reviewerId: string;
-            };
-            header?: never;
-            path: {
-                taskId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    decision: {
-        parameters: {
-            query: {
-                reviewerId: string;
-            };
-            header?: never;
-            path: {
-                taskId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReviewDecisionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    batchDecision: {
-        parameters: {
-            query: {
-                reviewerId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BatchDecisionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    pull: {
-        parameters: {
-            query: {
-                reviewerId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PullRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    autoAssign: {
-        parameters: {
-            query: {
-                examId: string;
-                stage: "PRIMARY" | "SECONDARY";
-                batchSize?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    batchReview: {
-        parameters: {
-            query: {
-                reviewerId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BatchReviewRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["BatchReviewResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createPosition: {
+    ExamController_createPosition: {
         parameters: {
             query?: never;
             header?: never;
@@ -8892,22 +3163,38 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["PositionResponse"];
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    getPositionSubjects: {
+    ExamController_updatePosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePositionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_deletePosition: {
         parameters: {
             query?: never;
             header?: never;
@@ -8918,30 +3205,76 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["SubjectResponse"][];
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            /** @description Not Found */
-            404: {
+        };
+    };
+    ExamController_getExamSubjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
+                content?: never;
             };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    createSubject: {
+    ExamController_getSubjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                positionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_createSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                positionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSubjectRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_updateSubject: {
         parameters: {
             query?: never;
             header?: never;
@@ -8952,26 +3285,522 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SubjectCreateRequest"];
+                "application/json": components["schemas"]["UpdateSubjectRequest"];
             };
         };
         responses: {
-            /** @description Created */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_deleteSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_getExamRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_updateExamRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateExamRulesRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_getPositionRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                positionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_updatePositionRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                positionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePositionRulesRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_getExamFormTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ExamController_setExamFormTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                templateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PositionController_getFormTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PositionController_listApplications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PositionController_getById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PositionController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PositionController_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublicExamController_getOpenExams: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublicExamController_getExamByTenantAndCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenantCode: string;
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublicExamController_getExamPositionsByTenantAndCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenantCode: string;
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublicExamController_getAnnouncementByTenantAndCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenantCode: string;
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublishedExamController_getOpenExams: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FormTemplateController_list: {
+        parameters: {
+            query: {
+                examId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FormTemplateController_create: {
+        parameters: {
+            query: {
+                examId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFormTemplateRequest"];
+            };
+        };
+        responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["SubjectResponse"];
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    query: {
+    FormTemplateController_getById: {
+        parameters: {
+            query: {
+                examId: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FormTemplateController_update: {
+        parameters: {
+            query: {
+                examId: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFormTemplateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FormTemplateController_batchUpdate: {
+        parameters: {
+            query: {
+                examId: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchUpdateFormTemplateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FormTemplateController_publish: {
+        parameters: {
+            query: {
+                examId: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScoreController_getScoresByExam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScoreController_getScoresByApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                applicationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScoreController_recordScore: {
         parameters: {
             query?: never;
             header?: never;
@@ -8980,28 +3809,19 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PaymentQueryRequest"];
+                "application/json": components["schemas"]["RecordScoreDto"];
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    initiate: {
+    ScoreController_batchImport: {
         parameters: {
             query?: never;
             header?: never;
@@ -9010,28 +3830,1031 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PaymentInitiateRequest"];
+                "application/json": components["schemas"]["BatchImportDto"];
             };
         };
         responses: {
-            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScoreController_calculateEligibility: {
+        parameters: {
+            query: {
+                passScore: string;
+            };
+            header?: never;
+            path: {
+                examId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScoreController_updateInterviewResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInterviewResultDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScoreController_getStatistics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    callback: {
+    ScoreController_getRanking: {
+        parameters: {
+            query: {
+                positionId: string;
+            };
+            header?: never;
+            path: {
+                examId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScoreController_exportScores: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScoreController_getImportTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScoreController_deleteScore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scoreId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_generate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateTicketRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_getByApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                applicationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_getMyTickets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_batchGenerate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchGenerateTicketsRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_validate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidateTicketRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_verify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyTicketRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_batchGenerateForExam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_listForExam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_getTicketTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_saveTicketTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_resetTicketTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_getTicketStatistics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TicketController_getById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ApplicationController_getMyApplications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ApplicationController_listAll: {
+        parameters: {
+            query: {
+                examId: string;
+                status: string;
+                page: string;
+                size: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ApplicationController_submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationSubmitRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ApplicationController_getMyDrafts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ApplicationController_saveDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationSubmitRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ApplicationController_updateDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationSubmitRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ApplicationController_getAuditLogs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ApplicationController_getById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ApplicationController_getReviews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReviewController_getMyStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReviewController_pullTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PullTaskRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReviewController_decide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionTaskRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReviewController_batchDecide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchReviewDecisionRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReviewController_heartbeat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReviewController_release: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReviewController_getQueue: {
+        parameters: {
+            query: {
+                examId: string;
+                stage: string;
+                status: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReviewController_getHistory: {
+        parameters: {
+            query: {
+                examId: string;
+                reviewerId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StatisticsController_getPlatformStatistics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StatisticsController_getCurrentTenantStatistics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StatisticsController_getApplicationStatistics: {
+        parameters: {
+            query: {
+                examId: string;
+                positionId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StatisticsController_getReviewStatistics: {
+        parameters: {
+            query: {
+                examId: string;
+                reviewerId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StatisticsController_getFunnelStatistics: {
+        parameters: {
+            query: {
+                examId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StatisticsController_getScoreAnalysis: {
+        parameters: {
+            query: {
+                examId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AnalyticsController_overview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AnalyticsController_examStats: {
+        parameters: {
+            query: {
+                examId: string;
+                dateRange: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AnalyticsController_applicationTrends: {
+        parameters: {
+            query: {
+                dateRange: string;
+                granularity: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AnalyticsController_reviewerPerformance: {
+        parameters: {
+            query: {
+                dateRange: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AnalyticsController_paymentAnalytics: {
+        parameters: {
+            query: {
+                dateRange: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AnalyticsController_candidateAnalytics: {
+        parameters: {
+            query: {
+                dateRange: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AnalyticsController_systemPerformance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PaymentController_initiate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InitiatePaymentRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PaymentController_callback: {
         parameters: {
             query?: never;
             header?: never;
@@ -9044,1348 +4867,108 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    listAll: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    create: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["NotificationTemplateDTO"];
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    preview: {
+    PaymentController_queryOrder: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    deactivate: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path: {
-                id: string;
+                orderId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    activate: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    resend: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getAllFormTemplates: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FormTemplateSummaryResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createFormTemplate: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FormTemplateCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FormTemplateDetailResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    publishTemplate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FormTemplateDetailResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    addField: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FieldDefinitionRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FieldDefinitionResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found - Template not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    archiveTemplate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FormTemplateDetailResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    scanFile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                fileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ScanStatusResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    confirmUpload: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                fileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FileUploadConfirmRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FileUploadConfirmResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    validateFileType: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ValidateTypeRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ValidateTypeResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getUploadUrl: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FileUploadUrlRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FileUploadUrlResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getBatchFileInfo: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FileBatchInfoRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FileBatchInfoResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getAllExams: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createExam: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExamCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    startExam: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    publishExam: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    openExam: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    copyExam: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExamCopyRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    completeExam: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    closeExam: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    cancelExam: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    list: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": Record<string, never>;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    create_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": Record<string, never>;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    previewTicketNumber: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    list_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamReviewerResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    add: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddReviewerRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    issueTickets: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    allocate: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    allocateWithStrategy: {
-        parameters: {
-            query: {
-                /**
-                 * @description 分配策略
-                 * @example RANDOM
-                 */
-                strategy?: string;
-                /**
-                 * @description 自定义分组字段（仅当strategy为CUSTOM_GROUP时使用）
-                 * @example graduationSchool
-                 */
-                customGroupField?: string;
-                userId: string;
-            };
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    batchAssignExamAdmins: {
-        parameters: {
-            query: {
-                operatorId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BatchAssignExamAdminRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    assignExamAdmin: {
-        parameters: {
-            query: {
-                operatorId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AssignExamAdminRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    selectTenant: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SelectTenantRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["LoginResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            /** @description Forbidden - 用户无权访问该租户 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    register: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UserResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    refreshToken: {
-        parameters: {
-            query?: never;
-            header: {
-                Authorization: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["LoginResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    logout: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    login: {
+    PaymentController_listMyOrders: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["LoginResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    changePassword: {
-        parameters: {
-            query: {
-                username: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChangePasswordRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    createInitialAdmin: {
+    MockGatewayController_showPaymentPage: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Bootstrap-Token"?: string;
+            header?: never;
+            path: {
+                outTradeNo: string;
             };
-            path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
+    };
+    MockGatewayController_handlePaymentAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                outTradeNo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
-            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["UserResponse"];
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            /** @description Forbidden */
-            403: {
+        };
+    };
+    SeatingController_listVenues: {
+        parameters: {
+            query: {
+                examId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
+                content?: never;
             };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    resetPassword: {
+    SeatingController_createVenue: {
         parameters: {
             query?: never;
             header?: never;
@@ -10394,294 +4977,38 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ResetPasswordRequest"];
+                "application/json": components["schemas"]["CreateVenueRequest"];
             };
         };
         responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    lockUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                username: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    deactivateUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                username: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createTenantAdmin: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["UserResponse"];
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    createSecondaryReviewer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UserResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createPrimaryReviewer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UserResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createExaminer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UserResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createAdmin: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UserResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    activateUser: {
+    SeatingController_getVenue: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                username: string;
+                id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    query_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AuditLogQueryRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AuditLogDTO"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    submitApplication: {
-        parameters: {
-            query: {
-                candidateId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ApplicationSubmitRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    secondaryReject: {
+    SeatingController_updateVenue: {
         parameters: {
             query?: never;
             header?: never;
@@ -10690,76 +5017,21 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
-                "application/json": components["schemas"]["ReviewDecisionRequest"];
+                "application/json": components["schemas"]["UpdateVenueRequest"];
             };
         };
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["ApplicationResponse"];
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    secondaryApprove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["ReviewDecisionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    runAutoReview: {
+    SeatingController_deleteVenue: {
         parameters: {
             query?: never;
             header?: never;
@@ -10770,3103 +5042,323 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
         };
     };
-    primaryReject: {
+    SeatingController_getSeatMap: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                venueId: string;
             };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["ReviewDecisionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    primaryApprove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["ReviewDecisionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    payApplication: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["ApplicationPayRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    uploadAttachment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ApplicationAttachmentUploadRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    importApplications: {
-        parameters: {
-            query: {
-                operatorId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    listDrafts: {
-        parameters: {
-            query: {
-                candidateId: string;
-            };
-            header?: never;
-            path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["ApplicationResponse"][];
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    saveDraft: {
+    SeatingController_createSeatMap: {
         parameters: {
-            query: {
-                candidateId: string;
-            };
+            query?: never;
             header?: never;
-            path?: never;
+            path: {
+                venueId: string;
+            };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ApplicationSubmitRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    batchTransition: {
-        parameters: {
-            query: {
-                operatorId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ApplicationBatchTransitionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    batchImport: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ApplicationBatchImportRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationBatchImportResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    createUser: {
-        parameters: {
-            query: {
-                currentUserId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateUserRequest"];
-            };
-        };
-        responses: {
-            /** @description 创建成功 */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["UserResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    displayName: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getTicket: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                ticketId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TicketResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    viewTicketPdf: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                ticketId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/pdf": string;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    downloadTicketPdf: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                ticketId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/pdf": string;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getTicketStatistics: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TicketStatisticsResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getTicketByApplication: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                applicationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getTenantUsers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tenantId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string[];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getUserRoles: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tenantId: string;
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string[];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getMyTenants: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string[];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getTenantUsersWithDetails: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tenantId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantUserResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getTenantUsersWithDetailsCategorized: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tenantId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantUsersResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getTenantUsersByRole: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tenantId: string;
-                role: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string[];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getBackupDetails: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-                /** @description 备份ID */
-                backupId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    deleteBackup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-                /** @description 备份ID */
-                backupId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getBackupProgress: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-                /** @description 备份ID */
-                backupId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getRestoreProgress: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-                /** @description 恢复任务ID */
-                restoreTaskId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getLatestBackup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getTenantBySlug: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /**
-                 * @description 租户slug（代码）
-                 * @example test-company-a
-                 */
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 成功获取租户信息 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            /** @description 租户不存在 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getMyTenants_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 成功 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    checkTenantCode: {
-        parameters: {
-            query: {
-                code: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 成功 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": boolean;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getTenantStatistics: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 租户ID */
-                tenantId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantStatisticsDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getCurrentTenantStatistics: {
-        parameters: {
-            query?: never;
-            header: {
-                "X-Tenant-ID": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TenantStatisticsDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getPlatformStatistics: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PlatformStatisticsDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getExamStatistics: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 考试ID */
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamStatisticsDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getApplicationStatistics: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 考试ID */
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationStatisticsDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getScoresBySubject: {
-        parameters: {
-            query: {
-                requesterId: string;
-            };
-            header?: never;
-            path: {
-                subjectId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ScoreResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getScoreStatistics: {
-        parameters: {
-            query: {
-                requesterId: string;
-            };
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ScoreStatisticsResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getRanking: {
-        parameters: {
-            query: {
-                positionId?: string;
-                requesterId: string;
-            };
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ScoreRankingResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getScoresByExam: {
-        parameters: {
-            query: {
-                requesterId: string;
-            };
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ScoreResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getInterviewEligibilityStatistics: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["InterviewEligibilityStatistics"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    exportScores: {
-        parameters: {
-            query: {
-                requesterId: string;
-            };
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getScoresByApplication: {
-        parameters: {
-            query: {
-                requesterId: string;
-            };
-            header?: never;
-            path: {
-                applicationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ScoreResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    checkInterviewEligibility: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                applicationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getReviewDetails: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                applicationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getWorkbench: {
-        parameters: {
-            query: {
-                stage: "PRIMARY" | "SECONDARY";
-                reviewerId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    assignee: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                taskId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    myStats: {
-        parameters: {
-            query: {
-                reviewerId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["MyReviewStatsResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getReviewStatistics: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    listQueue: {
-        parameters: {
-            query: {
-                examId: string;
-                stage: "PRIMARY" | "SECONDARY";
-                positionId?: string;
-                status?: string;
-                page?: number;
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getPendingReviews: {
-        parameters: {
-            query?: {
-                /** @description 审核阶段：PRIMARY/SECONDARY */
-                stage?: string;
-                /** @description 是否包含未占用任务（仅限关联考试） */
-                includeUnassigned?: boolean;
-                /** @description 页码 */
-                page?: number;
-                /** @description 页大小 */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getExamBySlug: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getExamPositionsBySlug: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PositionResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getAnnouncementBySlug: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getOpenExams: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getAllAccessLogs: {
-        parameters: {
-            query: {
-                /** @description 开始时间 */
-                startTime: string;
-                /** @description 结束时间 */
-                endTime: string;
-                /** @description 页码（从0开始） */
-                page?: number;
-                /** @description 每页大小 */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PIIAccessLogDTO"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getUserAccessLogs: {
-        parameters: {
-            query: {
-                /** @description 开始时间 */
-                startTime: string;
-                /** @description 结束时间 */
-                endTime: string;
-            };
-            header?: never;
-            path: {
-                /** @description 用户ID */
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PIIAccessLogDTO"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getAccessLogsByType: {
-        parameters: {
-            query: {
-                /** @description 开始时间 */
-                startTime: string;
-                /** @description 结束时间 */
-                endTime: string;
-            };
-            header?: never;
-            path: {
-                /** @description 访问类型 */
-                accessType: "READ" | "EXPORT" | "DOWNLOAD" | "PRINT" | "UPDATE" | "DELETE";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PIIAccessLogDTO"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getResourceAccessLogs: {
-        parameters: {
-            query: {
-                /** @description 资源类型 */
-                resourceType: string;
-                /** @description 资源ID */
-                resourceId: string;
-                /** @description 开始时间 */
-                startTime: string;
-                /** @description 结束时间 */
-                endTime: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PIIAccessLogDTO"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    countAccess: {
-        parameters: {
-            query: {
-                /** @description 用户ID（可选） */
-                userId?: string;
-                /** @description 资源类型（可选） */
-                resourceType?: string;
-                /** @description 开始时间 */
-                startTime: string;
-                /** @description 结束时间 */
-                endTime: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": number;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    config: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    listByStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /**
-                 * @description 模板状态
-                 * @example active
-                 */
-                status: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getByCode: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["NotificationTemplateDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    listByChannel: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /**
-                 * @description 通知渠道
-                 * @example email
-                 */
-                channel: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    query_2: {
-        parameters: {
-            query?: {
-                /** @description 接收人用户ID */
-                recipientUserId?: string;
-                /**
-                 * @description 通知渠道
-                 * @example email
-                 */
-                channel?: string;
-                /**
-                 * @description 发送状态
-                 * @example success
-                 */
-                status?: string;
-                /**
-                 * @description 开始时间
-                 * @example 2024-01-01T00:00:00
-                 */
-                startTime?: string;
-                /**
-                 * @description 结束时间
-                 * @example 2024-12-31T23:59:59
-                 */
-                endTime?: string;
-                /**
-                 * @description 页码（从0开始）
-                 * @example 0
-                 */
-                page?: number;
-                /**
-                 * @description 每页大小
-                 * @example 20
-                 */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getById_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["NotificationHistoryDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    delete_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    getStatistics: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["NotificationStatisticsDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getMyNotifications: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getFormTemplatesByStatus: {
+    SeatingController_updateSeatMapSeatStatus: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                status: string;
+                venueId: string;
+                row: string;
+                col: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FormTemplateSummaryResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getFileInfo: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                fileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FileInfoResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    deleteFile: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path: {
-                fileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FileDeleteResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getScanResult: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                fileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ScanStatusResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getDownloadUrl: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path: {
-                fileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PresignedUrlResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getMyFiles: {
-        parameters: {
-            query: {
-                page?: number;
-                size?: number;
-                status?: string;
-                userId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FileListResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getExamStatistics_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExamStatisticsResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getExamPositions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PositionResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getExamApplications: {
-        parameters: {
-            query?: {
-                status?: string;
-                positionId?: string;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationListItemResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    exportExamApplications: {
-        parameters: {
-            query: {
-                status?: string;
-                positionId?: string;
-                operatorId: string;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/csv": string;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/csv": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getOptions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getAvailableReviewers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    }[];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getUserManagedExams: {
-        parameters: {
-            query: {
-                requesterId: string;
-            };
-            header?: never;
-            path: {
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string[];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getMyManagedExams: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string[];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getExamAdmins: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string[];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    checkExamAdmin: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examId: string;
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getCurrentUser: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UserResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    findByUserId: {
-        parameters: {
-            query?: {
-                page?: number;
-                size?: number;
-            };
-            header?: never;
-            path: {
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AuditLogDTO"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    findByTenantId: {
-        parameters: {
-            query?: {
-                page?: number;
-                size?: number;
-            };
-            header?: never;
-            path: {
-                tenantId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AuditLogDTO"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    countByTenantId: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tenantId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": number;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    findByResource: {
-        parameters: {
-            query?: {
-                page?: number;
-                size?: number;
-            };
-            header?: never;
-            path: {
-                resourceType: string;
-                resourceId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AuditLogDTO"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getApplicationById: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationDetailResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    listReviews: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    }[];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    listAuditLogs: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApplicationAuditLogItemResponse"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
-            };
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    getMyApplications: {
-        parameters: {
-            query: {
-                page?: number;
-                size?: number;
-                status?: string;
-                sort?: string;
-                examId?: string;
-                positionId?: string;
-                candidateId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    exportCsv: {
-        parameters: {
-            query: {
-                examId: string;
-                status?: string;
-                operatorId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/csv": string;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    listMyDrafts: {
-        parameters: {
-            query: {
-                page?: number;
-                size?: number;
-                candidateId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
-        };
-    };
-    removeUserFromTenant: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tenantId: string;
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    revokeRole: {
+    SeatingController_updateSeatMapSeatLabel: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                tenantId: string;
-                userId: string;
-                role: string;
+                venueId: string;
+                row: string;
+                col: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    deleteScore: {
+    SeatingController_listRooms: {
         parameters: {
-            query: {
-                requesterId: string;
-            };
+            query?: never;
             header?: never;
             path: {
-                scoreId: string;
+                venueId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    cleanupOldLogs: {
+    SeatingController_createRoom: {
         parameters: {
-            query?: {
-                /** @description 保留天数 */
-                retentionDays?: number;
-            };
+            query?: never;
             header?: never;
-            path?: never;
+            path: {
+                venueId: string;
+            };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRoomRequest"];
+            };
+        };
         responses: {
-            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SeatingController_updateRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roomId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoomRequest"];
+            };
+        };
+        responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": number;
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    remove: {
+    SeatingController_deleteRoom: {
         parameters: {
-            query: {
-                role: string;
+            query?: never;
+            header?: never;
+            path: {
+                roomId: string;
             };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SeatingController_allocate: {
+        parameters: {
+            query?: never;
             header?: never;
             path: {
                 examId: string;
-                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AllocateSeatsRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SeatingController_listAssignments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    removeExamAdmin: {
+    SeatingController_assignSeat: {
         parameters: {
-            query: {
-                operatorId: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RemoveExamAdminRequest"];
+                "application/json": components["schemas"]["AssignSeatRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SuperAdminController_getAllTenants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 成功返回分页租户列表 */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
-                };
+                content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalServerError"];
         };
     };
-    deleteDraft: {
+    SuperAdminController_createTenant: {
         parameters: {
-            query: {
-                candidateId: string;
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTenantDto"];
             };
+        };
+        responses: {
+            /** @description 租户创建成功 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SuperAdminController_getAllUsers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SuperAdminController_createUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUserDto"];
+            };
+        };
+        responses: {
+            /** @description 用户创建成功 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SuperAdminController_deleteUser: {
+        parameters: {
+            query?: never;
             header?: never;
             path: {
                 id: string;
@@ -13875,26 +5367,94 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
-            204: {
+            /** @description 用户删除成功 */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            /** @description Not Found */
-            404: {
+        };
+    };
+    SuperAdminController_updateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserDto"];
+            };
+        };
+        responses: {
+            /** @description 用户更新成功 */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponse"];
-                };
+                content?: never;
             };
-            500: components["responses"]["InternalServerError"];
+        };
+    };
+    SuperAdminController_activateTenant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SuperAdminController_deactivateTenant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SuperAdminController_deleteTenant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
 }

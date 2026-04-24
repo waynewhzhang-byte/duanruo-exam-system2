@@ -107,6 +107,36 @@ function ReviewQueueContent() {
     toast.info('批量审核功能开发中');
   };
 
+  /** 从待审报名池中锁定下一条并生成审核任务（需先选择考试） */
+  const handlePullNext = async () => {
+    if (!tenant?.id || !selectedExamId) {
+      toast.error('请先选择考试');
+      return;
+    }
+    try {
+      const res = await apiPostWithTenant<{
+        taskId: string;
+        applicationId: string;
+        stage: string;
+        lockedUntil?: string;
+      } | null>(`/reviews/pull`, tenant.id, {
+        examId: selectedExamId,
+        stage: reviewLevel,
+      });
+      if (!res?.taskId) {
+        toast.info('当前没有可领取的审核任务');
+        return;
+      }
+      toast.success('已领取审核任务');
+      await refetch();
+      router.push(
+        `/${tenantSlug}/reviewer/applications/${res.applicationId}?taskId=${encodeURIComponent(res.taskId)}`,
+      );
+    } catch (err: any) {
+      toast.error(err?.message || '领取失败');
+    }
+  };
+
   const handleApprove = async (taskId: string) => {
     if (!tenant?.id) return;
     try {
@@ -195,6 +225,9 @@ function ReviewQueueContent() {
             <RefreshCw className="h-4 w-4 mr-2" />
             刷新
           </Button>
+          <Button variant="default" onClick={handlePullNext} disabled={!selectedExamId}>
+            领取下一任务
+          </Button>
         </div>
       </div>
 
@@ -281,7 +314,11 @@ function ReviewQueueContent() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => router.push(`/${tenantSlug}/reviewer/applications/${app.id}`)}
+                      onClick={() =>
+                        router.push(
+                          `/${tenantSlug}/reviewer/applications/${app.applicationId}?taskId=${encodeURIComponent(app.id)}`,
+                        )
+                      }
                     >
                       查看详情
                     </Button>

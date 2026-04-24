@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useMyApplications, useOpenExams } from '@/lib/api-hooks'
 import { useAuth } from '@/contexts/AuthContext'
 import { apiGet, apiGetWithTenant } from '@/lib/api'
+import { buildPublicExamPath } from '@/lib/public-exams'
 import {
   FileText,
   Upload,
@@ -1058,10 +1059,10 @@ function OpenExamsList() {
           {sortedExams.map((exam) => (
             <div
               key={exam.id}
-              onClick={() => router.push(`/candidate/exams/${exam.examId}?tenantId=${exam.tenantId}`)}
+              onClick={() => router.push(buildPublicExamPath(exam.tenantCode, exam.code))}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/candidate/exams/${exam.examId}?tenantId=${exam.tenantId}`); } }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(buildPublicExamPath(exam.tenantCode, exam.code)); } }}
               className="group p-4 border rounded-lg hover:border-primary hover:shadow-md transition-all cursor-pointer"
               aria-label={`考试 ${exam.title}`}
             >

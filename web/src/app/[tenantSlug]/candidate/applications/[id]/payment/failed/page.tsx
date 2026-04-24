@@ -1,6 +1,5 @@
 'use client'
 
-import { use } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -8,14 +7,14 @@ import { AlertCircle, ArrowLeft, RefreshCw, HelpCircle } from 'lucide-react'
 import { useApplication } from '@/lib/api-hooks'
 
 interface PaymentFailedPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     id: string
-  }>
+  }
 }
 
 export default function PaymentFailedPage({ params }: PaymentFailedPageProps) {
-  const resolvedParams = use(params)
+  const resolvedParams = params
   const { tenantSlug, id } = resolvedParams
   const router = useRouter()
 

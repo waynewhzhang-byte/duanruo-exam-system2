@@ -1,4 +1,4 @@
-import { Pool, PoolClient, QueryConfig, QueryResult } from 'pg';
+import { Pool, PoolClient, QueryConfig, QueryResult, PoolConfig } from 'pg';
 
 let _getTenantSchema: () => string | undefined = () => undefined;
 
@@ -15,7 +15,7 @@ function rewriteSqlSchema(sql: string, targetSchema: string): string {
     return sql;
   }
 
-  return sql.replace(
+  return sql.replaceAll(
     /"tenant"\.("[^"]+")/g,
     (_match: string, quotedTable: string) => {
       return `"${targetSchema}".${quotedTable}`;
@@ -76,8 +76,8 @@ function createWrappedQuery(originalQuery: PgQueryFn): PgQueryFn {
 }
 
 class TenantPoolWrapper {
-  private pool: Pool;
-  private _query: PgQueryFn;
+  private readonly pool: Pool;
+  private readonly _query: PgQueryFn;
 
   constructor(pool: Pool) {
     this.pool = pool;
@@ -120,8 +120,34 @@ class TenantPoolWrapper {
 }
 
 export function createTenantPool(connectionString: string): TenantPoolWrapper {
-  const pool = new Pool({ connectionString });
+  const pool = new Pool(createPoolConfig(connectionString));
   return new TenantPoolWrapper(pool);
 }
 
 export { TenantPoolWrapper };
+
+function createPoolConfig(connectionString: string): PoolConfig {
+  try {
+    const parsed = new URL(connectionString);
+    const database = decodeURIComponent(parsed.pathname.replace(/^\//, ''));
+
+    const config: PoolConfig = {
+      host: parsed.hostname || undefined,
+      port: parsed.port ? Number(parsed.port) : undefined,
+      user: parsed.username ? decodeURIComponent(parsed.username) : undefined,
+      password: parsed.password
+        ? decodeURIComponent(parsed.password)
+        : undefined,
+      database: database || undefined,
+    };
+
+    const sslMode = parsed.searchParams.get('sslmode');
+    if (sslMode && sslMode !== 'disable') {
+      config.ssl = { rejectUnauthorized: false };
+    }
+
+    return config;
+  } catch {
+    return { connectionString };
+  }
+}

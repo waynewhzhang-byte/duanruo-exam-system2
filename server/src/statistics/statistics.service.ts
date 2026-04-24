@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ApplicationStatus, TenantStatus, ReviewStatus } from '../common/enums';
 
 export interface PlatformStatistics {
   totalTenants: number;
@@ -64,18 +65,18 @@ export class StatisticsService {
       await Promise.all([
         this.client.application.count({ where }),
         this.client.application.count({
-          where: { ...where, status: { notIn: ['DRAFT'] } },
+          where: { ...where, status: { notIn: [ApplicationStatus.DRAFT] } },
         }),
         this.client.application.count({
           where: {
             ...where,
             status: {
               in: [
-                'PRIMARY_PASSED',
-                'PENDING_SECONDARY_REVIEW',
-                'APPROVED',
-                'PAID',
-                'TICKET_ISSUED',
+                ApplicationStatus.PRIMARY_PASSED,
+                ApplicationStatus.PENDING_SECONDARY_REVIEW,
+                ApplicationStatus.APPROVED,
+                ApplicationStatus.PAID,
+                ApplicationStatus.TICKET_ISSUED,
               ],
             },
           },
@@ -83,14 +84,14 @@ export class StatisticsService {
         this.client.application.count({
           where: {
             ...where,
-            status: { in: ['APPROVED', 'PAID', 'TICKET_ISSUED'] },
+            status: { in: [ApplicationStatus.APPROVED, ApplicationStatus.PAID, ApplicationStatus.TICKET_ISSUED] },
           },
         }),
         this.client.application.count({
-          where: { ...where, status: { in: ['PAID', 'TICKET_ISSUED'] } },
+          where: { ...where, status: { in: [ApplicationStatus.PAID, ApplicationStatus.TICKET_ISSUED] } },
         }),
         this.client.application.count({
-          where: { ...where, status: 'TICKET_ISSUED' },
+          where: { ...where, status: ApplicationStatus.TICKET_ISSUED },
         }),
       ]);
 
@@ -122,7 +123,7 @@ export class StatisticsService {
         const stats = await this.client.application.aggregate({
           where: {
             positionId: pos.id,
-            status: { in: ['APPROVED', 'TICKET_ISSUED'] },
+            status: { in: [ApplicationStatus.APPROVED, ApplicationStatus.TICKET_ISSUED] },
           },
           _avg: { totalWrittenScore: true },
           _max: { totalWrittenScore: true },
@@ -182,7 +183,7 @@ export class StatisticsService {
       ]);
 
     const approvedApplications = await this.client.application.count({
-      where: { status: 'APPROVED' },
+      where: { status: ApplicationStatus.APPROVED },
     });
     const rejectedApplications = await this.client.application.count({
       where: { status: 'REJECTED' },
@@ -355,8 +356,8 @@ export class StatisticsService {
     );
     const pendingPrimary = pendingByStage['PRIMARY'] ?? 0;
     const pendingSecondary = pendingByStage['SECONDARY'] ?? 0;
-    const approved = reviews.filter((r) => r.decision === 'APPROVED').length;
-    const rejected = reviews.filter((r) => r.decision === 'REJECTED').length;
+    const approved = reviews.filter((r) => r.decision === ReviewStatus.APPROVED).length;
+    const rejected = reviews.filter((r) => r.decision === ReviewStatus.REJECTED).length;
 
     const reviewedWithTime = reviews.filter(
       (r) => r.reviewedAt && r.createdAt,

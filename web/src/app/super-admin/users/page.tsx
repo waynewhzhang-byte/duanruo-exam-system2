@@ -46,6 +46,7 @@ import {
   Shield,
   UserCheck,
   Users,
+  User,
   Building2,
   Calendar,
   Pencil,
@@ -138,6 +139,16 @@ const ROLE_CONFIG = {
     color: 'text-orange-600',
     bgColor: 'bg-orange-500/10',
     description: '负责特定租户下申请的二次审核',
+    requiresTenant: true
+  },
+  CANDIDATE: {
+    label: '考生',
+    endpoint: '/super-admin/users',
+    role: 'CANDIDATE',
+    icon: User,
+    color: 'text-slate-600',
+    bgColor: 'bg-slate-500/10',
+    description: '在指定租户下报名与提交申请的考生账号',
     requiresTenant: true
   }
 }

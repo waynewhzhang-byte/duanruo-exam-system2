@@ -1,6 +1,5 @@
 'use client'
 
-import { use } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePosition, usePositionApplications } from '@/lib/api-hooks'
@@ -9,16 +8,16 @@ import { Users, CheckCircle, XCircle, TrendingUp, Award, UserCheck } from 'lucid
 import { Badge } from '@/components/ui/badge'
 
 interface PositionAnalyticsPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     positionId: string
-  }>
+  }
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
 export default function PositionAnalyticsPage({ params }: PositionAnalyticsPageProps) {
-  const { positionId } = use(params)
+  const { positionId } = params
   
   const { data: position, isLoading: positionLoading } = usePosition(positionId)
   const { data: applicationsData, isLoading: applicationsLoading } = usePositionApplications(positionId, {

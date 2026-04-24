@@ -4,7 +4,7 @@
  * This file is auto-generated from the OpenAPI specification.
  * DO NOT EDIT MANUALLY - Changes will be overwritten.
  *
- * Generated: 2025-11-25T01:11:01.749Z
+ * Generated: 2026-04-23T17:34:54.238Z
  *
  * To regenerate:
  *   npm run openapi:generate
@@ -23,7 +23,7 @@ import type { paths } from './generated-types';
 
 // Create the base client
 export const apiClient = createClient<paths>({
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || '/api/v1',
+  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8081/api/v1',
 });
 
 // Add authentication interceptor
@@ -31,7 +31,7 @@ apiClient.use({
   async onRequest({ request }) {
     // Get token from localStorage (browser) or other storage
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+      const token = localStorage.getItem('auth_token');
       if (token) {
         request.headers.set('Authorization', `Bearer ${token}`);
       }
@@ -74,7 +74,7 @@ export type { components } from './generated-types';
  */
 export function createAuthenticatedClient(token: string, tenantId?: string) {
   const client = createClient<paths>({
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1',
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8081/api/v1',
   });
 
   client.use({

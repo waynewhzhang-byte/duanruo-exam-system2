@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  UnauthorizedException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import type { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -39,7 +43,9 @@ const mockTenantRole = {
 
 const mockPrisma = {
   user: {
+    findFirst: jest.fn(),
     findUnique: jest.fn(),
+    create: jest.fn(),
   },
   userTenantRole: {
     findMany: jest.fn().mockResolvedValue([]),
@@ -77,29 +83,69 @@ describe('AuthService', () => {
 
   describe('validateUser', () => {
     it('should return user when credentials are valid', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(mockUser);
+      mockPrisma.user.findFirst.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.validateUser('testuser', 'password123');
       expect(result).toEqual(mockUser);
-      expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
-        where: { username: 'testuser' },
+      expect(mockPrisma.user.findFirst).toHaveBeenCalledWith({
+        where: {
+          OR: [{ username: 'testuser' }, { email: 'testuser' }],
+        },
       });
     });
 
     it('should return null when user not found', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockPrisma.user.findFirst.mockResolvedValue(null);
 
       const result = await service.validateUser('nonexistent', 'password123');
       expect(result).toBeNull();
     });
 
     it('should return null when password is incorrect', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(mockUser);
+      mockPrisma.user.findFirst.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       const result = await service.validateUser('testuser', 'wrong-password');
       expect(result).toBeNull();
+    });
+
+    it('should support login identifier as email', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      const result = await service.validateUser(
+        'test@example.com',
+        'password123',
+      );
+
+      expect(result).toEqual(mockUser);
+      expect(mockPrisma.user.findFirst).toHaveBeenCalledWith({
+        where: {
+          OR: [{ username: 'test@example.com' }, { email: 'test@example.com' }],
+        },
+      });
+    });
+
+    it('should fallback to trimmed password when raw input contains extra spaces', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock)
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(true);
+
+      const result = await service.validateUser('testuser', ' password123 ');
+
+      expect(result).toEqual(mockUser);
+      expect(bcrypt.compare).toHaveBeenNthCalledWith(
+        1,
+        ' password123 ',
+        mockUser.passwordHash,
+      );
+      expect(bcrypt.compare).toHaveBeenNthCalledWith(
+        2,
+        'password123',
+        mockUser.passwordHash,
+      );
     });
   });
 
@@ -151,6 +197,71 @@ describe('AuthService', () => {
       await service.login(mockUser);
 
       expect(getJwtSignPayload(0).tenantId).toBeNull();
+    });
+  });
+
+  describe('registerCandidate', () => {
+    const registerPayload = {
+      username: 'newcandidate',
+      password: 'securePassword123',
+      confirmPassword: 'securePassword123',
+      email: 'new@example.com',
+      fullName: 'New Candidate',
+    };
+
+    it('should create candidate user and return normalized user response', async () => {
+      const createdUser: User = {
+        ...mockUser,
+        id: 'user-new',
+        username: 'newcandidate',
+        email: 'new@example.com',
+        fullName: 'New Candidate',
+        passwordHash: 'hashed-new',
+        roles: JSON.stringify(['CANDIDATE']),
+      };
+      mockPrisma.user.findFirst.mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-new');
+      mockPrisma.user.create.mockResolvedValue(createdUser);
+
+      const result = await service.registerCandidate(registerPayload);
+
+      expect(mockPrisma.user.create).toHaveBeenCalledWith({
+        data: {
+          username: 'newcandidate',
+          email: 'new@example.com',
+          fullName: 'New Candidate',
+          passwordHash: 'hashed-new',
+          phoneNumber: undefined,
+          department: null,
+          jobTitle: null,
+          status: 'ACTIVE',
+          roles: JSON.stringify(['CANDIDATE']),
+        },
+      });
+      expect(result.id).toBe('user-new');
+      expect(result.roles).toEqual(['CANDIDATE']);
+      expect(result.globalRoles).toEqual(['CANDIDATE']);
+      expect(result.permissions).toContain('application:view:own');
+    });
+
+    it('should throw BadRequestException when confirmPassword mismatches', async () => {
+      await expect(
+        service.registerCandidate({
+          ...registerPayload,
+          confirmPassword: 'not-same',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw ConflictException when username already exists', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({
+        ...mockUser,
+        username: 'newcandidate',
+      });
+
+      await expect(service.registerCandidate(registerPayload)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 

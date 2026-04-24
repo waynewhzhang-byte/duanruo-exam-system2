@@ -11,7 +11,11 @@ import { AuthService } from './auth.service';
 import { AuditService } from '../common/security/audit.service';
 import { ApiResult } from '../common/dto/api-result.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { LoginRequestDto, SelectTenantDto } from './dto/auth.dto';
+import {
+  LoginRequestDto,
+  RegisterRequestDto,
+  SelectTenantDto,
+} from './dto/auth.dto';
 import type { AuthenticatedRequest } from './interfaces/authenticated-request.interface';
 import type { Request } from 'express';
 
@@ -74,6 +78,12 @@ export class AuthController {
       body.tenantId,
     );
     return ApiResult.ok(result);
+  }
+
+  @Post('register')
+  async register(@Body() body: RegisterRequestDto) {
+    const user = await this.authService.registerCandidate(body);
+    return ApiResult.ok(user);
   }
 
   @Get('me')

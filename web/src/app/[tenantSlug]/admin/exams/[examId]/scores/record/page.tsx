@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '@/lib/api'
@@ -18,10 +18,10 @@ import { Spinner } from '@/components/ui/loading'
 import { toast } from 'sonner'
 
 interface RecordPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     examId: string
-  }>
+  }
 }
 
 interface Exam {
@@ -60,7 +60,7 @@ interface ScoreEntry {
 }
 
 export default function ScoreRecordPage({ params }: RecordPageProps) {
-  const { tenantSlug, examId } = use(params)
+  const { tenantSlug, examId } = params
   const router = useRouter()
 
   const [selectedPosition, setSelectedPosition] = useState<string>('')

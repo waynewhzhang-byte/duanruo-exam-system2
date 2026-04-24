@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTenant } from '@/contexts/TenantContext'
@@ -24,11 +24,11 @@ import {
 type Position = z.infer<typeof PositionResponse>
 
 interface PositionsPageProps {
-  params: Promise<{ tenantSlug: string; id: string }>
+  params: { tenantSlug: string; id: string }
 }
 
 export default function TenantPositionsPage({ params }: PositionsPageProps) {
-  const resolvedParams = use(params)
+  const resolvedParams = params
   const examId = resolvedParams.id
   
   const router = useRouter()

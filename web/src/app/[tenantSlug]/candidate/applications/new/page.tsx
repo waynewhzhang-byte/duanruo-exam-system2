@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { use, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTenant } from '@/contexts/TenantContext'
 import { Spinner } from '@/components/ui/loading'
@@ -8,17 +8,12 @@ import { AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
-interface NewApplicationPageProps {
-  params: Promise<{ tenantSlug: string }>
-}
-
 /**
  * Tenant-aware application form page
  * This page redirects to the global application form with tenant context
  * The global form already handles all the application logic
  */
-export default function TenantNewApplicationPage({ params }: Readonly<NewApplicationPageProps>) {
-  use(params) // Unwrap params to trigger tenant context
+export default function TenantNewApplicationPage() {
   const { tenant, isLoading } = useTenant()
   const router = useRouter()
   const searchParams = useSearchParams()

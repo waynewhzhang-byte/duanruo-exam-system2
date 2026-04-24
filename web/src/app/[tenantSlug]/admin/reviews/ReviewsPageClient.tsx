@@ -101,10 +101,11 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
   const batchDecisionMutation = useMutation({
     mutationFn: async ({ taskIds, decision }: { taskIds: string[]; decision: 'APPROVED' | 'REJECTED' }) => {
       if (!tenant?.id) throw new Error('No tenant')
-      const decisions = taskIds.map(taskId => ({
-        taskId,
-        decision,
-        comment: decision === 'APPROVED' ? '批量审核通过' : '批量审核拒绝',
+      // 与 BatchReviewDecisionRequest / IdWithReason 一致：id=审核任务ID，decision=布尔
+      const decisions = taskIds.map((id) => ({
+        id,
+        decision: decision === 'APPROVED',
+        reason: decision === 'APPROVED' ? '批量审核通过' : '批量审核拒绝',
       }))
       return apiPostWithTenant('/reviews/batch-decide', tenant.id, { decisions })
     },
@@ -292,6 +293,10 @@ export default function ReviewsPageClient({ tenantSlug }: ReviewsPageClientProps
           复审队列
         </Button>
       </div>
+      <p className="text-sm text-muted-foreground">
+        两级审核时：请先在「初审队列」批量通过，再在「复审队列」批量通过，报名状态才会变为
+        <span className="font-medium text-foreground"> 已通过（APPROVED）</span>，方可进入缴费/准考证等环节。
+      </p>
 
       {/* Filters */}
       <Card>

@@ -28,6 +28,21 @@ export class TenantController {
     private readonly userService: UserService,
   ) {}
 
+  private toIsoOrNull(value: unknown): string | null {
+    if (!value) return null;
+    if (typeof value === 'string') return value;
+    if (value instanceof Date) return value.toISOString();
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      'toISOString' in value &&
+      typeof (value as { toISOString?: unknown }).toISOString === 'function'
+    ) {
+      return (value as { toISOString: () => string }).toISOString();
+    }
+    return null;
+  }
+
   @Get('slug/:slug')
   async getBySlug(@Param('slug') slug: string) {
     const tenant = await this.prisma.tenant.findFirst({
@@ -36,7 +51,13 @@ export class TenantController {
     if (!tenant) {
       throw new NotFoundException(`Tenant with slug ${slug} not found`);
     }
-    return tenant;
+    return {
+      ...tenant,
+      createdAt: this.toIsoOrNull(tenant.createdAt) ?? new Date().toISOString(),
+      updatedAt: this.toIsoOrNull(tenant.updatedAt) ?? new Date().toISOString(),
+      activatedAt: this.toIsoOrNull(tenant.activatedAt),
+      deactivatedAt: this.toIsoOrNull(tenant.deactivatedAt),
+    };
   }
 
   @Get(':tenantId/users/details/categorized')

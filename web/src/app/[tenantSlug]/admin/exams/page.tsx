@@ -39,6 +39,50 @@ interface Exam {
   feeAmount?: number
 }
 
+const asString = (value: unknown, fallback = ''): string => {
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return fallback
+}
+
+const asOptionalString = (value: unknown): string | undefined => {
+  const normalized = asString(value, '')
+  return normalized.length > 0 ? normalized : undefined
+}
+
+const asBoolean = (value: unknown, fallback = false): boolean => {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'number') return value > 0
+  if (typeof value === 'string') return value.toLowerCase() === 'true'
+  return fallback
+}
+
+const asOptionalNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+  return undefined
+}
+
+const normalizeExam = (rawExam: unknown): Exam => {
+  const examRecord = (rawExam && typeof rawExam === 'object' ? rawExam : {}) as Record<string, unknown>
+
+  return {
+    id: asString(examRecord.id),
+    title: asString(examRecord.title, '未命名考试'),
+    code: asString(examRecord.code, '-'),
+    status: asString(examRecord.status, 'DRAFT'),
+    registrationStart: asOptionalString(examRecord.registrationStart),
+    registrationEnd: asOptionalString(examRecord.registrationEnd),
+    examStart: asOptionalString(examRecord.examStart),
+    examEnd: asOptionalString(examRecord.examEnd),
+    feeRequired: asBoolean(examRecord.feeRequired, false),
+    feeAmount: asOptionalNumber(examRecord.feeAmount),
+  }
+}
+
 // Backend returns paginated response (PaginationHelper: content + pagination)
 type ExamsResponse = {
   content: Exam[]
@@ -86,10 +130,19 @@ export default function TenantAdminExamsPage() {
         searchParams.set('status', filters.status)
       }
 
-      return apiGetWithTenant<ExamsResponse>(
+      const response = await apiGetWithTenant<ExamsResponse>(
         `/exams?${searchParams}`,
         tenant.id
       )
+
+      const normalizedContent = Array.isArray((response as ExamsResponse).content)
+        ? (response as ExamsResponse).content.map((exam) => normalizeExam(exam))
+        : []
+
+      return {
+        ...response,
+        content: normalizedContent
+      }
     },
     enabled: !!tenant?.id,
   })

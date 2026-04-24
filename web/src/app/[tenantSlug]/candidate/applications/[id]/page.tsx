@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiPut } from '@/lib/api'
@@ -16,10 +16,10 @@ import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 interface ApplicationPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
     id: string
-  }>
+  }
 }
 
 interface Application {
@@ -54,7 +54,7 @@ interface Review {
 }
 
 export default function ApplicationPage({ params }: ApplicationPageProps) {
-  const { tenantSlug, id } = use(params)
+  const { tenantSlug, id } = params
   const router = useRouter()
   const queryClient = useQueryClient()
 

@@ -5,33 +5,6 @@ import { useApplication, usePaymentConfig, useInitiatePayment } from '@/lib/api-
 import { useRouter } from 'next/navigation'
 import { apiPost } from '@/lib/api'
 
-/** React 19-style fulfilled thenable — `use(params)` needs this when Vitest uses npm `react@18` (no real `use`). */
-function fulfilledParams<T extends Record<string, string>>(value: T): Promise<T> {
-  return { status: 'fulfilled' as const, value: value } as unknown as Promise<T>
-}
-
-vi.mock('react', async (importOriginal) => {
-  const React = await importOriginal<typeof import('react')>()
-  return {
-    ...React,
-    use: function use<T>(
-      thenable: Promise<T> | { status: 'fulfilled'; value: T },
-    ): T {
-      if (
-        thenable !== null &&
-        typeof thenable === 'object' &&
-        'status' in thenable &&
-        (thenable as { status: string }).status === 'fulfilled'
-      ) {
-        return (thenable as { value: T }).value
-      }
-      throw new Error(
-        'PaymentPage tests: pass fulfilledParams({ ... }) for the params Promise',
-      )
-    },
-  }
-})
-
 // Mock dependencies
 vi.mock('@/lib/api-hooks')
 vi.mock('next/navigation')
@@ -104,7 +77,7 @@ describe('PaymentPage', () => {
   })
 
   it('should render payment page correctly', async () => {
-    const params = fulfilledParams({ tenantSlug: 'test-tenant', id: 'app-123' })
+    const params = { tenantSlug: 'test-tenant', id: 'app-123' }
     render(<PaymentPage params={params} />)
 
     await waitFor(() => {
@@ -116,7 +89,7 @@ describe('PaymentPage', () => {
   })
 
   it('should display payment methods', async () => {
-    const params = fulfilledParams({ tenantSlug: 'test-tenant', id: 'app-123' })
+    const params = { tenantSlug: 'test-tenant', id: 'app-123' }
     render(<PaymentPage params={params} />)
 
     await waitFor(() => {
@@ -127,7 +100,7 @@ describe('PaymentPage', () => {
   })
 
   it('should handle mock payment successfully', async () => {
-    const params = fulfilledParams({ tenantSlug: 'test-tenant', id: 'app-123' })
+    const params = { tenantSlug: 'test-tenant', id: 'app-123' }
     render(<PaymentPage params={params} />)
 
     const mockRadio = await screen.findByRole('radio', { name: /模拟支付/i })
@@ -167,7 +140,7 @@ describe('PaymentPage', () => {
       error: null,
     } as any)
 
-    const params = fulfilledParams({ tenantSlug: 'test-tenant', id: 'app-123' })
+    const params = { tenantSlug: 'test-tenant', id: 'app-123' }
     render(<PaymentPage params={params} />)
 
     await waitFor(() => {
@@ -182,7 +155,7 @@ describe('PaymentPage', () => {
       error: null,
     } as any)
 
-    const params = fulfilledParams({ tenantSlug: 'test-tenant', id: 'app-123' })
+    const params = { tenantSlug: 'test-tenant', id: 'app-123' }
     render(<PaymentPage params={params} />)
 
     await waitFor(() => {
@@ -197,7 +170,7 @@ describe('PaymentPage', () => {
       error: null,
     } as any)
 
-    const params = fulfilledParams({ tenantSlug: 'test-tenant', id: 'app-123' })
+    const params = { tenantSlug: 'test-tenant', id: 'app-123' }
     render(<PaymentPage params={params} />)
 
     // Should show skeleton loaders
@@ -207,7 +180,7 @@ describe('PaymentPage', () => {
   it('should handle payment error', async () => {
     mutateAsync.mockRejectedValueOnce(new Error('Payment failed'))
 
-    const params = fulfilledParams({ tenantSlug: 'test-tenant', id: 'app-123' })
+    const params = { tenantSlug: 'test-tenant', id: 'app-123' }
     render(<PaymentPage params={params} />)
 
     await waitFor(() => {
@@ -221,7 +194,7 @@ describe('PaymentPage', () => {
   })
 
   it('should allow selecting different payment methods', async () => {
-    const params = fulfilledParams({ tenantSlug: 'test-tenant', id: 'app-123' })
+    const params = { tenantSlug: 'test-tenant', id: 'app-123' }
     render(<PaymentPage params={params} />)
 
     const alipayRadio = await screen.findByRole('radio', { name: /支付宝/i })
@@ -230,4 +203,3 @@ describe('PaymentPage', () => {
     expect(alipayRadio).toHaveAttribute('aria-checked', 'true')
   })
 })
-

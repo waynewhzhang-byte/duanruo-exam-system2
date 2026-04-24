@@ -4,8 +4,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPost, apiDelete, apiPut, apiPostWithTenant, apiPutWithTenant, apiDeleteWithTenant, apiGetWithTenant } from './api'
-export { apiGet, apiPost, apiDelete, apiPut, apiPostWithTenant, apiPutWithTenant, apiDeleteWithTenant, apiGetWithTenant }
+import { apiGet, apiGetPublic, apiPost, apiDelete, apiPut, apiPostWithTenant, apiPutWithTenant, apiDeleteWithTenant, apiGetWithTenant } from './api'
+export { apiGet, apiGetPublic, apiPost, apiDelete, apiPut, apiPostWithTenant, apiPutWithTenant, apiDeleteWithTenant, apiGetWithTenant }
 import { z } from 'zod'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -57,6 +57,7 @@ import {
   UserProfileResponseType,
   UpsertProfileRequestType,
 } from './schemas'
+import type { RuleConfiguration } from '@/types/auto-review-rules'
 import type {
   TicketTemplate,
   Ticket,
@@ -85,15 +86,14 @@ import {
 function normalizeTicketBatchResponse(
   raw: unknown,
 ): z.infer<typeof BatchGenerateTicketsResponseSchema> {
-  const r = raw as {
-    totalGenerated?: number
-    alreadyExisted?: number
-    failed?: number
-    count?: number
-  }
-  const successCount = r.totalGenerated ?? r.count ?? 0
-  const skippedCount = r.alreadyExisted ?? 0
-  const failureCount = r.failed ?? 0
+  const r = raw as Record<string, unknown>
+  const totalGenerated = typeof r.totalGenerated === 'number' ? r.totalGenerated : 0
+  const count = typeof r.count === 'number' ? r.count : 0
+  const alreadyExisted = typeof r.alreadyExisted === 'number' ? r.alreadyExisted : 0
+  const failed = typeof r.failed === 'number' ? r.failed : 0
+  const successCount = totalGenerated || count
+  const skippedCount = alreadyExisted
+  const failureCount = failed
   return BatchGenerateTicketsResponseSchema.parse({
     totalRequested: successCount + skippedCount + failureCount,
     successCount,
@@ -108,14 +108,14 @@ export const queryKeys = {
   applications: {
     all: ['applications'] as const,
     lists: () => [...queryKeys.applications.all, 'list'] as const,
-    list: (filters: Record<string, any>) => [...queryKeys.applications.lists(), filters] as const,
+    list: (filters: Record<string, string | number | boolean | undefined>) => [...queryKeys.applications.lists(), filters] as const,
     details: () => [...queryKeys.applications.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.applications.details(), id] as const,
   },
   files: {
     all: ['files'] as const,
     lists: () => [...queryKeys.files.all, 'list'] as const,
-    list: (filters: Record<string, any>) => [...queryKeys.files.lists(), filters] as const,
+    list: (filters: Record<string, string | number | boolean | undefined>) => [...queryKeys.files.lists(), filters] as const,
     details: () => [...queryKeys.files.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.files.details(), id] as const,
     my: () => [...queryKeys.files.all, 'my'] as const,
@@ -123,7 +123,7 @@ export const queryKeys = {
   exams: {
     all: ['exams'] as const,
     lists: () => [...queryKeys.exams.all, 'list'] as const,
-    list: (filters: Record<string, any>) => [...queryKeys.exams.lists(), filters] as const,
+    list: (filters: Record<string, string | number | boolean | undefined>) => [...queryKeys.exams.lists(), filters] as const,
     details: () => [...queryKeys.exams.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.exams.details(), id] as const,
     positionsByExam: (examId: string) => [...queryKeys.exams.all, 'positions', examId] as const,
@@ -135,7 +135,7 @@ export const queryKeys = {
   tickets: {
     all: ['tickets'] as const,
     lists: () => [...queryKeys.tickets.all, 'list'] as const,
-    list: (filters: Record<string, any>) => [...queryKeys.tickets.lists(), filters] as const,
+    list: (filters: Record<string, string | number | boolean | undefined>) => [...queryKeys.tickets.lists(), filters] as const,
     details: () => [...queryKeys.tickets.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.tickets.details(), id] as const,
     byApplication: (applicationId: string) => [...queryKeys.tickets.all, 'application', applicationId] as const,
@@ -156,7 +156,7 @@ export const queryKeys = {
   tenants: {
     all: ['tenants'] as const,
     lists: () => [...queryKeys.tenants.all, 'list'] as const,
-    list: (filters: Record<string, any>) => [...queryKeys.tenants.lists(), filters] as const,
+    list: (filters: Record<string, string | number | boolean | undefined>) => [...queryKeys.tenants.lists(), filters] as const,
     details: () => [...queryKeys.tenants.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.tenants.details(), id] as const,
   },
@@ -398,12 +398,20 @@ export function useOpenExams() {
   return useQuery<z.infer<typeof PublishedExamResponse>[]>({
     queryKey: ['exams', 'open', 'published'],
     queryFn: async () => {
-      // 使用带认证的API，CANDIDATE角色通过EXAM_VIEW_PUBLIC权限访问
-      // 返回来自所有租户的开放考试
-      const exams = await apiGet<z.infer<typeof PublishedExamResponse>[]>('/published-exams/open', {
+      const exams = await apiGetPublic<z.infer<typeof PublishedExamResponse>[]>('/public/exams/open', {
         schema: z.array(PublishedExamResponse),
       })
-      return exams
+      // 后端在部分部署下会对每个租户迭代同一套物理考试数据，导致同一 examId 重复多条。
+      // 列表页按考试实体去重，保留第一条（含 tenantCode，用于直达报名页）。
+      const seen = new Set<string>()
+      const deduped: z.infer<typeof PublishedExamResponse>[] = []
+      for (const e of exams) {
+        const key = e.examId || e.id
+        if (seen.has(key)) continue
+        seen.add(key)
+        deduped.push(e)
+      }
+      return deduped
     },
   })
 }
@@ -449,13 +457,34 @@ export function useExam(id: string) {
 export function useExamPositions(examId: string, tenantId?: string) {
   return useQuery<z.infer<typeof PositionResponse>[]>({
     queryKey: queryKeys.exams.positionsByExam(examId),
-    queryFn: () => {
+    queryFn: async () => {
       if (!tenantId) {
         throw new Error('Tenant ID is required to fetch exam positions')
       }
-      return apiGetWithTenant<z.infer<typeof PositionResponse>[]>(`/exams/${examId}/positions`, tenantId, {
-        schema: z.array(PositionResponse),
-      })
+      // Backend may occasionally return non-ISO objects for date fields (e.g. createdAt: {}).
+      // Keep list rendering resilient by normalizing payload instead of strict-failing.
+      const response = await apiGetWithTenant<unknown>(`/exams/${examId}/positions`, tenantId)
+      const rows = Array.isArray(response)
+        ? response
+        : Array.isArray((response as { data?: unknown })?.data)
+          ? (response as { data: unknown[] }).data
+          : []
+
+      return rows
+        .map((row) => {
+          if (!row || typeof row !== 'object') return row
+          const normalized = { ...(row as Record<string, unknown>) }
+          if (normalized.createdAt != null && typeof normalized.createdAt !== 'string') {
+            delete normalized.createdAt
+          }
+          if (normalized.updatedAt != null && typeof normalized.updatedAt !== 'string') {
+            delete normalized.updatedAt
+          }
+          return normalized
+        })
+        .map((row) => PositionResponse.partial().passthrough().safeParse(row))
+        .filter((result): result is z.SafeParseSuccess<z.infer<typeof PositionResponse>> => result.success)
+        .map((result) => result.data)
     },
     enabled: !!examId && !!tenantId,
     staleTime: 5 * 60 * 1000,
@@ -655,7 +684,7 @@ export function usePayApplication() {
       paymentData
     }: {
       applicationId: string
-      paymentData: Record<string, any>
+      paymentData: Record<string, unknown>
     }) =>
       apiPost(`/applications/${applicationId}/pay`, paymentData),
     onSuccess: () => {
@@ -713,9 +742,9 @@ export function useGenerateTicket() {
 // NOTE: OpenAPI does not expose GET /tickets/{ticketId} for details.
 // Use application-scoped endpoint instead.
 export function useTicketByApplication(applicationId: string) {
-  return useQuery({
+  return useQuery<z.infer<typeof TicketInfoSchema>>({
     queryKey: queryKeys.tickets.byApplication(applicationId),
-    queryFn: () => apiGet(`/tickets/application/${applicationId}`, {
+    queryFn: () => apiGet<z.infer<typeof TicketInfoSchema>>(`/tickets/application/${applicationId}`, {
       schema: TicketInfoSchema,
     }),
     enabled: !!applicationId,
@@ -906,7 +935,7 @@ export function useCreateExam() {
   const queryClient = useQueryClient()
   const { token } = useAuth()
   return useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: z.infer<typeof ExamUpdateRequest>) =>
       apiPost<ExamResponse>('/exams', data, { schema: ExamResponse, token: token || undefined }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.exams.all })
@@ -1105,9 +1134,9 @@ export function useUpdatePosition() {
       if (!tenantId) {
         throw new Error('Tenant ID is required to update a position')
       }
-      return await apiPutWithTenant(`/exams/positions/${id}`, tenantId, data)
+      return await apiPutWithTenant<z.infer<typeof PositionResponse>>(`/exams/positions/${id}`, tenantId, data)
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: z.infer<typeof PositionResponse> | null) => {
       if (data?.examId) {
         queryClient.invalidateQueries({ queryKey: queryKeys.exams.positionsByExam(data.examId) })
       }
@@ -1141,7 +1170,7 @@ export function useExamVenues(examId: string, tenantId?: string) {
       if (!tenantId) {
         throw new Error('Tenant ID is required to fetch exam venues')
       }
-      const response = await apiGetWithTenant<any[]>(`/seating/venues?examId=${examId}`, tenantId)
+      const response = await apiGetWithTenant<z.infer<typeof VenueListResponse>[]>(`/seating/venues?examId=${examId}`, tenantId)
       const items = Array.isArray(response) ? response : []
       return {
         items,
@@ -1219,7 +1248,7 @@ export function useUpdateExamRules() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ examId, rules, tenantId }: { examId: string; rules: Record<string, any>; tenantId?: string }) => {
+    mutationFn: async ({ examId, rules, tenantId }: { examId: string; rules: Record<string, unknown>; tenantId?: string }) => {
       if (!tenantId) {
         throw new Error('Tenant ID is required to update exam rules')
       }
@@ -1239,7 +1268,7 @@ export function useSubjects(positionId: string) {
     queryKey: ['subjects', positionId],
     queryFn: async () => {
       const response = await apiGet(`/positions/${positionId}/subjects`)
-      return z.array(z.any()).parse(response) // Will use SubjectListResponse when imported
+      return z.array(z.record(z.unknown())).parse(response) // Will use SubjectListResponse when imported
     },
     enabled: !!positionId,
   })
@@ -1259,7 +1288,7 @@ export function useCreateSubject() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ positionId, data, tenantId }: { positionId: string; data: any; tenantId?: string }) => {
+    mutationFn: async ({ positionId, data, tenantId }: { positionId: string; data: Record<string, unknown>; tenantId?: string }) => {
       if (!tenantId) {
         throw new Error('Tenant ID is required to create a subject')
       }
@@ -1276,7 +1305,7 @@ export function useUpdateSubject() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ subjectId, data, tenantId }: { subjectId: string; data: any; tenantId?: string }) => {
+    mutationFn: async ({ subjectId, data, tenantId }: { subjectId: string; data: Record<string, unknown>; tenantId?: string }) => {
       if (!tenantId) {
         throw new Error('Tenant ID is required to update a subject')
       }
@@ -1540,7 +1569,7 @@ export function useCreateUser() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       return await apiPost('/users', data)
     },
     onSuccess: () => {
@@ -1553,7 +1582,7 @@ export function useUpdateUser() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ userId, data }: { userId: string; data: any }) => {
+    mutationFn: async ({ userId, data }: { userId: string; data: Record<string, unknown> }) => {
       return await apiPut(`/users/${userId}`, data)
     },
     onSuccess: (_, variables) => {
@@ -1612,14 +1641,14 @@ export function usePositionApplications(positionId: string, params?: { page?: nu
  * Get auto-review rules for an exam
  */
 export function useExamAutoReviewRules(examId: string, tenantId?: string) {
-  return useQuery({
+  return useQuery<RuleConfiguration>({
     queryKey: ['exam-auto-review-rules', examId, tenantId],
     queryFn: async () => {
       if (!tenantId) {
         throw new Error('Tenant ID is required to fetch exam auto-review rules')
       }
       const response = await apiGetWithTenant(`/exams/${examId}/rules`, tenantId)
-      return response as { rules?: any[] }
+      return response as RuleConfiguration
     },
     enabled: !!examId && !!tenantId,
   })
@@ -1632,7 +1661,7 @@ export function useUpdateExamAutoReviewRules() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ examId, rules, tenantId }: { examId: string; rules: any; tenantId?: string }) => {
+    mutationFn: async ({ examId, rules, tenantId }: { examId: string; rules: RuleConfiguration; tenantId?: string }) => {
       if (!tenantId) {
         throw new Error('Tenant ID is required to update exam auto-review rules')
       }
@@ -1650,7 +1679,7 @@ export function useUpdateExamAutoReviewRules() {
  */
 export function useTestAutoReviewRules() {
   return useMutation({
-    mutationFn: async ({ examId, rules, testData }: { examId: string; rules: any; testData: any }) => {
+    mutationFn: async ({ examId, rules, testData }: { examId: string; rules: RuleConfiguration; testData: Record<string, unknown> }) => {
       // For now, we'll implement client-side testing
       // In the future, this could call a backend endpoint
       return {
@@ -2051,12 +2080,12 @@ export const FormFieldSchema = z.object({
   displayOrder: z.number().optional().nullable(),
   options: FieldOptionsSchema.nullable(),
   constraints: FieldConstraintsSchema.nullable(),
-  conditionalRules: z.any().optional().nullable(),
+  conditionalRules: z.record(z.unknown()).optional().nullable(),
   createdAt: z.string().optional().nullable(),
   // Legacy fields for backward compatibility
   fieldName: z.string().optional(),
   defaultValue: z.string().optional(),
-  validationRules: z.record(z.any()).optional(),
+  validationRules: z.record(z.unknown()).optional(),
   order: z.number().optional(),
 })
 
@@ -2161,7 +2190,7 @@ export function useExamFormTemplate(examId: string | undefined, tenantId: string
       }
       try {
         return FormTemplateSchema.parse(response)
-      } catch (parseError: any) {
+      } catch (parseError: unknown) {
         console.error('Failed to parse form template:', parseError, response)
         return null
       }

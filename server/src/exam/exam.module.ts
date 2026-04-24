@@ -6,6 +6,7 @@ import { FormTemplateController } from './form-template.controller';
 import { ScoreController } from './score.controller';
 import { ScoreService } from './score.service';
 import { PublishedExamController } from './published-exam.controller';
+import { PublicExamController } from './public-exam.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { PositionService } from './position.service';
 import { NotificationModule } from '../common/notification/notification.module';
@@ -25,6 +26,7 @@ import { UserModule } from '../user/user.module';
   controllers: [
     ExamController,
     PositionController,
+    PublicExamController,
     PublishedExamController,
     FormTemplateController,
     ScoreController,

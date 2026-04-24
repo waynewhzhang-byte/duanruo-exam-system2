@@ -12,6 +12,7 @@ import {
   SEAT_MAP_CELL_STATUSES,
 } from './dto/seating.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { ApplicationStatus } from '../common/enums';
 
 interface SeatAssignmentData {
   id: string;
@@ -65,8 +66,8 @@ export class SeatingService {
       // 3) Get eligible applications
       // For now, let's just get PAID applications for feeRequired exams, or APPROVED for others
       const eligibleStatus = exam.feeRequired
-        ? ['PAID', 'TICKET_ISSUED']
-        : ['APPROVED', 'PAID', 'TICKET_ISSUED'];
+        ? [ApplicationStatus.PAID, ApplicationStatus.TICKET_ISSUED]
+        : [ApplicationStatus.APPROVED, ApplicationStatus.PAID, ApplicationStatus.TICKET_ISSUED];
       const applications = await tx.application.findMany({
         where: {
           examId,

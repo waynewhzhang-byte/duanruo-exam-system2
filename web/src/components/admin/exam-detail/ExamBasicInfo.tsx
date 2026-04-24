@@ -17,20 +17,36 @@ interface ExamBasicInfoProps {
   examId: string
 }
 
+const asString = (value: unknown, fallback = ''): string => {
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return fallback
+}
+
+const normalizeDateTimeInput = (value: unknown): string => {
+  const normalized = asString(value, '').replace(' ', 'T')
+  return normalized.length >= 16 ? normalized.slice(0, 16) : ''
+}
+
+const toDateTimeStorage = (value: string): string => {
+  if (!value) return ''
+  return `${value.replace('T', ' ')}:00`
+}
+
 export default function ExamBasicInfo({ exam, examId }: ExamBasicInfoProps) {
   const { tenant } = useTenant()
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
-    title: exam.title || '',
-    description: exam.description || '',
-    code: exam.code || '',
-    urlSuffix: exam.slug || '',
-    registrationStart: exam.registrationStart || '',
-    registrationEnd: exam.registrationEnd || '',
-    feeRequired: exam.feeRequired || false,
-    feeAmount: exam.feeAmount || 0,
+    title: asString(exam?.title),
+    description: asString(exam?.description),
+    code: asString(exam?.code),
+    urlSuffix: asString(exam?.slug),
+    registrationStart: asString(exam?.registrationStart),
+    registrationEnd: asString(exam?.registrationEnd),
+    feeRequired: Boolean(exam?.feeRequired),
+    feeAmount: typeof exam?.feeAmount === 'number' ? exam.feeAmount : 0,
   })
-  const [announcement, setAnnouncement] = useState(exam.announcement || '')
+  const [announcement, setAnnouncement] = useState(asString(exam?.announcement))
 
   const updateExamMutation = useUpdateExam()
   const updateAnnouncementMutation = useUpdateExamAnnouncement()
@@ -132,7 +148,7 @@ export default function ExamBasicInfo({ exam, examId }: ExamBasicInfoProps) {
       case 'COMPLETED':
         return { label: '已完成', description: '考试已结束' }
       default:
-        return { label: status, description: '' }
+        return { label: asString(status, 'UNKNOWN'), description: '' }
     }
   }
 
@@ -181,7 +197,7 @@ export default function ExamBasicInfo({ exam, examId }: ExamBasicInfoProps) {
         </CardContent>
       </Card>
 
-      <Card shadow-sm>
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -223,8 +239,8 @@ export default function ExamBasicInfo({ exam, examId }: ExamBasicInfoProps) {
               <Input
                 id="registrationStart"
                 type="datetime-local"
-                value={formData.registrationStart?.replace(' ', 'T').slice(0, 16)}
-                onChange={(e) => setFormData({ ...formData, registrationStart: e.target.value.replace('T', ' ') + ':00' })}
+                value={normalizeDateTimeInput(formData.registrationStart)}
+                onChange={(e) => setFormData({ ...formData, registrationStart: toDateTimeStorage(e.target.value) })}
                 disabled={!isEditing}
               />
             </div>
@@ -233,8 +249,8 @@ export default function ExamBasicInfo({ exam, examId }: ExamBasicInfoProps) {
               <Input
                 id="registrationEnd"
                 type="datetime-local"
-                value={formData.registrationEnd?.replace(' ', 'T').slice(0, 16)}
-                onChange={(e) => setFormData({ ...formData, registrationEnd: e.target.value.replace('T', ' ') + ':00' })}
+                value={normalizeDateTimeInput(formData.registrationEnd)}
+                onChange={(e) => setFormData({ ...formData, registrationEnd: toDateTimeStorage(e.target.value) })}
                 disabled={!isEditing}
               />
             </div>

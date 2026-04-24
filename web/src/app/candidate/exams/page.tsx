@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOpenExams } from '@/lib/api-hooks'
+import { buildPublicExamPath } from '@/lib/public-exams'
 import {
   Search,
-  Filter,
   Calendar,
   Clock,
   BookOpen,
@@ -35,14 +35,8 @@ export default function ExamsPage() {
   ) || []
 
   // 考生选择考试后，跳转到对应租户的考试详情页面
-  const handleExamSelect = (tenantCode: string | null | undefined, examId: string) => {
-    if (tenantCode) {
-      // 跳转到租户级别的考试详情/报名页面
-      router.push(`/${tenantCode}/exams/${examId}`)
-    } else {
-      // 如果没有租户信息，回退到全局路径
-      router.push(`/candidate/exams/${examId}/positions`)
-    }
+  const handleExamSelect = (tenantCode: string | null | undefined, examCode: string) => {
+    router.push(buildPublicExamPath(tenantCode, examCode))
   }
 
   const getStatusBadge = (status: string) => {
@@ -181,9 +175,9 @@ export default function ExamsPage() {
                   )}
                 </div>
 
-                {/* Action Button - 使用 examId 和 tenantCode 跳转到租户级别的考试详情 */}
+                {/* Action Button */}
                 <Button
-                  onClick={() => handleExamSelect(exam.tenantCode, exam.examId)}
+                  onClick={() => handleExamSelect(exam.tenantCode, exam.code)}
                   className="w-full group-hover:shadow-md transition-shadow"
                   disabled={exam.status?.toUpperCase() !== 'OPEN'}
                 >

@@ -172,20 +172,103 @@ export const TenantListResponseNest = z.object({
 
 export type TenantListResponseNestType = z.infer<typeof TenantListResponseNest>
 
+function toIsoStringOrDefault(value: unknown, fallback: string): string {
+  if (typeof value === 'string') return value
+  if (value instanceof Date) return value.toISOString()
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    'toISOString' in value &&
+    typeof (value as { toISOString?: unknown }).toISOString === 'function'
+  ) {
+    return (value as { toISOString: () => string }).toISOString()
+  }
+  return fallback
+}
+
+function toIsoStringOrNull(value: unknown): string | null {
+  if (value == null) return null
+  if (typeof value === 'string') return value
+  if (value instanceof Date) return value.toISOString()
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    'toISOString' in value &&
+    typeof (value as { toISOString?: unknown }).toISOString === 'function'
+  ) {
+    return (value as { toISOString: () => string }).toISOString()
+  }
+  return null
+}
+
+function normalizeTenantRecord(raw: unknown): TenantType {
+  const nowIso = new Date().toISOString()
+  const item = z.record(z.unknown()).parse(raw)
+  const id = typeof item.id === 'string' ? item.id : ''
+  const name = typeof item.name === 'string' ? item.name : ''
+  const code = typeof item.code === 'string' ? item.code : undefined
+  const slug = typeof item.slug === 'string' ? item.slug : code
+  const schemaName =
+    typeof item.schemaName === 'string' ? item.schemaName : undefined
+  const status =
+    (typeof item.status === 'string' ? item.status : 'ACTIVE') as TenantType['status']
+
+  return {
+    id,
+    name,
+    code,
+    slug,
+    schemaName,
+    status,
+    contactEmail: typeof item.contactEmail === 'string' ? item.contactEmail : '',
+    contactPhone: typeof item.contactPhone === 'string' ? item.contactPhone : null,
+    description: typeof item.description === 'string' ? item.description : null,
+    createdAt: toIsoStringOrDefault(item.createdAt, nowIso),
+    updatedAt: toIsoStringOrDefault(item.updatedAt, nowIso),
+    activatedAt: toIsoStringOrNull(item.activatedAt),
+    deactivatedAt: toIsoStringOrNull(item.deactivatedAt),
+  }
+}
+
 /** 将不同分页格式规范为 hooks 使用的统一结构 */
 export function parseTenantListResponse(data: unknown): TenantListResponseType {
-  const nest = TenantListResponseNest.safeParse(data)
-  if (nest.success) {
-    const { content, pagination } = nest.data
+  const nestLoose = z
+    .object({
+      content: z.array(z.unknown()),
+      pagination: z.object({
+        totalItems: z.number(),
+        totalPages: z.number(),
+        page: z.number(),
+        size: z.number(),
+      }),
+    })
+    .safeParse(data)
+
+  if (nestLoose.success) {
+    const { content, pagination } = nestLoose.data
     return {
-      content,
+      content: content.map(normalizeTenantRecord),
       totalElements: pagination.totalItems,
       totalPages: pagination.totalPages,
       size: pagination.size,
       number: pagination.page,
     }
   }
-  return TenantListResponse.parse(data)
+
+  const springLoose = z
+    .object({
+      content: z.array(z.unknown()),
+      totalElements: z.number(),
+      totalPages: z.number(),
+      size: z.number(),
+      number: z.number(),
+    })
+    .parse(data)
+
+  return {
+    ...springLoose,
+    content: springLoose.content.map(normalizeTenantRecord),
+  }
 }
 
 export const CreateTenantRequest = z.object({

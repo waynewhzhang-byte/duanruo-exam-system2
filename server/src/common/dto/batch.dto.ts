@@ -1,4 +1,11 @@
-import { IsArray, IsOptional, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class BatchOperationItem<T = string> {
@@ -17,8 +24,14 @@ export class IdsBatchRequest {
 }
 
 export class IdWithReason {
+  @IsUUID('4')
   id: string;
+
+  @IsBoolean()
   decision: boolean;
+
+  @IsOptional()
+  @IsString()
   reason?: string;
 }
 

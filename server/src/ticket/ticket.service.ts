@@ -11,6 +11,7 @@ import { TicketResponse } from './dto/ticket.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { randomUUID } from 'crypto';
 import { NotificationService } from '../common/notification/notification.service';
+import { ApplicationStatus, TicketStatus } from '../common/enums';
 
 function generateSecureTicketNo(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -108,7 +109,7 @@ export class TicketService {
       throw new NotFoundException('Exam not found');
     }
 
-    const eligibleStatus = exam.feeRequired ? ['PAID'] : ['APPROVED'];
+    const eligibleStatus = exam.feeRequired ? [ApplicationStatus.PAID] : [ApplicationStatus.APPROVED];
 
     const [applications, existingTickets] = await Promise.all([
       this.client.application.findMany({
@@ -188,7 +189,7 @@ export class TicketService {
 
         await tx.application.updateMany({
           where: { id: { in: applicationIdsToUpdate } },
-          data: { status: 'TICKET_ISSUED' },
+          data: { status: ApplicationStatus.TICKET_ISSUED },
         });
 
         totalGenerated = ticketsData.length;
@@ -224,18 +225,18 @@ export class TicketService {
               candidateId: app.candidateId,
               ticketNo,
               ticketNumber,
-              status: 'ACTIVE',
-              examTitle: app.exam.title,
-              positionTitle: app.position.title,
-              examStartTime: app.exam.examStart,
-              examEndTime: app.exam.examEnd,
-              issuedAt: new Date(),
-            },
-          });
+            status: 'ACTIVE',
+            examTitle: app.exam.title,
+            positionTitle: app.position.title,
+            examStartTime: app.exam.examStart,
+            examEndTime: app.exam.examEnd,
+            issuedAt: new Date(),
+          },
+        });
 
-          await this.client.application.update({
-            where: { id: app.id },
-            data: { status: 'TICKET_ISSUED' },
+        await this.client.application.update({
+          where: { id: app.id },
+          data: { status: ApplicationStatus.TICKET_ISSUED },
           });
 
           totalGenerated++;
@@ -405,7 +406,7 @@ Generated at: ${new Date().toISOString()}
 
         await tx.application.updateMany({
           where: { id: { in: applicationIdsToUpdate } },
-          data: { status: 'TICKET_ISSUED' },
+          data: { status: ApplicationStatus.TICKET_ISSUED },
         });
 
         totalGenerated = ticketsData.length;
@@ -513,7 +514,7 @@ Generated at: ${new Date().toISOString()}
 
     const mapped = this.toClientTicket(ticket);
 
-    if (ticket.status === 'CANCELLED') {
+    if (ticket.status === TicketStatus.CANCELLED) {
       return {
         valid: false,
         reason: '准考证已作废',
@@ -577,7 +578,7 @@ Generated at: ${new Date().toISOString()}
       where: { id: input.ticketId },
       data: {
         verifiedAt: new Date(),
-        status: 'PRINTED',
+        status: TicketStatus.PRINTED,
       },
     });
 

@@ -8,6 +8,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { TenantBucketService } from './tenant-bucket.service';
 import { getErrorMessage, getErrorStack } from '../common/utils/error.util';
+import { TenantStatus } from '../common/enums';
 
 const TEMPLATE_SCHEMA = 'tenant';
 
@@ -62,7 +63,7 @@ export class TenantService {
             code: data.code,
             schemaName: data.schemaName,
             contactEmail: data.contactEmail,
-            status: 'ACTIVE',
+            status: TenantStatus.ACTIVE,
           },
         });
         await tx.$executeRaw`CREATE SCHEMA IF NOT EXISTS ${Prisma.raw(`"${escapeIdentifier(data.schemaName)}"`)}`;
@@ -148,7 +149,7 @@ export class TenantService {
     try {
       const templateTables = await this.prisma.$queryRaw<
         { tablename: string }[]
-      >`SELECT tablename FROM pg_tables WHERE schemaname = ${TEMPLATE_SCHEMA} ORDER BY tablename`;
+      >`SELECT tablename::text AS tablename FROM pg_tables WHERE schemaname = ${TEMPLATE_SCHEMA} ORDER BY tablename`;
 
       if (templateTables.length === 0) {
         throw new InternalServerErrorException(
@@ -165,7 +166,7 @@ export class TenantService {
 
       const templateSequences = await this.prisma.$queryRaw<
         { sequencename: string }[]
-      >`SELECT sequencename FROM pg_sequences WHERE schemaname = ${TEMPLATE_SCHEMA}`;
+      >`SELECT sequencename::text AS sequencename FROM pg_sequences WHERE schemaname = ${TEMPLATE_SCHEMA}`;
 
       for (const { sequencename } of templateSequences) {
         const safeSeq = escapeIdentifier(sequencename);

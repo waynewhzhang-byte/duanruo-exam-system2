@@ -93,6 +93,8 @@ describe('permissions.config', () => {
       expect(permissions).toContain('review:primary');
       expect(permissions).toContain('review:perform');
       expect(permissions).toContain('application:view:assigned');
+      expect(permissions).toContain('exam:view');
+      expect(permissions).toContain('file:view');
     });
 
     it('should handle SECONDARY_REVIEWER permissions', () => {
@@ -100,6 +102,8 @@ describe('permissions.config', () => {
       expect(permissions).toContain('review:secondary');
       expect(permissions).toContain('review:perform');
       expect(permissions).toContain('application:view:assigned');
+      expect(permissions).toContain('exam:view');
+      expect(permissions).toContain('file:view');
     });
   });
 

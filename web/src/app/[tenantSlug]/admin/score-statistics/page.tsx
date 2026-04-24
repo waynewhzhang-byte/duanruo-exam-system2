@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -71,15 +71,15 @@ interface ScoreAnalysis {
 }
 
 interface ScoreStatisticsPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
-  }>
+  }
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
 
 export default function ScoreStatisticsPage({ params }: ScoreStatisticsPageProps) {
-  const { tenantSlug } = use(params)
+  const { tenantSlug } = params
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedExam, setSelectedExam] = useState<string>('')

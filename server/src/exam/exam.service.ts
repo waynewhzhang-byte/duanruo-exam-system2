@@ -5,7 +5,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
-import { Exam, Prisma } from '@prisma/client';
+import { Exam, Position, Prisma, Subject, Tenant } from '@prisma/client';
+import {
+  ExamStatus,
+  ApplicationStatus,
+  TenantStatus,
+} from '../common/enums';
 import {
   ExamCreateRequest,
   ExamUpdateRequest,
@@ -13,6 +18,11 @@ import {
   ExamStatistics,
 } from './dto/exam.dto';
 import { UpdateExamRulesRequest } from './dto/exam-rules.dto';
+import {
+  PublicExamAnnouncementResponse,
+  PublicExamResponse,
+} from './dto/public-exam.dto';
+import { PositionResponse } from './dto/position.dto';
 
 function jsonObjectFromTemplate(
   v: Prisma.JsonValue | null | undefined,
@@ -101,7 +111,7 @@ export class ExamService {
         feeRequired: request.feeRequired ?? false,
         feeAmount: request.feeAmount,
         createdBy: userId,
-        status: 'DRAFT',
+        status: ExamStatus.DRAFT,
       },
     });
 
@@ -238,6 +248,123 @@ export class ExamService {
     });
   }
 
+  async findOpenPublicExams(): Promise<PublicExamResponse[]> {
+    const tenants = await this.prisma.publicClient.tenant.findMany({
+      where: { status: 'ACTIVE' },
+      orderBy: { name: 'asc' },
+    });
+    const now = new Date();
+    const exams: PublicExamResponse[] = [];
+
+    for (const tenant of tenants) {
+      const tenantExams = await PrismaService.runInTenantContext(
+        tenant.schemaName,
+        async () =>
+          this.prisma.client.exam.findMany({
+            where: {
+              status: ExamStatus.OPEN,
+              registrationStart: { lte: now },
+              registrationEnd: { gte: now },
+            },
+            include: {
+              _count: {
+                select: {
+                  positions: true,
+                },
+              },
+            },
+            orderBy: { updatedAt: 'desc' },
+          }),
+      );
+
+      exams.push(
+        ...tenantExams.map((exam) =>
+          this.mapToPublicExamResponse(tenant, exam, exam._count.positions),
+        ),
+      );
+    }
+
+    return exams.sort((left, right) => {
+      const leftTime = left.updatedAt ? new Date(left.updatedAt).getTime() : 0;
+      const rightTime = right.updatedAt
+        ? new Date(right.updatedAt).getTime()
+        : 0;
+      return rightTime - leftTime;
+    });
+  }
+
+  async findPublicExamByTenantAndCode(
+    tenantCode: string,
+    code: string,
+  ): Promise<PublicExamResponse> {
+    const tenant = await this.getActiveTenantByCode(tenantCode);
+
+    return PrismaService.runInTenantContext(tenant.schemaName, async () => {
+      const exam = await this.prisma.client.exam.findUnique({
+        where: { code },
+        include: {
+          _count: {
+            select: {
+              positions: true,
+            },
+          },
+        },
+      });
+
+      if (!exam || exam.status !== ExamStatus.OPEN) {
+        throw new NotFoundException('Exam not found');
+      }
+
+      return this.mapToPublicExamResponse(tenant, exam, exam._count.positions);
+    });
+  }
+
+  async findPublicExamPositions(
+    tenantCode: string,
+    code: string,
+  ): Promise<PositionResponse[]> {
+    const tenant = await this.getActiveTenantByCode(tenantCode);
+
+    return PrismaService.runInTenantContext(tenant.schemaName, async () => {
+      const exam = await this.prisma.client.exam.findUnique({
+        where: { code },
+        select: { id: true, status: true },
+      });
+
+      if (!exam || exam.status !== ExamStatus.OPEN) {
+        throw new NotFoundException('Exam not found');
+      }
+
+      const positions = await this.prisma.client.position.findMany({
+        where: { examId: exam.id },
+        include: { subjects: { orderBy: { ordering: 'asc' } } },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      return positions.map((position) => this.mapPositionToResponse(position));
+    });
+  }
+
+  async findPublicExamAnnouncement(
+    tenantCode: string,
+    code: string,
+  ): Promise<PublicExamAnnouncementResponse> {
+    const tenant = await this.getActiveTenantByCode(tenantCode);
+
+    return PrismaService.runInTenantContext(tenant.schemaName, async () => {
+      const exam = await this.prisma.client.exam.findUnique({
+        where: { code },
+        select: { status: true, announcement: true },
+      });
+
+      if (!exam || exam.status !== 'OPEN') {
+        throw new NotFoundException('Exam not found');
+      }
+
+      return { content: exam.announcement ?? '' };
+    });
+  }
+
   private mapToResponse(exam: Exam): ExamResponse {
     return {
       id: exam.id,
@@ -290,22 +417,22 @@ export class ExamService {
 
     const counts = {
       total: applications.length,
-      draft: applications.filter((a) => a.status === 'DRAFT').length,
-      submitted: applications.filter((a) => a.status === 'SUBMITTED').length,
+      draft: applications.filter((a) => a.status === ApplicationStatus.DRAFT).length,
+      submitted: applications.filter((a) => a.status === ApplicationStatus.SUBMITTED).length,
       pendingPrimary: applications.filter(
-        (a) => a.status === 'PENDING_PRIMARY_REVIEW',
+        (a) => a.status === ApplicationStatus.PENDING_PRIMARY_REVIEW,
       ).length,
-      primaryPassed: applications.filter((a) => a.status === 'PRIMARY_PASSED')
+      primaryPassed: applications.filter((a) => a.status === ApplicationStatus.PRIMARY_PASSED)
         .length,
       primaryRejected: applications.filter(
-        (a) => a.status === 'PRIMARY_REJECTED',
+        (a) => a.status === ApplicationStatus.PRIMARY_REJECTED,
       ).length,
       pendingSecondary: applications.filter(
-        (a) => a.status === 'PENDING_SECONDARY_REVIEW',
+        (a) => a.status === ApplicationStatus.PENDING_SECONDARY_REVIEW,
       ).length,
-      approved: applications.filter((a) => a.status === 'APPROVED').length,
+      approved: applications.filter((a) => a.status === ApplicationStatus.APPROVED).length,
       secondaryRejected: applications.filter(
-        (a) => a.status === 'SECONDARY_REJECTED',
+        (a) => a.status === ApplicationStatus.SECONDARY_REJECTED,
       ).length,
       paid: applications.filter((a) => paidApplicationIds.has(a.id)).length,
       ticketIssued: applications.filter((a) => ticketApplicationIds.has(a.id))
@@ -438,5 +565,76 @@ export class ExamService {
       throw new NotFoundException('Reviewer assignment not found');
     }
     await this.client.examReviewer.delete({ where: { id: row.id } });
+  }
+
+  private async getActiveTenantByCode(tenantCode: string): Promise<Tenant> {
+    const tenant = await this.prisma.publicClient.tenant.findFirst({
+      where: {
+        code: tenantCode,
+        status: TenantStatus.ACTIVE,
+      },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException('Tenant not found');
+    }
+
+    return tenant;
+  }
+
+  private mapToPublicExamResponse(
+    tenant: Tenant,
+    exam: Exam,
+    positionCount: number,
+  ): PublicExamResponse {
+    return {
+      id: exam.id,
+      examId: exam.id,
+      tenantId: tenant.id,
+      tenantName: tenant.name,
+      tenantCode: tenant.code,
+      code: exam.code,
+      title: exam.title,
+      description: exam.description ?? undefined,
+      announcement: exam.announcement ?? undefined,
+      registrationStart: exam.registrationStart ?? undefined,
+      registrationEnd: exam.registrationEnd ?? undefined,
+      examStart: exam.examStart ?? undefined,
+      examEnd: exam.examEnd ?? undefined,
+      feeRequired: exam.feeRequired,
+      feeAmount: exam.feeAmount ? Number(exam.feeAmount) : undefined,
+      status: exam.status,
+      positionCount,
+      updatedAt: exam.updatedAt,
+    };
+  }
+
+  private mapPositionToResponse(
+    position: Position & { subjects?: Subject[] },
+  ): PositionResponse {
+    return {
+      id: position.id,
+      examId: position.examId,
+      code: position.code,
+      title: position.title,
+      description: position.description ?? undefined,
+      requirements: position.requirements ?? undefined,
+      quota: position.quota ?? undefined,
+      rulesConfig: position.rulesConfig ?? undefined,
+      subjects: position.subjects?.map((subject) => ({
+        id: subject.id,
+        name: subject.name,
+        durationMinutes: subject.durationMinutes,
+        type: subject.type,
+        maxScore: subject.maxScore ? Number(subject.maxScore) : undefined,
+        passingScore: subject.passingScore
+          ? Number(subject.passingScore)
+          : undefined,
+        weight: Number(subject.weight),
+        ordering: subject.ordering,
+        createdAt: subject.createdAt,
+      })),
+      createdAt: position.createdAt,
+    };
   }
 }

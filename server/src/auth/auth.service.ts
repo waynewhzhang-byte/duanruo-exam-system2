@@ -2,13 +2,15 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { getPermissionsForRoles } from './permissions.config';
 import * as bcrypt from 'bcrypt';
-import { User, UserTenantRole } from '@prisma/client';
+import { Prisma, User, UserTenantRole } from '@prisma/client';
 import { parseUserRoles } from './roles.util';
+import { RegisterRequestDto } from './dto/auth.dto';
 
 export interface TenantRoleItem {
   tenantId: string;
@@ -45,12 +47,32 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async validateUser(username: string, pass: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { username },
+  async validateUser(identifier: string, pass: string): Promise<User | null> {
+    const normalizedIdentifier = identifier.trim();
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: normalizedIdentifier },
+          { email: normalizedIdentifier },
+        ],
+      },
     });
 
-    if (user && (await bcrypt.compare(pass, user.passwordHash))) {
+    if (!user) {
+      return null;
+    }
+
+    let isPasswordValid = await bcrypt.compare(pass, user.passwordHash);
+    if (!isPasswordValid) {
+      // Tolerate accidental copy/paste whitespace without changing
+      // the primary password matching behavior.
+      const trimmedPass = pass.trim();
+      if (trimmedPass !== pass) {
+        isPasswordValid = await bcrypt.compare(trimmedPass, user.passwordHash);
+      }
+    }
+
+    if (isPasswordValid) {
       return user;
     }
     return null;
@@ -98,6 +120,77 @@ export class AuthService {
       user: resultUser,
       tenantRoles: session.tenantRoleItems,
     };
+  }
+
+  async registerCandidate(dto: RegisterRequestDto): Promise<UserResponse> {
+    if (dto.password !== dto.confirmPassword) {
+      throw new BadRequestException('两次输入的密码不一致');
+    }
+
+    const username = dto.username.trim();
+    const email = dto.email.trim().toLowerCase();
+    const fullName = dto.fullName.trim();
+    const phoneNumber = dto.phoneNumber?.trim() || undefined;
+    const department = dto.department?.trim() || null;
+    const jobTitle = dto.jobTitle?.trim() || null;
+
+    const duplicateFilters: Prisma.UserWhereInput[] = [{ username }, { email }];
+    if (phoneNumber) {
+      duplicateFilters.push({ phoneNumber });
+    }
+
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        OR: duplicateFilters,
+      },
+    });
+
+    if (existingUser) {
+      if (existingUser.username === username) {
+        throw new ConflictException('用户名已存在');
+      }
+      if (existingUser.email === email) {
+        throw new ConflictException('邮箱已存在');
+      }
+      if (phoneNumber && existingUser.phoneNumber === phoneNumber) {
+        throw new ConflictException('手机号已存在');
+      }
+      throw new ConflictException('用户名、邮箱或手机号已存在');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          username,
+          email,
+          fullName,
+          passwordHash,
+          phoneNumber,
+          department,
+          jobTitle,
+          status: 'ACTIVE',
+          roles: JSON.stringify(['CANDIDATE']),
+        },
+      });
+
+      const roles = ['CANDIDATE'];
+      return this.buildUserResponse(
+        user,
+        roles,
+        getPermissionsForRoles(roles),
+        {
+          globalRoles: roles,
+          tenantRoles: [],
+        },
+      );
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        throw new ConflictException(this.buildUniqueConflictMessage(error));
+      }
+      throw error;
+    }
   }
 
   async selectTenant(userId: string, tenantId: string) {
@@ -325,5 +418,39 @@ export class AuthService {
       tenantRoleItems: this.mapTenantRoles(tenantRoles),
       globalRoles,
     };
+  }
+
+  private isUniqueConstraintError(
+    error: unknown,
+  ): error is { code: string; meta?: { target?: unknown } } {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: unknown }).code === 'P2002'
+    );
+  }
+
+  private buildUniqueConflictMessage(error: {
+    meta?: { target?: unknown };
+  }): string {
+    const targets = Array.isArray(error.meta?.target) ? error.meta.target : [];
+    const labels = new Set<string>();
+
+    for (const target of targets) {
+      if (target === 'username') {
+        labels.add('用户名');
+      } else if (target === 'email') {
+        labels.add('邮箱');
+      } else if (target === 'phone_number' || target === 'phoneNumber') {
+        labels.add('手机号');
+      }
+    }
+
+    if (labels.size > 0) {
+      return `${Array.from(labels).join('、')}已存在`;
+    }
+
+    return '用户名、邮箱或手机号已存在';
   }
 }

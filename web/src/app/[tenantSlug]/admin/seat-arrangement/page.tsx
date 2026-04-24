@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -70,13 +70,13 @@ interface ArrangeResult {
 }
 
 interface SeatArrangementPageProps {
-  params: Promise<{
+  params: {
     tenantSlug: string
-  }>
+  }
 }
 
 export default function SeatArrangementPage({ params }: SeatArrangementPageProps) {
-  const { tenantSlug } = use(params)
+  const { tenantSlug } = params
   const { tenant } = useTenant()
   const router = useRouter()
   const queryClient = useQueryClient()

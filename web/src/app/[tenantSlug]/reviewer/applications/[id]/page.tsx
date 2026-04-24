@@ -1,7 +1,7 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
-import { useState, useMemo } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useState, useMemo, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Input } from '@/components/ui/input';
 import { RouteGuard } from '@/components/auth/RouteGuard';
+import { Spinner } from '@/components/ui/loading';
 import { useTenant } from '@/hooks/useTenant';
 import { apiGetWithTenant, apiPostWithTenant } from '@/lib/api';
 import { toast } from 'sonner';
@@ -99,9 +100,11 @@ const defaultFieldLabels: Record<string, string> = {
 function ReviewDetailContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const tenantSlug = params.tenantSlug as string;
   const applicationId = params.id as string;
+  const reviewTaskId = searchParams.get('taskId') ?? '';
   const { tenant } = useTenant();
 
   const [reviewComments, setReviewComments] = useState('');
@@ -131,12 +134,18 @@ function ReviewDetailContent() {
     enabled: !!tenant?.id && !!application?.examId,
   });
 
-  // 审核通过 mutation - uses /reviews/decide endpoint
+  // 审核通过 mutation - uses /reviews/decide endpoint（taskId 由队列「查看详情」URL 携带）
   const approveMutation = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error('Tenant not loaded');
-      // TODO: Get taskId from application - requires backend to return taskId with application
-      throw new Error('Review action requires taskId - backend enhancement needed');
+      if (!reviewTaskId.trim()) {
+        throw new Error('缺少审核任务：请先在「审核队列」领取任务，再通过「查看详情」进入本页');
+      }
+      await apiPostWithTenant('/reviews/decide', tenant.id, {
+        taskId: reviewTaskId,
+        approve: true,
+        reason: reviewComments.trim() || '审核通过',
+      });
     },
     onSuccess: () => {
       toast.success('审核通过');
@@ -149,12 +158,18 @@ function ReviewDetailContent() {
     },
   });
 
-  // 审核拒绝 mutation - uses /reviews/decide endpoint
+  // 审核拒绝 mutation
   const rejectMutation = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error('Tenant not loaded');
-      // TODO: Get taskId from application - requires backend to return taskId with application
-      throw new Error('Review action requires taskId - backend enhancement needed');
+      if (!reviewTaskId.trim()) {
+        throw new Error('缺少审核任务：请先在「审核队列」领取任务，再通过「查看详情」进入本页');
+      }
+      await apiPostWithTenant('/reviews/decide', tenant.id, {
+        taskId: reviewTaskId,
+        approve: false,
+        reason: rejectReason.trim(),
+      });
     },
     onSuccess: () => {
       toast.success('已拒绝该申请');
@@ -303,6 +318,8 @@ function ReviewDetailContent() {
     );
   }
 
+  const canSubmitReview = Boolean(reviewTaskId.trim());
+
   return (
     <div className="container mx-auto p-6">
       {/* 头部导航 */}
@@ -315,6 +332,14 @@ function ReviewDetailContent() {
             </Button>
           </Link>
         </div>
+        {!canSubmitReview && (
+          <div
+            className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            role="status"
+          >
+            当前为只读查看。要提交通过或拒绝，请打开「审核队列」→ 选择考试 →「领取下一任务」或从列表进入带审核任务的详情（链接会携带任务 ID）。
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">审核详情</h1>
@@ -710,11 +735,19 @@ function ReviewDetailContent() {
               <Button
                 className="w-full bg-green-600 hover:bg-green-700"
                 onClick={handleApprove}
-                disabled={approveMutation.isPending || reviewStats.rejected > 0 || reviewStats.returned > 0}
+                disabled={
+                  approveMutation.isPending ||
+                  !canSubmitReview ||
+                  reviewStats.rejected > 0 ||
+                  reviewStats.returned > 0
+                }
                 data-testid="btn-approve"
               >
                 {approveMutation.isPending ? '处理中...' : '提交审核通过'}
               </Button>
+              {!canSubmitReview && (
+                <p className="text-xs text-muted-foreground text-center">未关联审核任务，无法提交</p>
+              )}
               {(reviewStats.rejected > 0 || reviewStats.returned > 0) && (
                 <p className="text-xs text-muted-foreground text-center">
                   存在拒绝或驳回项目，无法通过审核
@@ -771,7 +804,7 @@ function ReviewDetailContent() {
                 variant="destructive"
                 className="w-full"
                 onClick={handleReject}
-                disabled={rejectMutation.isPending}
+                disabled={rejectMutation.isPending || !canSubmitReview}
                 data-testid="btn-reject"
               >
                 {rejectMutation.isPending ? '处理中...' : '提交审核拒绝'}
@@ -800,7 +833,15 @@ function ReviewDetailContent() {
 export default function ReviewDetailPage() {
   return (
     <RouteGuard roles={['PRIMARY_REVIEWER', 'SECONDARY_REVIEWER', 'TENANT_ADMIN']}>
-      <ReviewDetailContent />
+      <Suspense
+        fallback={
+          <div className="container mx-auto flex min-h-[40vh] items-center justify-center p-6">
+            <Spinner size="lg" />
+          </div>
+        }
+      >
+        <ReviewDetailContent />
+      </Suspense>
     </RouteGuard>
   );
 }
