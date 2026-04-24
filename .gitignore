@@ -395,3 +395,5 @@ tenant_id.txt
 
 # Web bundles (framework artifacts)
 web-bundles/
+.omx/
+.worktrees/
