@@ -1,0 +1,6 @@
+export enum ExamStatus {
+  DRAFT = 'DRAFT',
+  REGISTRATION_OPEN = 'REGISTRATION_OPEN',
+  OPEN = 'OPEN',
+  CLOSED = 'CLOSED',
+}
