@@ -1,0 +1,6 @@
+export enum TicketStatus {
+  GENERATED = 'GENERATED',
+  DOWNLOADED = 'DOWNLOADED',
+  PRINTED = 'PRINTED',
+  CANCELLED = 'CANCELLED',
+}
