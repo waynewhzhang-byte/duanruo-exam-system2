@@ -20,6 +20,12 @@ function deepConvertBigInt(value: unknown): unknown {
   if (typeof value === 'bigint') {
     return value.toString();
   }
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      return null;
+    }
+    return value.toISOString();
+  }
   if (Array.isArray(value)) {
     return value.map(deepConvertBigInt);
   }

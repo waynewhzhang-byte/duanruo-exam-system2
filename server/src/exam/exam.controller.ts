@@ -72,11 +72,23 @@ export class ExamController {
     @Query('page') page = 0,
     @Query('size') size = 10,
     @Query('status') status?: string,
+    @Req() req?: AuthenticatedRequest,
   ): Promise<PaginatedResponse<ExamResponse>> {
-    const { content, total } = await this.examService.findAll(
+    const headerTenantId = req?.headers?.['x-tenant-id'];
+    const headerTenantSlug = req?.headers?.['x-tenant-slug'];
+    const tenantHeaderId =
+      typeof headerTenantId === 'string' ? headerTenantId : undefined;
+    const tenantHeaderSlug =
+      typeof headerTenantSlug === 'string' ? headerTenantSlug : undefined;
+
+    const { content, total } = await this.examService.findAllByTenantContext(
       Number(page),
       Number(size),
       status,
+      {
+        tenantId: tenantHeaderId ?? req?.user?.tenantId,
+        tenantSlug: tenantHeaderSlug,
+      },
     );
     return PaginationHelper.createResponse(
       content,

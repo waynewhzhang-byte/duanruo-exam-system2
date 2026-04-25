@@ -11,7 +11,6 @@ import { Spinner } from '@/components/ui/loading';
 import { RouteGuard } from '@/components/auth/RouteGuard';
 import { useTenant } from '@/hooks/useTenant';
 import { useAuth } from '@/contexts/AuthContext';
-import { useExams } from '@/lib/api-hooks';
 import { apiGetWithTenant, apiPostWithTenant } from '@/lib/api';
 import { toast } from 'sonner';
 import { ArrowLeft, ClipboardList, RefreshCw, User, FileText } from 'lucide-react';
@@ -70,8 +69,18 @@ function ReviewQueueContent() {
   // 需要先选择考试才能查看审核队列
   const [selectedExamId, setSelectedExamId] = useState<string>('');
 
-  // 获取考试列表供选择
-  const { data: examsData } = useExams({ status: 'OPEN' });
+  // 获取考试列表供选择（必须绑定当前租户，避免跨租户泄露）
+  const { data: examsData } = useQuery<{ content: Array<{ id: string; title: string }> }>({
+    queryKey: ['review-queue-exams', tenant?.id],
+    queryFn: async () => {
+      if (!tenant?.id) throw new Error('Tenant not loaded');
+      return apiGetWithTenant<{ content: Array<{ id: string; title: string }> }>(
+        '/exams?page=0&size=100&status=OPEN',
+        tenant.id,
+      );
+    },
+    enabled: !!tenant?.id,
+  });
 
   // 确定审核级别
   const isPrimaryReviewer = user?.roles?.includes('PRIMARY_REVIEWER');

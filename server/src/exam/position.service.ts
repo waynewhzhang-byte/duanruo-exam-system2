@@ -68,6 +68,7 @@ export class PositionService {
   }
 
   async create(request: PositionCreateRequest): Promise<PositionResponse> {
+    PrismaService.assertNotTemplateSchemaForWrite('create position');
     const exam = await this.client.exam.findUnique({
       where: { id: request.examId },
     });
@@ -109,6 +110,7 @@ export class PositionService {
   }
 
   async delete(id: string): Promise<void> {
+    PrismaService.assertNotTemplateSchemaForWrite('delete position');
     const position = await this.client.position.findUnique({ where: { id } });
     if (!position) throw new NotFoundException('Position not found');
 
@@ -146,6 +148,7 @@ export class PositionService {
       schedule?: string;
     },
   ) {
+    PrismaService.assertNotTemplateSchemaForWrite('create subject');
     const position = await this.client.position.findUnique({
       where: { id: positionId },
     });
@@ -182,6 +185,7 @@ export class PositionService {
       schedule?: string;
     },
   ) {
+    PrismaService.assertNotTemplateSchemaForWrite('update subject');
     const subject = await this.client.subject.findUnique({ where: { id } });
     if (!subject) throw new NotFoundException('Subject not found');
 
@@ -208,6 +212,7 @@ export class PositionService {
   }
 
   async deleteSubject(id: string) {
+    PrismaService.assertNotTemplateSchemaForWrite('delete subject');
     const subject = await this.client.subject.findUnique({ where: { id } });
     if (!subject) throw new NotFoundException('Subject not found');
     await this.client.subject.delete({ where: { id } });
@@ -223,6 +228,7 @@ export class PositionService {
       rulesConfig?: Prisma.InputJsonValue;
     },
   ): Promise<PositionResponse> {
+    PrismaService.assertNotTemplateSchemaForWrite('update position');
     const position = await this.client.position.findUnique({ where: { id } });
     if (!position) throw new NotFoundException('Position not found');
 

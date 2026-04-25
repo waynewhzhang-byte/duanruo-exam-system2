@@ -165,16 +165,16 @@ export class PaymentService {
           // 只更新状态，不触发审核或准考证生成
           await tx.application.update({
             where: { id: app.id },
-          data: { status: ApplicationStatus.PAID },
-        });
+            data: { status: ApplicationStatus.PAID },
+          });
 
-        // 记录审计日志
-        await tx.applicationAuditLog.create({
-          data: {
-            id: uuidv4(),
-            applicationId: app.id,
-            fromStatus: app.status,
-            toStatus: ApplicationStatus.PAID,
+          // 记录审计日志
+          await tx.applicationAuditLog.create({
+            data: {
+              id: uuidv4(),
+              applicationId: app.id,
+              fromStatus: app.status,
+              toStatus: ApplicationStatus.PAID,
               actor: 'SYSTEM',
               reason: 'Payment successful',
               metadata: {

@@ -73,6 +73,18 @@ export class ScoreService {
   }
 
   /**
+   * 获取报名信息用于权限校验（仅返回 candidateId）
+   */
+  async getApplicationForAuth(applicationId: string) {
+    const app = await this.client.application.findUnique({
+      where: { id: applicationId },
+      select: { candidateId: true },
+    });
+    if (!app) throw new NotFoundException('Application not found');
+    return app;
+  }
+
+  /**
    * 获取某报名者的所有成绩
    */
   async getScoresByApplication(applicationId: string) {

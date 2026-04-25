@@ -67,7 +67,11 @@ export class SeatingService {
       // For now, let's just get PAID applications for feeRequired exams, or APPROVED for others
       const eligibleStatus = exam.feeRequired
         ? [ApplicationStatus.PAID, ApplicationStatus.TICKET_ISSUED]
-        : [ApplicationStatus.APPROVED, ApplicationStatus.PAID, ApplicationStatus.TICKET_ISSUED];
+        : [
+            ApplicationStatus.APPROVED,
+            ApplicationStatus.PAID,
+            ApplicationStatus.TICKET_ISSUED,
+          ];
       const applications = await tx.application.findMany({
         where: {
           examId,
@@ -216,21 +220,82 @@ export class SeatingService {
       orderBy: { seatLabel: 'asc' },
     });
 
-    // We would typically join with other tables here, but for simplicity we return what we have
-    // Real implementation would join candidate info from public schema
-    return assignments.map((a) => ({
-      id: a.id,
-      applicationId: a.applicationId,
-      candidateName: 'Candidate', // Placeholder
-      positionTitle: 'Position', // Placeholder
-      venueName: 'Venue', // Placeholder
-      roomName: 'Room', // Placeholder
-      roomCode: '',
-      seatNo: a.seatNo,
-      seatNumber: a.seatLabel || String(a.seatNo),
-      applicationStatus: '',
-      assignedAt: a.createdAt,
-    }));
+    if (assignments.length === 0) return [];
+
+    // Collect related IDs
+    const applicationIds = assignments.map((a) => a.applicationId);
+    const venueIds = [...new Set(assignments.map((a) => a.venueId))];
+    const roomIds = [
+      ...new Set(assignments.map((a) => a.roomId).filter(Boolean)),
+    ] as string[];
+
+    // Fetch related data from tenant schema
+    const [applications, venues, rooms] = await Promise.all([
+      this.client.application.findMany({
+        where: { id: { in: applicationIds } },
+        select: { id: true, candidateId: true, positionId: true, status: true },
+      }),
+      this.client.venue.findMany({
+        where: { id: { in: venueIds } },
+        select: { id: true, name: true },
+      }),
+      roomIds.length > 0
+        ? this.client.room.findMany({
+            where: { id: { in: roomIds } },
+            select: { id: true, name: true, code: true },
+          })
+        : ([] as { id: string; name: string; code: string }[]),
+    ]);
+
+    // Fetch position titles
+    const positionIds = [...new Set(applications.map((a) => a.positionId))];
+    const positions =
+      positionIds.length > 0
+        ? await this.client.position.findMany({
+            where: { id: { in: positionIds } },
+            select: { id: true, title: true },
+          })
+        : [];
+
+    // Fetch candidate names from public schema
+    const candidateIds = [...new Set(applications.map((a) => a.candidateId))];
+    const users =
+      candidateIds.length > 0
+        ? await this.prisma.publicClient.user.findMany({
+            where: { id: { in: candidateIds } },
+            select: { id: true, fullName: true },
+          })
+        : [];
+
+    // Build lookup maps
+    const appMap = new Map(applications.map((a) => [a.id, a]));
+    const venueMap = new Map(venues.map((v) => [v.id, v]));
+    const roomMap = new Map(rooms.map((r) => [r.id, r]));
+    const posMap = new Map(positions.map((p) => [p.id, p]));
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return assignments.map((a) => {
+      const app = appMap.get(a.applicationId);
+      const venue = venueMap.get(a.venueId);
+      const room = a.roomId ? roomMap.get(a.roomId) : undefined;
+      const pos = app ? posMap.get(app.positionId) : undefined;
+
+      return {
+        id: a.id,
+        applicationId: a.applicationId,
+        candidateName: app
+          ? (userMap.get(app.candidateId)?.fullName ?? 'Unknown')
+          : 'Unknown',
+        positionTitle: pos?.title ?? 'Unknown',
+        venueName: venue?.name ?? 'Unknown',
+        roomName: room?.name ?? '',
+        roomCode: room?.code ?? '',
+        seatNo: a.seatNo,
+        seatNumber: a.seatLabel || String(a.seatNo),
+        applicationStatus: app?.status ?? '',
+        assignedAt: a.createdAt,
+      };
+    });
   }
 
   /**

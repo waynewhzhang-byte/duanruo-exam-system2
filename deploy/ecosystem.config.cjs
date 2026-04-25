@@ -1,0 +1,42 @@
+module.exports = {
+  apps: [
+    {
+      name: process.env.APP_NAME_SERVER || 'duanruo-server',
+      cwd: `${process.env.ROOT_DIR}/server`,
+      script: 'dist/main.js',
+      interpreter: 'node',
+      env: {
+        NODE_ENV: 'production',
+        PORT: process.env.SERVER_PORT || 8081,
+      },
+      max_restarts: 10,
+      min_uptime: '10s',
+      autorestart: true,
+      restart_delay: 3000,
+      time: true,
+      error_file: `${process.env.ROOT_DIR}/logs/server-error.log`,
+      out_file: `${process.env.ROOT_DIR}/logs/server-out.log`,
+      merge_logs: true,
+    },
+    {
+      name: process.env.APP_NAME_WEB || 'duanruo-web',
+      cwd: `${process.env.ROOT_DIR}/web`,
+      script: 'node_modules/next/dist/bin/next',
+      args: `start -H 0.0.0.0 -p ${process.env.WEB_PORT || 3000}`,
+      interpreter: 'node',
+      env: {
+        NODE_ENV: 'production',
+        BACKEND_PORT: process.env.SERVER_PORT || 8081,
+        BACKEND_ORIGIN: `http://127.0.0.1:${process.env.SERVER_PORT || 8081}`,
+      },
+      max_restarts: 10,
+      min_uptime: '10s',
+      autorestart: true,
+      restart_delay: 3000,
+      time: true,
+      error_file: `${process.env.ROOT_DIR}/logs/web-error.log`,
+      out_file: `${process.env.ROOT_DIR}/logs/web-out.log`,
+      merge_logs: true,
+    },
+  ],
+};

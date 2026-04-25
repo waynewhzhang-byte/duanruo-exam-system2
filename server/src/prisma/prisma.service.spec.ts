@@ -7,7 +7,8 @@ describe('PrismaService', () => {
 
   const mockConfigService = {
     get: jest.fn((key: string) => {
-      if (key === 'DATABASE_URL') return 'postgresql://test:test@localhost:5432/test';
+      if (key === 'DATABASE_URL')
+        return 'postgresql://test:test@localhost:5432/test';
       return null;
     }),
   };

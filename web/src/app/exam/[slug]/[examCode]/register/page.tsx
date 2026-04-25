@@ -37,6 +37,32 @@ type PublicExam = z.infer<typeof PublishedExamResponse>
 type PublicPosition = z.infer<typeof PositionResponse>
 type ApplicationResult = z.infer<typeof ApplicationResponse>
 
+function isNonEmptyDateString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0 && !Number.isNaN(new Date(value).getTime())
+}
+
+function normalizePublicExamPayload(payload: unknown): PublicExam {
+  if (!payload || typeof payload !== 'object') {
+    return PublishedExamResponse.parse(payload)
+  }
+  const normalized = { ...(payload as Record<string, unknown>) }
+  const dateKeys = [
+    'registrationStart',
+    'registrationEnd',
+    'examStart',
+    'examEnd',
+    'publishedAt',
+    'updatedAt',
+  ] as const
+  for (const key of dateKeys) {
+    const value = normalized[key]
+    if (typeof value !== 'string' && value !== null && value !== undefined) {
+      normalized[key] = undefined
+    }
+  }
+  return PublishedExamResponse.parse(normalized)
+}
+
 export default function PublicExamRegisterPage() {
   const params = useParams()
   const pathname = usePathname()
@@ -62,11 +88,12 @@ export default function PublicExamRegisterPage() {
 
   const { data: exam, isLoading: examLoading, error: examError } = useQuery({
     queryKey: ['public-exam', tenantCode, examCode],
-    queryFn: () =>
-      apiGetPublic<PublicExam>(
+    queryFn: async () => {
+      const payload = await apiGetPublic<unknown>(
         `/public/exams/tenant/${tenantCode}/code/${examCode}`,
-        { schema: PublishedExamResponse },
-      ),
+      )
+      return normalizePublicExamPayload(payload)
+    },
     retry: false,
   })
 
@@ -97,12 +124,14 @@ export default function PublicExamRegisterPage() {
   })
 
   const isRegistrationOpen = useMemo(() => {
-    if (!exam?.registrationStart || !exam?.registrationEnd) return false
-    const now = new Date()
-    return (
-      now >= new Date(exam.registrationStart) &&
-      now <= new Date(exam.registrationEnd)
-    )
+    if (!exam) return false
+    if (isNonEmptyDateString(exam.registrationStart) && isNonEmptyDateString(exam.registrationEnd)) {
+      const now = new Date()
+      return now >= new Date(exam.registrationStart) && now <= new Date(exam.registrationEnd)
+    }
+    // Some environments serialize datetime fields as {} on public exam APIs.
+    // When window fields are unavailable, fall back to backend OPEN status.
+    return exam.status === 'OPEN'
   }, [exam])
 
   const onSubmit = async (data: RegistrationForm) => {

@@ -9,26 +9,20 @@ import {
   UseGuards,
   Request,
   ParseUUIDPipe,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiResult } from '../common/dto/api-result.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { TenantGuard } from '../auth/tenant.guard';
 import { Permissions } from '../auth/permissions.decorator';
+import type { AuthenticatedRequest } from '../auth/interfaces/authenticated-request.interface';
 import { ScoreService } from './score.service';
 import {
   RecordScoreDto,
   BatchImportDto,
   UpdateInterviewResultDto,
 } from './dto/score.dto';
-
-interface AuthenticatedRequest {
-  user: {
-    userId: string;
-    tenantId?: string;
-    roles?: string[];
-  };
-}
 
 @Controller('scores')
 @UseGuards(JwtAuthGuard, TenantGuard, PermissionsGuard)
@@ -43,10 +37,17 @@ export class ScoreController {
   }
 
   @Get('application/:applicationId')
-  @Permissions('exam:view')
   async getScoresByApplication(
     @Param('applicationId', ParseUUIDPipe) applicationId: string,
+    @Request() req: AuthenticatedRequest,
   ) {
+    const app = await this.scoreService.getApplicationForAuth(applicationId);
+    const canView =
+      req.user.userId === app.candidateId ||
+      req.user.permissions?.includes('exam:view');
+    if (!canView) {
+      throw new ForbiddenException('No permission to view these scores');
+    }
     const scores =
       await this.scoreService.getScoresByApplication(applicationId);
     return ApiResult.ok(scores);

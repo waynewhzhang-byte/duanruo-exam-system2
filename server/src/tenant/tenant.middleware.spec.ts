@@ -74,6 +74,20 @@ describe('TenantMiddleware', () => {
       expect(next).toHaveBeenCalled();
     });
 
+    it('should use public schema for /public/ routes without tenant headers', async () => {
+      const req = createMockRequest({ path: '/public/exams/open' });
+      const res = createMockResponse();
+      const next = createMockNext();
+
+      await middleware.use(req, res, next);
+
+      expect(runInTenantContextSpy).toHaveBeenCalledWith(
+        'public',
+        expect.any(Function),
+      );
+      expect(next).toHaveBeenCalled();
+    });
+
     it('should use public schema for /tenants route', async () => {
       const req = createMockRequest({ path: '/tenants' });
       const res = createMockResponse();
@@ -126,16 +140,13 @@ describe('TenantMiddleware', () => {
       );
     });
 
-    it('should use public schema when no tenant headers and non-public route', async () => {
+    it('should reject non-public routes when no tenant headers are provided', async () => {
       const req = createMockRequest({ path: '/api/exams', headers: {} });
       const res = createMockResponse();
       const next = createMockNext();
 
-      await middleware.use(req, res, next);
-
-      expect(runInTenantContextSpy).toHaveBeenCalledWith(
-        'public',
-        expect.any(Function),
+      await expect(middleware.use(req, res, next)).rejects.toThrow(
+        'Tenant context is required for this route',
       );
     });
 

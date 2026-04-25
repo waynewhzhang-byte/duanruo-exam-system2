@@ -13,10 +13,7 @@ import {
 } from './dto/review.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from '../common/notification/notification.service';
-import {
-  ApplicationStatus,
-  ReviewStatus,
-} from '../common/enums';
+import { ApplicationStatus } from '../common/enums';
 
 interface QueueTaskRaw {
   id: string;
@@ -88,9 +85,15 @@ export class ReviewService {
 
     let targetStatus: string[];
     if (stage === ReviewStage.PRIMARY) {
-      targetStatus = [ApplicationStatus.PENDING_PRIMARY_REVIEW, ApplicationStatus.SUBMITTED];
+      targetStatus = [
+        ApplicationStatus.PENDING_PRIMARY_REVIEW,
+        ApplicationStatus.SUBMITTED,
+      ];
     } else {
-      targetStatus = [ApplicationStatus.PENDING_SECONDARY_REVIEW, ApplicationStatus.PRIMARY_PASSED];
+      targetStatus = [
+        ApplicationStatus.PENDING_SECONDARY_REVIEW,
+        ApplicationStatus.PRIMARY_PASSED,
+      ];
     }
 
     const applications = await this.client.application.findMany({
@@ -258,7 +261,7 @@ export class ReviewService {
         data: { status: 'COMPLETED' },
       });
 
-      if (toStatus === ApplicationStatus.PRIMARY_PASSED) {
+      if (toStatus === 'PRIMARY_PASSED') {
         await tx.application.update({
           where: { id: app.id },
           data: { status: ApplicationStatus.PENDING_SECONDARY_REVIEW },

@@ -164,13 +164,14 @@ export type RequestOptions = RequestInit & {
   schema?: z.ZodType<unknown>
   token?: string
   tenantId?: string
+  skipTenantContext?: boolean
 }
 
 export async function api<T>(
   endpoint: string,
   options?: RequestOptions,
 ): Promise<T> {
-  const { schema, token, tenantId, ...fetchOptions } = options || {}
+  const { schema, token, tenantId, skipTenantContext, ...fetchOptions } = options || {}
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`
 
@@ -182,12 +183,14 @@ export async function api<T>(
     headers['Content-Type'] = headers['Content-Type'] || 'application/json'
   }
 
-  const { tenantId: resolvedTenantId, tenantSlug: resolvedSlug } = await resolveTenantContext(tenantId)
-  if (resolvedTenantId) {
-    headers['X-Tenant-ID'] = resolvedTenantId
-  }
-  if (resolvedSlug) {
-    headers['X-Tenant-Slug'] = resolvedSlug
+  if (!skipTenantContext) {
+    const { tenantId: resolvedTenantId, tenantSlug: resolvedSlug } = await resolveTenantContext(tenantId)
+    if (resolvedTenantId) {
+      headers['X-Tenant-ID'] = resolvedTenantId
+    }
+    if (resolvedSlug) {
+      headers['X-Tenant-Slug'] = resolvedSlug
+    }
   }
 
   const resolvedToken = await resolveAuthToken(token)
@@ -262,7 +265,7 @@ export const apiDelete = <T>(endpoint: string, options?: Omit<RequestOptions, 'm
   api<T>(endpoint, { ...options, method: 'DELETE' })
 
 export const apiGetPublic = <T>(endpoint: string, options?: Omit<RequestOptions, 'token'>) =>
-  api<T>(endpoint, { ...options, method: 'GET' })
+  api<T>(endpoint, { ...options, method: 'GET', skipTenantContext: true })
 
 export function getAuthHeaders(token?: string): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {}

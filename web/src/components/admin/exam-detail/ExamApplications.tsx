@@ -27,7 +27,7 @@ import {
   UserX
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { format } from 'date-fns'
+import { format, isValid } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { useTenant } from '@/hooks/useTenant'
 
@@ -173,6 +173,13 @@ export default function ExamApplications({ examId }: ExamApplicationsProps) {
         {config.label}
       </Badge>
     )
+  }
+
+  const formatSubmittedAt = (submittedAt?: string) => {
+    if (!submittedAt) return '-'
+    const date = new Date(submittedAt)
+    if (!isValid(date)) return '-'
+    return format(date, 'yyyy-MM-dd HH:mm', { locale: zhCN })
   }
 
   if (isLoading) {
@@ -329,9 +336,7 @@ export default function ExamApplications({ examId }: ExamApplicationsProps) {
                       <TableCell>{application.positionTitle}</TableCell>
                       <TableCell>{getStatusBadge(application.status)}</TableCell>
                       <TableCell>
-                        {application.submittedAt
-                          ? format(new Date(application.submittedAt), 'yyyy-MM-dd HH:mm', { locale: zhCN })
-                          : '-'}
+                        {formatSubmittedAt(application.submittedAt)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button

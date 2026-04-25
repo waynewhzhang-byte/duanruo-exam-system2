@@ -31,6 +31,7 @@ export class TenantGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user;
     const headerTenantId = request.headers['x-tenant-id'] as string;
+    const headerTenantSlug = request.headers['x-tenant-slug'] as string;
 
     if (!user) {
       return true; // Let JwtAuthGuard handle this
@@ -65,6 +66,32 @@ export class TenantGuard implements CanActivate {
 
     if (isCandidateSelfService) {
       return true;
+    }
+
+    // Non-super-admin, non-candidate-self-service requests must carry tenant context.
+    // Without tenant headers, TenantMiddleware falls back to public schema and may expose cross-tenant data.
+    const hasTenantContextHeader = Boolean(
+      (typeof headerTenantId === 'string' && headerTenantId.length > 0) ||
+      (typeof headerTenantSlug === 'string' && headerTenantSlug.length > 0),
+    );
+
+    // Deny if neither header nor JWT has tenant context — this is a misconfigured request
+    if (!hasTenantContextHeader && !user.tenantId) {
+      throw new ForbiddenException(
+        'Tenant context is required. Please ensure X-Tenant-ID or X-Tenant-Slug header is set.',
+      );
+    }
+
+    // Deny if header has tenant context but user's JWT lacks tenant selection
+    if (hasTenantContextHeader && !user.tenantId) {
+      throw new ForbiddenException('No tenant selected in session');
+    }
+
+    // Deny if user has tenant in JWT but no tenant header sent (frontend bug)
+    if (!hasTenantContextHeader && user.tenantId) {
+      throw new ForbiddenException(
+        'Tenant context header is required for tenant-scoped access',
+      );
     }
 
     // For other users, if they are accessing a tenant-specific resource,

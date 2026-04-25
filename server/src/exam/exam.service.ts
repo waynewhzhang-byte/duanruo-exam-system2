@@ -6,11 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
 import { Exam, Position, Prisma, Subject, Tenant } from '@prisma/client';
-import {
-  ExamStatus,
-  ApplicationStatus,
-  TenantStatus,
-} from '../common/enums';
+import { ExamStatus, TenantStatus } from '../common/enums';
 import {
   ExamCreateRequest,
   ExamUpdateRequest,
@@ -69,6 +65,118 @@ export class ExamService {
     };
   }
 
+  async findAllByTenantContext(
+    page = 0,
+    size = 10,
+    status?: string,
+    tenantContext?: { tenantId?: string; tenantSlug?: string },
+  ): Promise<{ content: ExamResponse[]; total: number }> {
+    const tenantId = tenantContext?.tenantId?.trim();
+    const tenantSlug = tenantContext?.tenantSlug?.trim();
+    if (!tenantId && !tenantSlug) {
+      throw new BadRequestException(
+        'Tenant context is required to query tenant exams',
+      );
+    }
+
+    const tenantWhere = tenantSlug ? { code: tenantSlug } : { id: tenantId! };
+    const tenant = await this.prisma.publicClient.tenant.findFirst({
+      where: tenantWhere,
+      select: { schemaName: true },
+    });
+
+    if (!tenant?.schemaName) {
+      throw new NotFoundException('Tenant not found');
+    }
+
+    const safeSchemaName = tenant.schemaName.replace(/"/g, '""');
+    const whereClause = status ? `WHERE status = $1` : '';
+    const countParams: unknown[] = status ? [status] : [];
+    const listParams: unknown[] = status
+      ? [status, size, page * size]
+      : [size, page * size];
+    const listWhereClause = status ? `WHERE status = $1` : '';
+    const limitParamIndex = status ? 2 : 1;
+    const offsetParamIndex = status ? 3 : 2;
+
+    type ExamRow = {
+      id: string;
+      code: string;
+      title: string;
+      description: string | null;
+      announcement: string | null;
+      registrationStart: Date | null;
+      registrationEnd: Date | null;
+      examStart: Date | null;
+      examEnd: Date | null;
+      feeRequired: boolean;
+      feeAmount: Prisma.Decimal | null;
+      status: string;
+      formTemplate: Prisma.JsonValue | null;
+      createdBy: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+
+    const [countRows, exams] = await Promise.all([
+      this.prisma.$queryRawUnsafe<{ total: bigint }[]>(
+        `SELECT COUNT(*)::bigint AS total FROM "${safeSchemaName}"."exams" ${whereClause}`,
+        ...countParams,
+      ),
+      this.prisma.$queryRawUnsafe<ExamRow[]>(
+        `SELECT
+           id,
+           code,
+           title,
+           description,
+           announcement,
+           registration_start AS "registrationStart",
+           registration_end AS "registrationEnd",
+           exam_start AS "examStart",
+           exam_end AS "examEnd",
+           fee_required AS "feeRequired",
+           fee_amount AS "feeAmount",
+           status,
+           form_template AS "formTemplate",
+           created_by AS "createdBy",
+           created_at AS "createdAt",
+           updated_at AS "updatedAt"
+         FROM "${safeSchemaName}"."exams"
+         ${listWhereClause}
+         ORDER BY created_at DESC
+         LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}`,
+        ...listParams,
+      ),
+    ]);
+
+    const total = Number(countRows[0]?.total ?? 0);
+    return {
+      content: exams.map((exam) =>
+        this.mapToResponse({
+          id: exam.id,
+          code: exam.code,
+          title: exam.title,
+          description: exam.description,
+          announcement: exam.announcement,
+          registrationStart: exam.registrationStart,
+          registrationEnd: exam.registrationEnd,
+          examStart: exam.examStart,
+          examEnd: exam.examEnd,
+          feeRequired: exam.feeRequired,
+          feeAmount: exam.feeAmount,
+          ticketTemplate: null,
+          formTemplate: exam.formTemplate,
+          formTemplateId: null,
+          status: exam.status,
+          createdBy: exam.createdBy,
+          createdAt: exam.createdAt,
+          updatedAt: exam.updatedAt,
+        } as Exam),
+      ),
+      total,
+    };
+  }
+
   async findById(id: string): Promise<ExamResponse> {
     const exam = await this.client.exam.findUnique({
       where: { id },
@@ -89,6 +197,7 @@ export class ExamService {
     request: ExamCreateRequest,
     userId: string,
   ): Promise<ExamResponse> {
+    PrismaService.assertNotTemplateSchemaForWrite('create exam');
     const existing = await this.client.exam.findUnique({
       where: { code: request.code },
     });
@@ -119,6 +228,7 @@ export class ExamService {
   }
 
   async update(id: string, request: ExamUpdateRequest): Promise<ExamResponse> {
+    PrismaService.assertNotTemplateSchemaForWrite('update exam');
     const exam = await this.client.exam.findUnique({ where: { id } });
     if (!exam) throw new NotFoundException('Exam not found');
 
@@ -146,6 +256,7 @@ export class ExamService {
   }
 
   async delete(id: string): Promise<void> {
+    PrismaService.assertNotTemplateSchemaForWrite('delete exam');
     const exam = await this.client.exam.findUnique({ where: { id } });
     if (!exam) throw new NotFoundException('Exam not found');
 
@@ -162,6 +273,7 @@ export class ExamService {
   }
 
   async updateStatus(id: string, status: string): Promise<ExamResponse> {
+    PrismaService.assertNotTemplateSchemaForWrite('update exam status');
     const exam = await this.client.exam.findUnique({ where: { id } });
     if (!exam) throw new NotFoundException('Exam not found');
 
@@ -176,6 +288,9 @@ export class ExamService {
   }
 
   async updateFormTemplate(examId: string, templateId: string): Promise<void> {
+    PrismaService.assertNotTemplateSchemaForWrite(
+      'update exam form template ref',
+    );
     const exam = await this.client.exam.findUnique({ where: { id: examId } });
     if (!exam) throw new NotFoundException('Exam not found');
 
@@ -195,6 +310,7 @@ export class ExamService {
     examId: string,
     formTemplateData: Prisma.InputJsonValue,
   ): Promise<void> {
+    PrismaService.assertNotTemplateSchemaForWrite('update exam form template');
     const exam = await this.client.exam.findUnique({ where: { id: examId } });
     if (!exam) throw new NotFoundException('Exam not found');
 
@@ -230,6 +346,7 @@ export class ExamService {
     examId: string,
     request: UpdateExamRulesRequest,
   ): Promise<void> {
+    PrismaService.assertNotTemplateSchemaForWrite('update exam rules');
     const exam = await this.client.exam.findUnique({ where: { id: examId } });
     if (!exam) throw new NotFoundException('Exam not found');
     const cur = exam.formTemplate;
@@ -311,7 +428,7 @@ export class ExamService {
         },
       });
 
-      if (!exam || exam.status !== ExamStatus.OPEN) {
+      if (!exam || exam.status !== 'OPEN') {
         throw new NotFoundException('Exam not found');
       }
 
@@ -331,7 +448,7 @@ export class ExamService {
         select: { id: true, status: true },
       });
 
-      if (!exam || exam.status !== ExamStatus.OPEN) {
+      if (!exam || exam.status !== 'OPEN') {
         throw new NotFoundException('Exam not found');
       }
 
@@ -417,22 +534,22 @@ export class ExamService {
 
     const counts = {
       total: applications.length,
-      draft: applications.filter((a) => a.status === ApplicationStatus.DRAFT).length,
-      submitted: applications.filter((a) => a.status === ApplicationStatus.SUBMITTED).length,
+      draft: applications.filter((a) => a.status === 'DRAFT').length,
+      submitted: applications.filter((a) => a.status === 'SUBMITTED').length,
       pendingPrimary: applications.filter(
-        (a) => a.status === ApplicationStatus.PENDING_PRIMARY_REVIEW,
+        (a) => a.status === 'PENDING_PRIMARY_REVIEW',
       ).length,
-      primaryPassed: applications.filter((a) => a.status === ApplicationStatus.PRIMARY_PASSED)
+      primaryPassed: applications.filter((a) => a.status === 'PRIMARY_PASSED')
         .length,
       primaryRejected: applications.filter(
-        (a) => a.status === ApplicationStatus.PRIMARY_REJECTED,
+        (a) => a.status === 'PRIMARY_REJECTED',
       ).length,
       pendingSecondary: applications.filter(
-        (a) => a.status === ApplicationStatus.PENDING_SECONDARY_REVIEW,
+        (a) => a.status === 'PENDING_SECONDARY_REVIEW',
       ).length,
-      approved: applications.filter((a) => a.status === ApplicationStatus.APPROVED).length,
+      approved: applications.filter((a) => a.status === 'APPROVED').length,
       secondaryRejected: applications.filter(
-        (a) => a.status === ApplicationStatus.SECONDARY_REJECTED,
+        (a) => a.status === 'SECONDARY_REJECTED',
       ).length,
       paid: applications.filter((a) => paidApplicationIds.has(a.id)).length,
       ticketIssued: applications.filter((a) => ticketApplicationIds.has(a.id))

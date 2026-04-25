@@ -144,50 +144,52 @@ export class TenantService {
    * table structure. Each new tenant gets a LIKE ... INCLUDING ALL copy.
    */
   private async cloneSchemaFromTemplate(targetSchema: string): Promise<void> {
-    const safeSchema = escapeIdentifier(targetSchema);
+    return PrismaService.runInTenantContext(TEMPLATE_SCHEMA, async () => {
+      const safeSchema = escapeIdentifier(targetSchema);
 
-    try {
-      const templateTables = await this.prisma.$queryRaw<
-        { tablename: string }[]
-      >`SELECT tablename::text AS tablename FROM pg_tables WHERE schemaname = ${TEMPLATE_SCHEMA} ORDER BY tablename`;
+      try {
+        const templateTables = await this.prisma.$queryRaw<
+          { tablename: string }[]
+        >`SELECT tablename::text AS tablename FROM pg_tables WHERE schemaname = ${TEMPLATE_SCHEMA} ORDER BY tablename`;
 
-      if (templateTables.length === 0) {
+        if (templateTables.length === 0) {
+          throw new InternalServerErrorException(
+            `Template schema "${TEMPLATE_SCHEMA}" is empty. Run Prisma migrations first to populate it.`,
+          );
+        }
+
+        for (const { tablename } of templateTables) {
+          const safeTable = escapeIdentifier(tablename);
+          await this.prisma
+            .$executeRaw`CREATE TABLE IF NOT EXISTS ${Prisma.raw(`"${safeSchema}"."${safeTable}"`)} (LIKE ${Prisma.raw(`"${TEMPLATE_SCHEMA}"."${safeTable}"`)} INCLUDING ALL)`;
+          this.logger.debug(`Cloned table: ${targetSchema}.${tablename}`);
+        }
+
+        const templateSequences = await this.prisma.$queryRaw<
+          { sequencename: string }[]
+        >`SELECT sequencename::text AS sequencename FROM pg_sequences WHERE schemaname = ${TEMPLATE_SCHEMA}`;
+
+        for (const { sequencename } of templateSequences) {
+          const safeSeq = escapeIdentifier(sequencename);
+          await this.prisma
+            .$executeRaw`CREATE SEQUENCE IF NOT EXISTS ${Prisma.raw(`"${safeSchema}"."${safeSeq}"`)}`;
+        }
+
+        await this.verifySchemaInitialization(targetSchema);
+
+        this.logger.log(
+          `Cloned ${templateTables.length} tables from "${TEMPLATE_SCHEMA}" to "${targetSchema}"`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to clone schema from template: ${getErrorMessage(error)}`,
+          getErrorStack(error),
+        );
         throw new InternalServerErrorException(
-          `Template schema "${TEMPLATE_SCHEMA}" is empty. Run Prisma migrations first to populate it.`,
+          `Failed to initialize tenant schema ${targetSchema}: ${getErrorMessage(error)}`,
         );
       }
-
-      for (const { tablename } of templateTables) {
-        const safeTable = escapeIdentifier(tablename);
-        await this.prisma
-          .$executeRaw`CREATE TABLE IF NOT EXISTS ${Prisma.raw(`"${safeSchema}"."${safeTable}"`)} (LIKE ${Prisma.raw(`"${TEMPLATE_SCHEMA}"."${safeTable}"`)} INCLUDING ALL)`;
-        this.logger.debug(`Cloned table: ${targetSchema}.${tablename}`);
-      }
-
-      const templateSequences = await this.prisma.$queryRaw<
-        { sequencename: string }[]
-      >`SELECT sequencename::text AS sequencename FROM pg_sequences WHERE schemaname = ${TEMPLATE_SCHEMA}`;
-
-      for (const { sequencename } of templateSequences) {
-        const safeSeq = escapeIdentifier(sequencename);
-        await this.prisma
-          .$executeRaw`CREATE SEQUENCE IF NOT EXISTS ${Prisma.raw(`"${safeSchema}"."${safeSeq}"`)}`;
-      }
-
-      await this.verifySchemaInitialization(targetSchema);
-
-      this.logger.log(
-        `Cloned ${templateTables.length} tables from "${TEMPLATE_SCHEMA}" to "${targetSchema}"`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to clone schema from template: ${getErrorMessage(error)}`,
-        getErrorStack(error),
-      );
-      throw new InternalServerErrorException(
-        `Failed to initialize tenant schema ${targetSchema}: ${getErrorMessage(error)}`,
-      );
-    }
+    });
   }
 
   private async verifySchemaInitialization(schemaName: string): Promise<void> {

@@ -2,6 +2,7 @@ import {
   Injectable,
   NestMiddleware,
   Inject,
+  BadRequestException,
   NotFoundException,
   Logger,
 } from '@nestjs/common';
@@ -31,13 +32,20 @@ export class TenantMiddleware implements NestMiddleware {
 
     const isPublicRoute =
       path.startsWith('/auth/') ||
+      path.startsWith('/public/') ||
       path === '/tenants' ||
       path.startsWith('/tenants/') ||
       path === '/health' ||
       path === '/';
 
-    if (isPublicRoute || (!tenantId && !tenantSlug)) {
+    if (isPublicRoute) {
       return PrismaService.runInTenantContext('public', () => next());
+    }
+
+    if (!tenantId && !tenantSlug) {
+      throw new BadRequestException(
+        'Tenant context is required for this route. Please provide X-Tenant-ID or X-Tenant-Slug header.',
+      );
     }
 
     // 超管接口只操作 public 库表；忽略浏览器误带的 X-Tenant-ID，避免 Prisma 进入租户 schema 后写入 users 失败

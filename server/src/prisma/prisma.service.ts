@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
 import {
+  BadRequestException,
   Injectable,
   Logger,
   OnModuleInit,
@@ -140,6 +141,25 @@ export class PrismaService
 
   static getTenantSchema(): string | undefined {
     return this.als.getStore()?.schema;
+  }
+
+  /**
+   * Physical schema used by Prisma `@@schema("tenant")` — the structure template.
+   * Business data must not be written here; per-tenant schemas are `tenant_*`.
+   */
+  static readonly TEMPLATE_SCHEMA_NAME = 'tenant';
+
+  /**
+   * Reject mutating operations that would write into the template schema
+   * (e.g. missing or invalid X-Tenant-* so ALS stayed on `tenant`).
+   */
+  static assertNotTemplateSchemaForWrite(operation: string): void {
+    const s = this.getTenantSchema();
+    if (s === this.TEMPLATE_SCHEMA_NAME) {
+      throw new BadRequestException(
+        `${operation}: 当前请求解析到模板库 schema "${this.TEMPLATE_SCHEMA_NAME}"，禁止写入业务数据。请携带有效的 X-Tenant-ID 或 X-Tenant-Slug。`,
+      );
+    }
   }
 
   get client(): PrismaClient {

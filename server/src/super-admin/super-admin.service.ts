@@ -10,6 +10,7 @@ import {
 } from '../common/dto/paginated-response.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { parseUserRoles } from '../auth/roles.util';
 
 export interface CreateTenantInput {
   id: string;
@@ -100,7 +101,7 @@ export class SuperAdminService {
       fullName: string;
       phoneNumber: string | null;
       status: string;
-      roles: string;
+      roles: string[];
       createdAt: Date;
     }>
   > {
@@ -125,7 +126,12 @@ export class SuperAdminService {
       this.prisma.user.count(),
     ]);
 
-    return PaginationHelper.createResponse(users, total, page, size);
+    const parsed = users.map((u) => ({
+      ...u,
+      roles: parseUserRoles(u.roles),
+    }));
+
+    return PaginationHelper.createResponse(parsed, total, page, size);
   }
 
   async updateUser(id: string, dto: UpdateUserDto): Promise<User> {

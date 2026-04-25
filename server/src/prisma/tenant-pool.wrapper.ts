@@ -11,6 +11,18 @@ function getCurrentTenantSchema(): string | undefined {
 }
 
 function rewriteSqlSchema(sql: string, targetSchema: string): string {
+  // When running in public context, queries referencing tenant-schema tables
+  // indicate a missing or bypassed tenant context — a potential data leak.
+  // The only legitimate use is the schema migration service, which must
+  // wrap itself in runInTenantContext('tenant', …).
+  if (targetSchema === 'public' && /"tenant"\."/.test(sql)) {
+    throw new Error(
+      `Tenant schema isolation violation: a query referencing "tenant"."…" tables was executed in "public" context. ` +
+        `This means tenant headers (X-Tenant-ID / X-Tenant-Slug) are missing or the TenantMiddleware was bypassed. ` +
+        `Query prefix: ${sql.substring(0, 200)}`,
+    );
+  }
+
   if (targetSchema === 'public' || targetSchema === 'tenant') {
     return sql;
   }

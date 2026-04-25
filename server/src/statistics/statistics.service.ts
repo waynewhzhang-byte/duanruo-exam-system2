@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ApplicationStatus, TenantStatus, ReviewStatus } from '../common/enums';
+import { ApplicationStatus, ReviewStatus } from '../common/enums';
 
 export interface PlatformStatistics {
   totalTenants: number;
@@ -84,11 +84,22 @@ export class StatisticsService {
         this.client.application.count({
           where: {
             ...where,
-            status: { in: [ApplicationStatus.APPROVED, ApplicationStatus.PAID, ApplicationStatus.TICKET_ISSUED] },
+            status: {
+              in: [
+                ApplicationStatus.APPROVED,
+                ApplicationStatus.PAID,
+                ApplicationStatus.TICKET_ISSUED,
+              ],
+            },
           },
         }),
         this.client.application.count({
-          where: { ...where, status: { in: [ApplicationStatus.PAID, ApplicationStatus.TICKET_ISSUED] } },
+          where: {
+            ...where,
+            status: {
+              in: [ApplicationStatus.PAID, ApplicationStatus.TICKET_ISSUED],
+            },
+          },
         }),
         this.client.application.count({
           where: { ...where, status: ApplicationStatus.TICKET_ISSUED },
@@ -123,7 +134,9 @@ export class StatisticsService {
         const stats = await this.client.application.aggregate({
           where: {
             positionId: pos.id,
-            status: { in: [ApplicationStatus.APPROVED, ApplicationStatus.TICKET_ISSUED] },
+            status: {
+              in: [ApplicationStatus.APPROVED, ApplicationStatus.TICKET_ISSUED],
+            },
           },
           _avg: { totalWrittenScore: true },
           _max: { totalWrittenScore: true },
@@ -356,8 +369,12 @@ export class StatisticsService {
     );
     const pendingPrimary = pendingByStage['PRIMARY'] ?? 0;
     const pendingSecondary = pendingByStage['SECONDARY'] ?? 0;
-    const approved = reviews.filter((r) => r.decision === ReviewStatus.APPROVED).length;
-    const rejected = reviews.filter((r) => r.decision === ReviewStatus.REJECTED).length;
+    const approved = reviews.filter(
+      (r) => r.decision === ReviewStatus.APPROVED,
+    ).length;
+    const rejected = reviews.filter(
+      (r) => r.decision === ReviewStatus.REJECTED,
+    ).length;
 
     const reviewedWithTime = reviews.filter(
       (r) => r.reviewedAt && r.createdAt,

@@ -37,6 +37,12 @@ interface Exam {
   examEnd?: string
 }
 
+const toSafeString = (value: unknown, fallback = ''): string => {
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return fallback
+}
+
 export default function TenantExamDetailPage() {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -96,6 +102,19 @@ export default function TenantExamDetailPage() {
     )
   }
 
+  const normalizedExam: Exam = {
+    ...exam,
+    id: toSafeString(exam.id),
+    code: toSafeString(exam.code),
+    title: toSafeString(exam.title, '未命名考试'),
+    description: toSafeString(exam.description),
+    status: toSafeString(exam.status, 'DRAFT'),
+    registrationStart: toSafeString(exam.registrationStart),
+    registrationEnd: toSafeString(exam.registrationEnd),
+    examStart: toSafeString(exam.examStart),
+    examEnd: toSafeString(exam.examEnd),
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'DRAFT':
@@ -124,11 +143,11 @@ export default function TenantExamDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">{exam.title}</h1>
-              {getStatusBadge(exam.status)}
+              <h1 className="text-3xl font-bold tracking-tight">{normalizedExam.title}</h1>
+              {getStatusBadge(normalizedExam.status)}
             </div>
             <p className="text-muted-foreground mt-1">
-              考试代码: {exam.code} | 租户: {tenant?.name}
+              考试代码: {normalizedExam.code} | 租户: {tenant?.name}
             </p>
           </div>
         </div>
@@ -139,7 +158,7 @@ export default function TenantExamDetailPage() {
           {tenant?.id && (
             <ExamStatusEditor
               examId={examId}
-              currentStatus={exam.status}
+              currentStatus={normalizedExam.status}
               tenantId={tenant.id}
               onStatusChange={refetch}
             />
@@ -149,19 +168,19 @@ export default function TenantExamDetailPage() {
           {tenant?.id && (
             <ExamStatusActions
               examId={examId}
-              currentStatus={exam.status}
+              currentStatus={normalizedExam.status}
               tenantId={tenant.id}
               onStatusChange={refetch}
             />
           )}
 
-          {exam.status === 'DRAFT' && (
+          {normalizedExam.status === 'DRAFT' && (
             <Button onClick={() => setPublishDialogOpen(true)} disabled={!tenant?.id}>
               <Send className="h-4 w-4 mr-2" />
               发布考试
             </Button>
           )}
-          {exam.status === 'OPEN' && (
+          {normalizedExam.status === 'OPEN' && (
             <Button variant="outline" onClick={() => setPublishDialogOpen(true)} disabled={!tenant?.id}>
               <Send className="h-4 w-4 mr-2" />
               重新发布
@@ -216,7 +235,7 @@ export default function TenantExamDetailPage() {
         </TabsList>
 
         <TabsContent value="basic" className="space-y-6">
-          <ExamBasicInfo exam={exam} examId={examId} />
+          <ExamBasicInfo exam={normalizedExam} examId={examId} />
         </TabsContent>
 
         <TabsContent value="positions" className="space-y-6">
@@ -261,8 +280,8 @@ export default function TenantExamDetailPage() {
         open={publishDialogOpen}
         onOpenChange={setPublishDialogOpen}
         examId={examId}
-        examTitle={exam.title}
-        examStatus={exam.status}
+        examTitle={normalizedExam.title}
+        examStatus={normalizedExam.status}
         onPublish={handlePublish}
       />
     </div>

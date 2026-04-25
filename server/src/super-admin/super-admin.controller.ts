@@ -21,6 +21,7 @@ import { ApiResult } from '../common/dto/api-result.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Permissions } from '../auth/permissions.decorator';
+import { parseUserRoles } from '../auth/roles.util';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -49,7 +50,7 @@ export class SuperAdminController {
   async createUser(@Body() dto: CreateUserDto) {
     const user = await this.superAdminService.createUser(dto);
     const { passwordHash: _passwordHash, ...safe } = user;
-    return ApiResult.ok(safe);
+    return ApiResult.ok({ ...safe, roles: parseUserRoles(user.roles) });
   }
 
   @Patch('users/:id')
@@ -58,7 +59,8 @@ export class SuperAdminController {
   @ApiResponse({ status: 200, description: '用户更新成功' })
   async updateUser(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     const user = await this.superAdminService.updateUser(id, dto);
-    return ApiResult.ok(user);
+    const { passwordHash: _passwordHash, ...safe } = user;
+    return ApiResult.ok({ ...safe, roles: parseUserRoles(user.roles) });
   }
 
   @Delete('users/:id')

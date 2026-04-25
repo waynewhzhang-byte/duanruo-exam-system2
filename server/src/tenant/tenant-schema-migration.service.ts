@@ -24,7 +24,9 @@ export class TenantSchemaMigrationService implements OnModuleInit {
     }
 
     try {
-      await this.syncAllTenantSchemas();
+      await PrismaService.runInTenantContext(TEMPLATE_SCHEMA, () =>
+        this.syncAllTenantSchemas(),
+      );
     } catch (error) {
       this.logger.error(
         `Failed to sync tenant schemas on startup: ${(error as Error).message}`,
@@ -33,25 +35,27 @@ export class TenantSchemaMigrationService implements OnModuleInit {
   }
 
   async syncAllTenantSchemas(): Promise<void> {
-    const tenants = await this.prisma.tenant.findMany({
-      where: { status: 'ACTIVE' },
-    });
+    return PrismaService.runInTenantContext(TEMPLATE_SCHEMA, async () => {
+      const tenants = await this.prisma.tenant.findMany({
+        where: { status: 'ACTIVE' },
+      });
 
-    this.logger.log(
-      `Syncing ${tenants.length} tenant schemas from template "${TEMPLATE_SCHEMA}"`,
-    );
+      this.logger.log(
+        `Syncing ${tenants.length} tenant schemas from template "${TEMPLATE_SCHEMA}"`,
+      );
 
-    for (const tenant of tenants) {
-      try {
-        await this.syncTenantSchema(tenant.schemaName);
-      } catch (error) {
-        this.logger.error(
-          `Failed to sync schema for tenant ${tenant.code} (${tenant.schemaName}): ${(error as Error).message}`,
-        );
+      for (const tenant of tenants) {
+        try {
+          await this.syncTenantSchema(tenant.schemaName);
+        } catch (error) {
+          this.logger.error(
+            `Failed to sync schema for tenant ${tenant.code} (${tenant.schemaName}): ${(error as Error).message}`,
+          );
+        }
       }
-    }
 
-    this.logger.log('Tenant schema sync completed');
+      this.logger.log('Tenant schema sync completed');
+    });
   }
 
   async syncTenantSchema(schemaName: string): Promise<{
@@ -184,11 +188,16 @@ export class TenantSchemaMigrationService implements OnModuleInit {
             `"${escapeIdentifier(schemaName)}".`,
           )
           .replace(`"${TEMPLATE_SCHEMA}"`, `"${escapeIdentifier(schemaName)}"`);
+        // Use IF NOT EXISTS to avoid 42P07 errors when index already exists
+        const safeDef = targetDef.replace(
+          /CREATE\s+(UNIQUE\s+)?INDEX\s+/,
+          'CREATE $1INDEX IF NOT EXISTS ',
+        );
         try {
-          await this.prisma.$executeRawUnsafe(targetDef);
+          await this.prisma.$executeRawUnsafe(safeDef);
           added++;
         } catch {
-          // Index may already exist under different name or conflict
+          // Race condition or other transient failure
         }
       }
     }

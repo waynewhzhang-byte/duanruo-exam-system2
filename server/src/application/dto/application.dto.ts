@@ -50,6 +50,13 @@ export class ApplicationResponse {
   feeRequired?: boolean;
   feeAmount?: number;
   taskId?: string;
+  totalWrittenScore?: number;
+  writtenPassStatus?: string;
+  interviewEligibility?: string;
+  finalResult?: string;
+  interviewTime?: Date;
+  interviewLocation?: string;
+  interviewRoom?: string;
 }
 
 export class ApplicationListItemResponse extends ApplicationResponse {

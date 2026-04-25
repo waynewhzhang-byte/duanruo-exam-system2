@@ -365,6 +365,15 @@ export class ApplicationService {
         fileId: a.id,
         fieldKey: a.fieldKey || '',
       })),
+      totalWrittenScore: app.totalWrittenScore
+        ? Number(app.totalWrittenScore)
+        : undefined,
+      writtenPassStatus: app.writtenPassStatus ?? undefined,
+      interviewEligibility: app.interviewEligibility ?? undefined,
+      finalResult: app.finalResult ?? undefined,
+      interviewTime: app.interviewTime ?? undefined,
+      interviewLocation: app.interviewLocation ?? undefined,
+      interviewRoom: app.interviewRoom ?? undefined,
     };
   }
 }

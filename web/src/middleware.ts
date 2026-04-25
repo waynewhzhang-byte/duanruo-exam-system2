@@ -13,13 +13,23 @@ const PUBLIC_ROUTES = [
 ]
 
 function isPublicRoute(pathname: string): boolean {
+  // Exact match or prefix match against PUBLIC_ROUTES
   for (const route of PUBLIC_ROUTES) {
     if (route === '/') {
       if (pathname === '/') return true
       continue
     }
-
     if (pathname === route || pathname.startsWith(`${route}/`)) {
+      return true
+    }
+  }
+
+  // Tenant-scoped public routes: /[tenantSlug]/login, /[tenantSlug]/register
+  const tenantScopedPublic = ['/login', '/register']
+  for (const suffix of tenantScopedPublic) {
+    // Match /{tenantSlug}/login, /{tenantSlug}/register, etc.
+    const match = pathname.match(/^\/[^\/]+\/[^\/]+$/)
+    if (match && (pathname.endsWith(suffix))) {
       return true
     }
   }

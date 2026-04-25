@@ -18,6 +18,8 @@ import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api'
 interface Exam {
   id: string
   name: string
+  title?: string
+  code?: string
   type: string
   status: 'DRAFT' | 'PUBLISHED' | 'REGISTRATION_OPEN' | 'REGISTRATION_CLOSED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
   registrationStart: string
@@ -26,6 +28,12 @@ interface Exam {
   totalPositions: number
   totalApplications: number
   createdAt: string
+}
+
+const readText = (value: unknown, fallback = ''): string => {
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return fallback
 }
 
 export default function ExamsPage() {
@@ -52,8 +60,30 @@ export default function ExamsPage() {
   const fetchExams = async () => {
     try {
       setIsLoading(true)
-      const data = await apiGet<Exam[]>('/exams')
-      setExams(data)
+      const data = await apiGet<{
+        content?: Array<Record<string, unknown>>
+      } | Array<Record<string, unknown>>>('/exams')
+      let rawList: Array<Record<string, unknown>> = []
+      if (Array.isArray(data)) {
+        rawList = data
+      } else if (Array.isArray(data?.content)) {
+        rawList = data.content
+      }
+      const normalizedExams: Exam[] = rawList.map((exam) => ({
+        id: readText(exam.id),
+        name: readText(exam.title, readText(exam.name, '未命名考试')),
+        title: readText(exam.title) || undefined,
+        code: readText(exam.code) || undefined,
+        type: readText(exam.type, 'RECRUITMENT'),
+        status: readText(exam.status, 'DRAFT') as Exam['status'],
+        registrationStart: readText(exam.registrationStart),
+        registrationEnd: readText(exam.registrationEnd),
+        examDate: readText(exam.examStart, readText(exam.examDate)),
+        totalPositions: Number(exam.totalPositions || 0),
+        totalApplications: Number(exam.totalApplications || 0),
+        createdAt: readText(exam.createdAt),
+      }))
+      setExams(normalizedExams)
     } catch (error) {
       console.error('Failed to fetch exams:', error)
       alert('获取考试列表失败，请重试')
@@ -202,7 +232,7 @@ export default function ExamsPage() {
               <TableBody>
                 {exams.map((exam) => (
                   <TableRow key={exam.id}>
-                    <TableCell className="font-medium">{exam.name}</TableCell>
+                    <TableCell className="font-medium">{exam.name || '-'}</TableCell>
                     <TableCell>{exam.type}</TableCell>
                     <TableCell>{getStatusBadge(exam.status)}</TableCell>
                     <TableCell>

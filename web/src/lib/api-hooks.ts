@@ -398,15 +398,37 @@ export function useOpenExams() {
   return useQuery<z.infer<typeof PublishedExamResponse>[]>({
     queryKey: ['exams', 'open', 'published'],
     queryFn: async () => {
-      const exams = await apiGetPublic<z.infer<typeof PublishedExamResponse>[]>('/public/exams/open', {
-        schema: z.array(PublishedExamResponse),
-      })
-      // 后端在部分部署下会对每个租户迭代同一套物理考试数据，导致同一 examId 重复多条。
-      // 列表页按考试实体去重，保留第一条（含 tenantCode，用于直达报名页）。
+      const raw = await apiGetPublic<unknown[]>('/public/exams/open')
+      const exams = (Array.isArray(raw) ? raw : [])
+        .map((item) => {
+          if (!item || typeof item !== 'object') return item
+          const normalized = { ...(item as Record<string, unknown>) }
+          const dateKeys = [
+            'registrationStart',
+            'registrationEnd',
+            'examStart',
+            'examEnd',
+            'publishedAt',
+            'updatedAt',
+          ] as const
+          for (const key of dateKeys) {
+            const value = normalized[key]
+            if (typeof value !== 'string' && value !== null && value !== undefined) {
+              normalized[key] = undefined
+            }
+          }
+          return normalized
+        })
+        .map((item) => PublishedExamResponse.safeParse(item))
+        .filter((result): result is z.SafeParseSuccess<z.infer<typeof PublishedExamResponse>> => result.success)
+        .map((result) => result.data)
+      // 列表页只合并“同租户 + 同考试编码”的重复项。
+      // 不能仅按 examId 去重，否则会把不同租户的考试折叠到同一条，
+      // 进而导致跳转路径携带错误 tenantCode，详情页出现“考试不存在”。
       const seen = new Set<string>()
       const deduped: z.infer<typeof PublishedExamResponse>[] = []
       for (const e of exams) {
-        const key = e.examId || e.id
+        const key = `${e.tenantCode ?? ''}:${e.code ?? e.examId ?? e.id}`
         if (seen.has(key)) continue
         seen.add(key)
         deduped.push(e)

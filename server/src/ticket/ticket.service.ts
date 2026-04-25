@@ -109,7 +109,9 @@ export class TicketService {
       throw new NotFoundException('Exam not found');
     }
 
-    const eligibleStatus = exam.feeRequired ? [ApplicationStatus.PAID] : [ApplicationStatus.APPROVED];
+    const eligibleStatus = exam.feeRequired
+      ? [ApplicationStatus.PAID]
+      : [ApplicationStatus.APPROVED];
 
     const [applications, existingTickets] = await Promise.all([
       this.client.application.findMany({
@@ -225,18 +227,18 @@ export class TicketService {
               candidateId: app.candidateId,
               ticketNo,
               ticketNumber,
-            status: 'ACTIVE',
-            examTitle: app.exam.title,
-            positionTitle: app.position.title,
-            examStartTime: app.exam.examStart,
-            examEndTime: app.exam.examEnd,
-            issuedAt: new Date(),
-          },
-        });
+              status: 'ACTIVE',
+              examTitle: app.exam.title,
+              positionTitle: app.position.title,
+              examStartTime: app.exam.examStart,
+              examEndTime: app.exam.examEnd,
+              issuedAt: new Date(),
+            },
+          });
 
-        await this.client.application.update({
-          where: { id: app.id },
-          data: { status: ApplicationStatus.TICKET_ISSUED },
+          await this.client.application.update({
+            where: { id: app.id },
+            data: { status: ApplicationStatus.TICKET_ISSUED },
           });
 
           totalGenerated++;
@@ -514,7 +516,7 @@ Generated at: ${new Date().toISOString()}
 
     const mapped = this.toClientTicket(ticket);
 
-    if (ticket.status === TicketStatus.CANCELLED) {
+    if (ticket.status === 'CANCELLED') {
       return {
         valid: false,
         reason: '准考证已作废',
