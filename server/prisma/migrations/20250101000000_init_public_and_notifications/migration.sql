@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS "tenants" (
 );
 
 -- CreateTable
-CREATE TABLE "user_tenant_roles" (
+CREATE TABLE IF NOT EXISTS "user_tenant_roles" (
     "id" UUID NOT NULL,
     "user_id" UUID NOT NULL,
     "tenant_id" UUID NOT NULL,
@@ -95,7 +95,7 @@ CREATE TABLE "user_tenant_roles" (
 );
 
 -- CreateTable
-CREATE TABLE "security_audit_logs" (
+CREATE TABLE IF NOT EXISTS "security_audit_logs" (
     "id" UUID NOT NULL,
     "user_id" UUID,
     "username" VARCHAR(100),
@@ -113,7 +113,7 @@ CREATE TABLE "security_audit_logs" (
 );
 
 -- CreateTable
-CREATE TABLE "notifications" (
+CREATE TABLE IF NOT EXISTS "notifications" (
     "id" UUID NOT NULL,
     "user_id" UUID NOT NULL,
     "tenant_id" UUID,
@@ -132,46 +132,54 @@ CREATE TABLE "notifications" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_username_key" ON "users"("username");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_email_key" ON "users"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_phone_number_key" ON "users"("phone_number");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_phone_number_key" ON "users"("phone_number");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "user_profiles_user_id_key" ON "user_profiles"("user_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "user_profiles_user_id_key" ON "user_profiles"("user_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "tenants_code_key" ON "tenants"("code");
+CREATE UNIQUE INDEX IF NOT EXISTS "tenants_code_key" ON "tenants"("code");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "tenants_schema_name_key" ON "tenants"("schema_name");
+CREATE UNIQUE INDEX IF NOT EXISTS "tenants_schema_name_key" ON "tenants"("schema_name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "user_tenant_roles_user_id_tenant_id_role_key" ON "user_tenant_roles"("user_id", "tenant_id", "role");
+CREATE UNIQUE INDEX IF NOT EXISTS "user_tenant_roles_user_id_tenant_id_role_key" ON "user_tenant_roles"("user_id", "tenant_id", "role");
 
 -- CreateIndex
-CREATE INDEX "security_audit_logs_action_idx" ON "security_audit_logs"("action");
+CREATE INDEX IF NOT EXISTS "security_audit_logs_action_idx" ON "security_audit_logs"("action");
 
 -- CreateIndex
-CREATE INDEX "security_audit_logs_user_id_idx" ON "security_audit_logs"("user_id");
+CREATE INDEX IF NOT EXISTS "security_audit_logs_user_id_idx" ON "security_audit_logs"("user_id");
 
 -- CreateIndex
-CREATE INDEX "security_audit_logs_created_at_idx" ON "security_audit_logs"("created_at");
+CREATE INDEX IF NOT EXISTS "security_audit_logs_created_at_idx" ON "security_audit_logs"("created_at");
 
 -- CreateIndex
-CREATE INDEX "notifications_user_id_status_idx" ON "notifications"("user_id", "status");
+CREATE INDEX IF NOT EXISTS "notifications_user_id_status_idx" ON "notifications"("user_id", "status");
 
 -- CreateIndex
-CREATE INDEX "notifications_created_at_idx" ON "notifications"("created_at");
+CREATE INDEX IF NOT EXISTS "notifications_created_at_idx" ON "notifications"("created_at");
 
--- AddForeignKey
-ALTER TABLE "user_profiles" ADD CONSTRAINT "user_profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "user_tenant_roles" ADD CONSTRAINT "user_tenant_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "user_tenant_roles" ADD CONSTRAINT "user_tenant_roles_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (idempotent: skip if constraint already present)
+DO $c$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'user_profiles_user_id_fkey'
+  ) THEN
+    ALTER TABLE "user_profiles" ADD CONSTRAINT "user_profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_tenant_roles_user_id_fkey') THEN
+    ALTER TABLE "user_tenant_roles" ADD CONSTRAINT "user_tenant_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_tenant_roles_tenant_id_fkey') THEN
+    ALTER TABLE "user_tenant_roles" ADD CONSTRAINT "user_tenant_roles_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END
+$c$;

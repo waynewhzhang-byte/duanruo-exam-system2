@@ -1,11 +1,13 @@
 -- =============================================================================
 -- Migration: Enable multiSchema with tenant template schema
 --
+-- Requires 20250101000000_init_public_and_notifications to have been applied first
+-- (public.users and platform tables). This migration only manages schema "tenant".
+--
 -- 1) Legacy DBs: tenant business tables were created in public; move to schema "tenant".
--- 2) Greenfield: public has no legacy tenant tables (e.g. fresh install); create template
---    in "tenant" from the current Prisma datamodel.
+-- 2) Greenfield: public has no legacy tenant tables; create "tenant" template from datamodel.
 -- 3) Idempotent: if "tenant".exams already exists, the migration is a no-op.
--- Regenerate greenfield-tenant-template.sql: see comment in that file.
+-- Regenerate greenfield-tenant-template.sql: see that file.
 -- =============================================================================
 
 CREATE SCHEMA IF NOT EXISTS "tenant";
